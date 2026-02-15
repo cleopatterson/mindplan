@@ -1,0 +1,136 @@
+STATEMENT OF ADVICE
+Prepared for: John & Sarah Mitchell
+Date: 15 January 2025
+Adviser: Jane Smith, CFP
+
+═══════════════════════════════════════════════════
+CLIENT DETAILS
+═══════════════════════════════════════════════════
+
+Client 1: John Mitchell
+  Age: 52
+  Occupation: Civil Engineer
+  Employer: Mitchell & Partners Engineering Pty Ltd
+  Annual Salary: $185,000
+  Superannuation: AustralianSuper - $420,000
+
+Client 2: Sarah Mitchell
+  Age: 49
+  Occupation: Physiotherapist (Part-time)
+  Employer: Northern Beaches Physio
+  Annual Salary: $78,000
+  Superannuation: REST Super - $195,000
+
+═══════════════════════════════════════════════════
+ENTITY STRUCTURE
+═══════════════════════════════════════════════════
+
+1. Mitchell Family Trust (Discretionary Trust)
+   ABN: 12 345 678 901
+   Trustee: Mitchell Holdings Pty Ltd
+   Appointer: John Mitchell
+   Beneficiaries: John Mitchell, Sarah Mitchell, Mitchell children
+
+   Assets:
+   - Investment Property: 42 Ocean Parade, Dee Why NSW 2099
+     Current Value: $1,850,000
+     Rental Income: $52,000 p.a.
+
+   - Share Portfolio (managed by Macquarie)
+     Current Value: $320,000
+     Dividend Income: $12,800 p.a. (fully franked)
+
+   - Term Deposit (NAB)
+     Current Value: $85,000
+     Interest Rate: 4.35%
+
+   Liabilities:
+   - Investment Loan (NAB)
+     Outstanding: $580,000
+     Interest Rate: 6.24% (interest only)
+     Security: 42 Ocean Parade
+
+2. Mitchell Holdings Pty Ltd (Company)
+   ACN: 123 456 789
+   Directors: John Mitchell, Sarah Mitchell
+   Shareholders: Mitchell Family Trust (100%)
+
+   Assets:
+   - Business Equipment: $45,000
+   - Company Cash Account: $32,000
+
+3. Mitchell Super Fund (SMSF)
+   ABN: 98 765 432 109
+   Members: John Mitchell, Sarah Mitchell
+   Trustee: Mitchell Holdings Pty Ltd
+
+   Assets:
+   - Property: Unit 3/15 Military Road, Neutral Bay NSW 2089
+     Current Value: $920,000
+     Rental Income: $38,000 p.a.
+
+   - Australian Shares (direct)
+     BHP: 2,000 shares
+     CBA: 1,500 shares
+     CSL: 400 shares
+     Estimated Value: $285,000
+
+   - Cash Account (Macquarie)
+     Balance: $65,000
+
+   Liabilities:
+   - Limited Recourse Borrowing Arrangement
+     Outstanding: $340,000
+     Interest Rate: 6.89%
+     Security: Unit 3/15 Military Road
+
+═══════════════════════════════════════════════════
+PERSONAL ASSETS & LIABILITIES
+═══════════════════════════════════════════════════
+
+Personal Assets:
+- Family Home: 28 Balgowlah Road, Balgowlah Heights NSW 2093
+  Estimated Value: $2,400,000
+
+- Motor Vehicle: 2022 Toyota RAV4 Hybrid
+  Estimated Value: $38,000
+
+- Motor Vehicle: 2020 Mazda CX-5
+  Estimated Value: $28,000
+
+- Savings Account (Westpac)
+  Balance: $42,000
+
+Personal Liabilities:
+- Home Loan (Westpac)
+  Outstanding: $650,000
+  Interest Rate: 5.99%
+  Repayment: $4,200/month (P&I)
+
+- Credit Card (AMEX)
+  Limit: $15,000
+  Outstanding Balance: $3,200
+
+═══════════════════════════════════════════════════
+INSURANCE
+═══════════════════════════════════════════════════
+
+John Mitchell:
+- Life Insurance: $1,500,000 (via AustralianSuper)
+- TPD Insurance: $750,000 (via AustralianSuper)
+- Income Protection: 75% of salary, 90-day wait, to age 65
+
+Sarah Mitchell:
+- Life Insurance: $800,000 (via REST Super)
+- TPD Insurance: $500,000 (via REST Super)
+
+═══════════════════════════════════════════════════
+OBJECTIVES
+═══════════════════════════════════════════════════
+
+1. Retire by age 60 (John) and 57 (Sarah) with a combined income of $120,000 p.a. (today's dollars)
+2. Pay off the family home mortgage within 5 years
+3. Build the SMSF to $2,000,000 by retirement
+4. Ensure adequate insurance protection for the family
+5. Minimise tax through the trust structure
+6. Fund children's education (private school fees ~$35,000 p.a. per child)

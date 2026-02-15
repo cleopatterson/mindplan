@@ -1,0 +1,317 @@
+{
+  "clients": [
+    {
+      "id": "client-1",
+      "name": "John Mitchell",
+      "age": 52,
+      "occupation": "Civil Engineer",
+      "income": 185000,
+      "superBalance": 420000
+    },
+    {
+      "id": "client-2",
+      "name": "Sarah Mitchell",
+      "age": 49,
+      "occupation": "Physiotherapist (Part-time)",
+      "income": 78000,
+      "superBalance": 195000
+    }
+  ],
+  "entities": [
+    {
+      "id": "entity-1",
+      "name": "Mitchell Family Trust",
+      "type": "trust",
+      "linkedClientIds": [
+        "client-1",
+        "client-2"
+      ],
+      "role": "Appointer: John Mitchell; Beneficiaries: John Mitchell, Sarah Mitchell, Mitchell children; Trustee: Mitchell Holdings Pty Ltd",
+      "assets": [
+        {
+          "id": "asset-1",
+          "name": "42 Ocean Parade, Dee Why NSW 2099",
+          "type": "property",
+          "value": 1850000,
+          "details": "Investment Property - Rental Income: $52,000 p.a."
+        },
+        {
+          "id": "asset-2",
+          "name": "Share Portfolio (managed by Macquarie)",
+          "type": "managed_fund",
+          "value": 320000,
+          "details": "Dividend Income: $12,800 p.a. (fully franked)"
+        },
+        {
+          "id": "asset-3",
+          "name": "Term Deposit (NAB)",
+          "type": "cash",
+          "value": 85000,
+          "details": "Interest Rate: 4.35%"
+        }
+      ],
+      "liabilities": [
+        {
+          "id": "liability-1",
+          "name": "NAB Investment Loan - 42 Ocean Parade",
+          "type": "mortgage",
+          "amount": 580000,
+          "interestRate": 6.24,
+          "details": "Interest only. Security: 42 Ocean Parade"
+        }
+      ]
+    },
+    {
+      "id": "entity-2",
+      "name": "Mitchell Holdings Pty Ltd",
+      "type": "company",
+      "linkedClientIds": [
+        "client-1",
+        "client-2"
+      ],
+      "role": "Directors: John Mitchell, Sarah Mitchell; Shareholders: Mitchell Family Trust (100%); Trustee of Mitchell Family Trust and Mitchell Super Fund",
+      "assets": [
+        {
+          "id": "asset-4",
+          "name": "Business Equipment",
+          "type": "other",
+          "value": 45000,
+          "details": null
+        },
+        {
+          "id": "asset-5",
+          "name": "Company Cash Account",
+          "type": "cash",
+          "value": 32000,
+          "details": null
+        }
+      ],
+      "liabilities": []
+    },
+    {
+      "id": "entity-3",
+      "name": "Mitchell Super Fund",
+      "type": "smsf",
+      "linkedClientIds": [
+        "client-1",
+        "client-2"
+      ],
+      "role": "Members: John Mitchell, Sarah Mitchell; Trustee: Mitchell Holdings Pty Ltd",
+      "assets": [
+        {
+          "id": "asset-6",
+          "name": "Unit 3/15 Military Road, Neutral Bay NSW 2089",
+          "type": "property",
+          "value": 920000,
+          "details": "Rental Income: $38,000 p.a."
+        },
+        {
+          "id": "asset-7",
+          "name": "Australian Shares - BHP (2,000 shares)",
+          "type": "shares",
+          "value": null,
+          "details": "Part of total direct shares portfolio estimated at $285,000"
+        },
+        {
+          "id": "asset-8",
+          "name": "Australian Shares - CBA (1,500 shares)",
+          "type": "shares",
+          "value": null,
+          "details": "Part of total direct shares portfolio estimated at $285,000"
+        },
+        {
+          "id": "asset-9",
+          "name": "Australian Shares - CSL (400 shares)",
+          "type": "shares",
+          "value": null,
+          "details": "Part of total direct shares portfolio estimated at $285,000"
+        },
+        {
+          "id": "asset-10",
+          "name": "Cash Account (Macquarie)",
+          "type": "cash",
+          "value": 65000,
+          "details": null
+        }
+      ],
+      "liabilities": [
+        {
+          "id": "liability-2",
+          "name": "Limited Recourse Borrowing Arrangement - Unit 3/15 Military Road",
+          "type": "mortgage",
+          "amount": 340000,
+          "interestRate": 6.89,
+          "details": "Security: Unit 3/15 Military Road, Neutral Bay"
+        }
+      ]
+    }
+  ],
+  "personalAssets": [
+    {
+      "id": "asset-11",
+      "name": "28 Balgowlah Road, Balgowlah Heights NSW 2093",
+      "type": "property",
+      "value": 2400000,
+      "details": "Family Home"
+    },
+    {
+      "id": "asset-12",
+      "name": "2022 Toyota RAV4 Hybrid",
+      "type": "vehicle",
+      "value": 38000,
+      "details": null
+    },
+    {
+      "id": "asset-13",
+      "name": "2020 Mazda CX-5",
+      "type": "vehicle",
+      "value": 28000,
+      "details": null
+    },
+    {
+      "id": "asset-14",
+      "name": "Savings Account (Westpac)",
+      "type": "cash",
+      "value": 42000,
+      "details": null
+    },
+    {
+      "id": "asset-15",
+      "name": "Life Insurance - John Mitchell (AustralianSuper)",
+      "type": "insurance",
+      "value": 1500000,
+      "details": "Life Insurance cover"
+    },
+    {
+      "id": "asset-16",
+      "name": "TPD Insurance - John Mitchell (AustralianSuper)",
+      "type": "insurance",
+      "value": 750000,
+      "details": "Total and Permanent Disability cover"
+    },
+    {
+      "id": "asset-17",
+      "name": "Income Protection - John Mitchell",
+      "type": "insurance",
+      "value": null,
+      "details": "75% of salary, 90-day wait period, cover to age 65"
+    },
+    {
+      "id": "asset-18",
+      "name": "Life Insurance - Sarah Mitchell (REST Super)",
+      "type": "insurance",
+      "value": 800000,
+      "details": "Life Insurance cover"
+    },
+    {
+      "id": "asset-19",
+      "name": "TPD Insurance - Sarah Mitchell (REST Super)",
+      "type": "insurance",
+      "value": 500000,
+      "details": "Total and Permanent Disability cover"
+    }
+  ],
+  "personalLiabilities": [
+    {
+      "id": "liability-3",
+      "name": "Westpac Home Loan - 28 Balgowlah Road",
+      "type": "mortgage",
+      "amount": 650000,
+      "interestRate": 5.99,
+      "details": "Principal & Interest repayment: $4,200/month"
+    },
+    {
+      "id": "liability-4",
+      "name": "AMEX Credit Card",
+      "type": "credit_card",
+      "amount": 3200,
+      "interestRate": null,
+      "details": "Credit limit: $15,000"
+    }
+  ],
+  "objectives": [
+    "Retire by age 60 (John) and 57 (Sarah) with a combined income of $120,000 p.a. (today's dollars)",
+    "Pay off the family home mortgage within 5 years",
+    "Build the SMSF to $2,000,000 by retirement",
+    "Ensure adequate insurance protection for the family",
+    "Minimise tax through the trust structure",
+    "Fund children's education (private school fees ~$35,000 p.a. per child)"
+  ],
+  "dataGaps": [
+    {
+      "entityId": "asset-7",
+      "field": "value",
+      "description": "Individual share value for BHP (2,000 shares) not specified. Total portfolio value is $285,000 but breakdown by stock is needed."
+    },
+    {
+      "entityId": "asset-8",
+      "field": "value",
+      "description": "Individual share value for CBA (1,500 shares) not specified. Total portfolio value is $285,000 but breakdown by stock is needed."
+    },
+    {
+      "entityId": "asset-9",
+      "field": "value",
+      "description": "Individual share value for CSL (400 shares) not specified. Total portfolio value is $285,000 but breakdown by stock is needed."
+    },
+    {
+      "entityId": "liability-4",
+      "field": "interestRate",
+      "description": "Interest rate for AMEX Credit Card not specified"
+    },
+    {
+      "entityId": "asset-17",
+      "field": "value",
+      "description": "Annual premium or benefit amount for John's Income Protection insurance not specified"
+    },
+    {
+      "entityId": null,
+      "field": "children_details",
+      "description": "Number of Mitchell children and their ages not specified (referenced as beneficiaries and for education funding objective)"
+    },
+    {
+      "entityId": null,
+      "field": "children_education_years",
+      "description": "Number of years remaining for private school fees (~$35,000 p.a. per child) not specified"
+    },
+    {
+      "entityId": "entity-1",
+      "field": "abn_verification",
+      "description": "Mitchell Family Trust ABN 12 345 678 901 should be verified"
+    },
+    {
+      "entityId": "entity-2",
+      "field": "acn_verification",
+      "description": "Mitchell Holdings Pty Ltd ACN 123 456 789 should be verified"
+    },
+    {
+      "entityId": "entity-3",
+      "field": "abn_verification",
+      "description": "Mitchell Super Fund ABN 98 765 432 109 should be verified"
+    },
+    {
+      "entityId": null,
+      "field": "income_protection_sarah",
+      "description": "No Income Protection insurance mentioned for Sarah Mitchell - should confirm if this is intentional or if cover exists"
+    },
+    {
+      "entityId": "entity-3",
+      "field": "value",
+      "description": "Value missing for \"Australian Shares - BHP (2,000 shares)\" in Mitchell Super Fund"
+    },
+    {
+      "entityId": "entity-3",
+      "field": "value",
+      "description": "Value missing for \"Australian Shares - CBA (1,500 shares)\" in Mitchell Super Fund"
+    },
+    {
+      "entityId": "entity-3",
+      "field": "value",
+      "description": "Value missing for \"Australian Shares - CSL (400 shares)\" in Mitchell Super Fund"
+    },
+    {
+      "entityId": null,
+      "field": "value",
+      "description": "Value missing for personal asset \"Income Protection - John Mitchell\""
+    }
+  ]
+}
