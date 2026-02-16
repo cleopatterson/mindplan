@@ -41,7 +41,8 @@ interface MindMapProps {
 }
 
 export interface MindMapHandle {
-  fitView: () => void;
+  fitView: (opts?: { padding?: number }) => void;
+  getContentBounds: () => { width: number; height: number };
 }
 
 export const MindMap = forwardRef<MindMapHandle, MindMapProps>(function MindMap(props, ref) {
@@ -56,7 +57,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
   { data, selectedNodeId, onSelectNode, highlightedNodeIds },
   ref,
 ) {
-  const { fitView } = useReactFlow();
+  const { fitView, getNodes } = useReactFlow();
   const { nodes: rawNodes, edges: rawEdges } = useMemo(() => transformToGraph(data), [data]);
   const { nodes: layoutedNodes, edges: layoutedEdges } = useGraphLayout(rawNodes, rawEdges);
 
@@ -64,8 +65,22 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
   const [edges, setEdges] = useState<Edge[]>(layoutedEdges);
 
   useImperativeHandle(ref, () => ({
-    fitView: () => fitView({ padding: 0.03, duration: 0 }),
-  }), [fitView]);
+    fitView: (opts) => fitView({ padding: opts?.padding ?? 0.03, duration: 0 }),
+    getContentBounds: () => {
+      const allNodes = getNodes();
+      if (allNodes.length === 0) return { width: 800, height: 600 };
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const node of allNodes) {
+        const w = node.measured?.width ?? 200;
+        const h = node.measured?.height ?? 60;
+        minX = Math.min(minX, node.position.x);
+        minY = Math.min(minY, node.position.y);
+        maxX = Math.max(maxX, node.position.x + w);
+        maxY = Math.max(maxY, node.position.y + h);
+      }
+      return { width: maxX - minX, height: maxY - minY };
+    },
+  }), [fitView, getNodes]);
 
   useEffect(() => { setNodes(layoutedNodes); }, [layoutedNodes]);
   useEffect(() => { setEdges(layoutedEdges); }, [layoutedEdges]);

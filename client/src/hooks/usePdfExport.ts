@@ -29,10 +29,16 @@ export function usePdfExport() {
       setExporting(true);
 
       try {
-        // 1. Switch to light mode
+        // 1. Determine tree shape for dynamic orientation
+        const bounds = mindMap?.getContentBounds() ?? { width: 800, height: 600 };
+        const treeRatio = bounds.width / bounds.height;
+        // Use portrait if tree is significantly taller than wide
+        const orientation = treeRatio < 1.0 ? 'portrait' as const : 'landscape' as const;
+
+        // 2. Switch to light mode
         mapElement.setAttribute('data-pdf-light', '');
 
-        // 2. Clear highlights
+        // 3. Clear highlights
         mapElement.querySelectorAll<HTMLElement>('.react-flow__node').forEach((n) => {
           n.style.opacity = '1';
         });
@@ -41,22 +47,46 @@ export function usePdfExport() {
           p.style.strokeWidth = '1.5';
         });
 
-        // 3. Tight fit view
-        mindMap?.fitView();
-        await new Promise((r) => setTimeout(r, 400));
+        // 4. Resize container to match A4 aspect ratio (off-screen)
+        //    This ensures fitView fills the space proportionally to the PDF page
+        const origStyle = mapElement.style.cssText;
+        const captureW = orientation === 'landscape' ? 2970 : 2100; // A4 ratio in px
+        const captureH = orientation === 'landscape' ? 2100 : 2970;
+        mapElement.style.cssText = `
+          position: fixed !important;
+          width: ${captureW}px !important;
+          height: ${captureH}px !important;
+          top: -9999px !important;
+          left: -9999px !important;
+          z-index: -1 !important;
+          background: #ffffff;
+        `;
 
-        // 4. Capture at high res with white background
+        // 5. Wait for React Flow to resize into new container
+        await new Promise((r) => setTimeout(r, 300));
+
+        // 6. Tight fit view in the resized container
+        mindMap?.fitView({ padding: 0.02 });
+        await new Promise((r) => setTimeout(r, 500));
+
+        // 7. Capture at high res with white background
         const dataUrl = await toPng(mapElement, {
           quality: 1,
           pixelRatio: 2,
           backgroundColor: '#ffffff',
+          width: captureW,
+          height: captureH,
         });
 
-        // 5. Restore
+        // 8. Restore container
+        mapElement.style.cssText = origStyle;
         mapElement.removeAttribute('data-pdf-light');
 
-        // 6. Build PDF
-        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        // Wait for container to restore before continuing
+        await new Promise((r) => setTimeout(r, 100));
+
+        // 9. Build PDF with chosen orientation
+        const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
         const pw = pdf.internal.pageSize.getWidth();
         const ph = pdf.internal.pageSize.getHeight();
 
@@ -94,7 +124,14 @@ export function usePdfExport() {
         pdf.save(safeName);
       } finally {
         setExporting(false);
-        mapElement?.removeAttribute('data-pdf-light');
+        // Ensure container is always restored even if capture fails
+        if (mapElement) {
+          mapElement.removeAttribute('data-pdf-light');
+          // Reset any leftover off-screen positioning
+          if (mapElement.style.top === '-9999px') {
+            mapElement.style.cssText = '';
+          }
+        }
       }
     },
     [],
@@ -240,7 +277,7 @@ function drawSummaryPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan
       if (client.occupation) info.push(client.occupation);
       if (client.income) info.push(`Income ${formatAUD(client.income)}`);
       if (client.superBalance) info.push(`Super ${formatAUD(client.superBalance)}`);
-      pdf.text(info.join('  \u2022  '), m + 60, y + 6.5);
+      pdf.text(info.join('  \u2022  '), m + Math.min(60, pw * 0.2), y + 6.5);
       y += 12;
     });
 
@@ -255,13 +292,14 @@ function drawSummaryPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan
     pdf.text('Entity Breakdown', m, y);
     y += 6;
 
-    // Table header
+    // Table header — columns scale to page width
+    const tableW = pw - m * 2;
     const colX = {
       name: m + 4,
-      type: m + 85,
-      assets: m + 125,
-      liab: m + 170,
-      equity: m + 215,
+      type: m + tableW * 0.32,
+      assets: m + tableW * 0.48,
+      liab: m + tableW * 0.65,
+      equity: m + tableW * 0.82,
     };
 
     pdf.setFillColor(241, 245, 249); // slate-100
