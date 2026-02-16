@@ -1,42 +1,101 @@
 import { useFinancialData } from './hooks/useFinancialData';
-import { UploadZone } from './components/upload/UploadZone';
+import { LandingPage } from './components/landing/LandingPage';
 import { ParseProgress } from './components/upload/ParseProgress';
 import { Dashboard } from './components/Dashboard';
-import { RotateCcw } from 'lucide-react';
+import { ExportModal, type ExportOptions } from './components/export/ExportModal';
+import type { MindMapHandle } from './components/mindmap/MindMap';
+import { LogoFull } from './components/Logo';
+import { RotateCcw, Download, Loader2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { usePdfExport } from './hooks/usePdfExport';
 
 export default function App() {
-  const { appState, data, error, selectedNodeId, setSelectedNodeId, uploadFile, reset } =
-    useFinancialData();
+  const {
+    appState, data, error,
+    selectedNodeId, setSelectedNodeId,
+    highlightedNodeIds, toggleHighlight, clearHighlight,
+    uploadFile, reset, resolveGap, updateNodeField,
+  } = useFinancialData();
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mindMapRef = useRef<MindMapHandle>(null);
+  const { exportPdf, exporting } = usePdfExport();
+  const [showExportModal, setShowExportModal] = useState(false);
+
+  const handleExport = (options: ExportOptions) => {
+    exportPdf(mapRef.current, mindMapRef.current, data!, options).then(() => {
+      setShowExportModal(false);
+    });
+  };
+
+  if (appState === 'upload') {
+    return <LandingPage onUpload={uploadFile} error={error} />;
+  }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">MindPlan</h1>
-          <p className="text-sm text-gray-500">Financial Structure Visualiser</p>
+    <div className="h-screen flex flex-col overflow-hidden bg-[#0f0f1a]">
+      <header className="shrink-0 border-b border-white/10 px-5 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <LogoFull size="sm" />
+          <span className="text-xs text-white/25 hidden sm:block">Financial Structure Visualiser</span>
         </div>
-        {appState === 'dashboard' && (
-          <button
-            onClick={reset}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <RotateCcw className="w-4 h-4" />
-            New upload
-          </button>
-        )}
+
+        <div className="flex items-center gap-3">
+          {appState === 'dashboard' && (
+            <button
+              onClick={reset}
+              className="flex items-center gap-2 text-sm text-white/30 hover:text-white/60 transition-colors"
+              title="Upload new plan"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+          )}
+          {appState === 'dashboard' && (
+            <button
+              onClick={() => setShowExportModal(true)}
+              disabled={exporting}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white
+                bg-gradient-to-r from-blue-600 to-purple-600
+                hover:from-blue-500 hover:to-purple-500
+                disabled:opacity-50 transition-all shadow-lg shadow-purple-500/20"
+            >
+              {exporting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              {exporting ? 'Exporting...' : 'Export PDF'}
+            </button>
+          )}
+        </div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center p-6">
-        {appState === 'upload' && <UploadZone onUpload={uploadFile} error={error} />}
+      <main className="flex-1 min-h-0 flex items-center justify-center">
         {appState === 'parsing' && <ParseProgress />}
         {appState === 'dashboard' && data && (
           <Dashboard
             data={data}
+            mapRef={mapRef}
+            mindMapRef={mindMapRef}
             selectedNodeId={selectedNodeId}
             onSelectNode={setSelectedNodeId}
+            highlightedNodeIds={highlightedNodeIds}
+            onToggleHighlight={toggleHighlight}
+            onClearHighlight={clearHighlight}
+            onResolveGap={resolveGap}
+            onUpdateField={updateNodeField}
           />
         )}
       </main>
+
+      {/* Export modal */}
+      {showExportModal && data && (
+        <ExportModal
+          data={data}
+          exporting={exporting}
+          onExport={handleExport}
+          onClose={() => setShowExportModal(false)}
+        />
+      )}
     </div>
   );
 }

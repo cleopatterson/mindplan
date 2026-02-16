@@ -1,0 +1,169 @@
+FINANCIAL PLAN REVIEW
+Prepared for: David & Lisa Andreou
+Date: 3 March 2025
+Adviser: Michael Papas, AFP
+
+═══════════════════════════════════════════════════
+PERSONAL DETAILS
+═══════════════════════════════════════════════════
+
+Client 1: David Andreou
+  Age: 61
+  Occupation: Retired (previously Managing Director, Andreou Imports Pty Ltd)
+  Income: Nil (living off investment income and super pension)
+  Superannuation: SMSF — see below
+
+Client 2: Lisa Andreou
+  Age: 58
+  Occupation: Interior Designer (self-employed, part-time)
+  Annual Income: $65,000 (net of business expenses)
+  Superannuation: SMSF — see below
+
+═══════════════════════════════════════════════════
+ENTITY STRUCTURE
+═══════════════════════════════════════════════════
+
+1. Andreou Family Trust (Discretionary Trust)
+   ABN: 45 678 901 234
+   Trustee: Andreou Investments Pty Ltd
+   Appointer: David Andreou
+   Beneficiaries: David, Lisa, their children (George, Elena, Sophie)
+
+   Assets:
+   - Commercial Property: Suite 4, 88 Walker Street, North Sydney NSW 2060
+     Current Value: $2,100,000
+     Rental Income: $126,000 p.a. (net)
+     Tenant: National law firm, lease expires 2029
+
+   - Residential Investment: 14 Beach Road, Bondi NSW 2026
+     Current Value: $1,750,000
+     Rental Income: $72,000 p.a.
+
+   - Managed Fund Portfolio (Magellan Global Fund)
+     Current Value: $480,000
+
+   - Cash at Bank (CBA Business Account)
+     Balance: $95,000
+
+   Liabilities:
+   - Commercial Loan (Macquarie Bank)
+     Outstanding: $620,000
+     Interest Rate: 6.45% (interest only)
+     Security: Suite 4, 88 Walker Street
+
+   - Investment Loan (ANZ)
+     Outstanding: $410,000
+     Interest Rate: 6.19% (interest only)
+     Security: 14 Beach Road, Bondi
+
+2. Andreou Investments Pty Ltd (Company)
+   ACN: 456 789 012
+   Directors: David Andreou, Lisa Andreou
+   Shareholders: Andreou Family Trust (100%)
+
+   Assets:
+   - Company Cash Reserve: $28,000
+   - Office Furniture & Equipment: $12,000
+
+   Liabilities: Nil
+
+3. Andreou Superannuation Fund (SMSF)
+   ABN: 67 890 123 456
+   Members: David Andreou, Lisa Andreou
+   Trustee: Andreou Investments Pty Ltd
+   David is in pension phase. Lisa in accumulation phase.
+
+   Member Balances:
+   - David Andreou: $1,450,000 (pension phase — tax-free earnings)
+   - Lisa Andreou: $680,000 (accumulation phase)
+
+   Fund Assets:
+   - Vanguard Diversified High Growth ETF: $820,000
+   - Australian Shares (direct holdings):
+     BHP: 3,500 shares — approx $155,000
+     Woolworths: 4,000 shares — approx $132,000
+     Wesfarmers: 2,200 shares — approx $148,000
+   - Fixed Interest (IShares Composite Bond ETF): $310,000
+   - Cash (Macquarie CMA): $185,000
+   - Residential Property: Unit 7, 22 Pittwater Road, Manly NSW 2095
+     Current Value: $1,080,000
+     Rental Income: $48,000 p.a.
+
+   Liabilities:
+   - Limited Recourse Borrowing Arrangement (LRBA)
+     Outstanding: $280,000
+     Interest Rate: 7.15%
+     Security: Unit 7, 22 Pittwater Road
+
+4. Andreou Imports Pty Ltd (Trading Company — dormant)
+   ACN: 789 012 345
+   Directors: David Andreou
+   Shareholders: Andreou Family Trust (100%)
+   Status: Non-trading since 2022. Retained earnings of $145,000 still held.
+
+   Assets:
+   - Cash at Bank: $145,000
+
+   Liabilities: Nil
+
+═══════════════════════════════════════════════════
+PERSONAL ASSETS & LIABILITIES
+═══════════════════════════════════════════════════
+
+Personal Assets:
+- Family Home: 3 The Esplanade, Mosman NSW 2088
+  Estimated Value: $4,200,000
+
+- Holiday Home: 18 Lighthouse Crescent, Byron Bay NSW 2481
+  Estimated Value: $1,650,000
+  Rental income when not in use: approx $35,000 p.a.
+
+- Motor Vehicle: 2023 Mercedes-Benz GLE 450
+  Estimated Value: $95,000
+
+- Motor Vehicle: 2021 Audi Q5
+  Estimated Value: $52,000
+
+- Art Collection (insured value)
+  Estimated Value: $120,000
+
+- Savings Account (Westpac)
+  Balance: $78,000
+
+- Lisa's Business Equipment
+  Estimated Value: $15,000
+
+Personal Liabilities:
+- Home Loan (CBA)
+  Outstanding: $480,000
+  Interest Rate: 5.89%
+  Repayment: $3,800/month (P&I)
+
+═══════════════════════════════════════════════════
+INSURANCE
+═══════════════════════════════════════════════════
+
+David Andreou:
+- Life Insurance: Nil (cancelled on retirement — to review)
+- Private Health: Medibank Private (Gold Hospital + Extras)
+
+Lisa Andreou:
+- Life Insurance: $1,000,000 (MLC, owned personally)
+  Premium: $2,400 p.a.
+- TPD Insurance: $500,000 (via SMSF)
+- Income Protection: 75% of income, 30-day wait, benefit period 2 years
+  Premium: $1,800 p.a.
+- Private Health: Medibank Private (Gold Hospital + Extras)
+
+═══════════════════════════════════════════════════
+OBJECTIVES & CONCERNS
+═══════════════════════════════════════════════════
+
+1. Lisa to retire at age 62 with a combined pension income of $150,000 p.a. (today's dollars)
+2. Review David's lack of life insurance now that he has no cover
+3. Plan for potential aged care needs (David's mother recently entered a facility)
+4. Consider strategies to maximise Lisa's super before she retires
+5. Review the dormant Andreou Imports company — wind up or retain?
+6. Minimise CGT on the Bondi investment property if they decide to sell
+7. Estate planning: ensure wealth transfers smoothly to George, Elena, and Sophie
+8. Holiday home — keep or sell? Currently underutilised (used ~6 weeks per year)

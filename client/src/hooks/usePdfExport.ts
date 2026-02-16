@@ -2,91 +2,411 @@ import { useCallback, useState } from 'react';
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import type { FinancialPlan } from 'shared/types';
-import { netWorth, totalAssets, totalLiabilities, formatAUD } from '../utils/calculations';
+import type { ExportOptions } from '../components/export/ExportModal';
+import type { MindMapHandle } from '../components/mindmap/MindMap';
+import {
+  netWorth, totalAssets, totalLiabilities, entityEquity, formatAUD,
+} from '../utils/calculations';
+
+// ── Brand colours ──
+const BLUE = [59, 130, 246] as const;   // #3b82f6
+const PURPLE = [168, 85, 247] as const; // #a855f7
+const EMERALD = [16, 185, 129] as const;
+const RED = [239, 68, 68] as const;
+const SLATE = [100, 116, 139] as const;
 
 export function usePdfExport() {
   const [exporting, setExporting] = useState(false);
 
   const exportPdf = useCallback(
-    async (mapElement: HTMLElement | null, data: FinancialPlan) => {
+    async (
+      mapElement: HTMLElement | null,
+      mindMap: MindMapHandle | null,
+      data: FinancialPlan,
+      options: ExportOptions,
+    ) => {
       if (!mapElement) return;
       setExporting(true);
 
       try {
-        // Capture the map at 2x resolution
+        // 1. Switch to light mode
+        mapElement.setAttribute('data-pdf-light', '');
+
+        // 2. Clear highlights
+        mapElement.querySelectorAll<HTMLElement>('.react-flow__node').forEach((n) => {
+          n.style.opacity = '1';
+        });
+        mapElement.querySelectorAll<SVGPathElement>('.react-flow__edge path').forEach((p) => {
+          p.style.stroke = '#94a3b8';
+          p.style.strokeWidth = '1.5';
+        });
+
+        // 3. Tight fit view
+        mindMap?.fitView();
+        await new Promise((r) => setTimeout(r, 400));
+
+        // 4. Capture at high res with white background
         const dataUrl = await toPng(mapElement, {
           quality: 1,
           pixelRatio: 2,
           backgroundColor: '#ffffff',
         });
 
+        // 5. Restore
+        mapElement.removeAttribute('data-pdf-light');
+
+        // 6. Build PDF
         const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
+        const pw = pdf.internal.pageSize.getWidth();
+        const ph = pdf.internal.pageSize.getHeight();
 
-        // Title page
-        pdf.setFontSize(28);
-        pdf.text('Financial Structure Map', pageWidth / 2, 40, { align: 'center' });
-        pdf.setFontSize(14);
-        pdf.setTextColor(100);
-        pdf.text(`Generated ${new Date().toLocaleDateString('en-AU')}`, pageWidth / 2, 52, {
-          align: 'center',
-        });
+        // ── Page 1: Map ──
+        const headerH = drawHeader(pdf, pw, options);
+        await drawMap(pdf, dataUrl, pw, ph, headerH);
 
-        // Summary
-        pdf.setFontSize(12);
-        pdf.setTextColor(0);
-        const summaryY = 75;
-        pdf.text(`Net Worth: ${formatAUD(netWorth(data))}`, 20, summaryY);
-        pdf.text(`Total Assets: ${formatAUD(totalAssets(data))}`, 20, summaryY + 8);
-        pdf.text(`Total Liabilities: ${formatAUD(totalLiabilities(data))}`, 20, summaryY + 16);
-        pdf.text(`Entities: ${data.entities.length}`, 20, summaryY + 24);
-        pdf.text(`Data Gaps: ${data.dataGaps.length}`, 20, summaryY + 32);
-
-        // Map page
-        pdf.addPage();
-        const img = new Image();
-        img.src = dataUrl;
-        await new Promise((resolve) => {
-          img.onload = resolve;
-        });
-
-        const imgRatio = img.width / img.height;
-        const margin = 10;
-        let imgWidth = pageWidth - margin * 2;
-        let imgHeight = imgWidth / imgRatio;
-
-        if (imgHeight > pageHeight - margin * 2) {
-          imgHeight = pageHeight - margin * 2;
-          imgWidth = imgHeight * imgRatio;
-        }
-
-        pdf.addImage(dataUrl, 'PNG', margin, margin, imgWidth, imgHeight);
-
-        // Data gaps page (if any)
-        if (data.dataGaps.length > 0) {
+        // ── Page 2: Summary ──
+        if (options.includeSummary) {
           pdf.addPage();
-          pdf.setFontSize(18);
-          pdf.text('Information Needed', 20, 25);
-          pdf.setFontSize(10);
-          let y = 40;
-          for (const gap of data.dataGaps) {
-            if (y > pageHeight - 20) {
-              pdf.addPage();
-              y = 25;
-            }
-            pdf.text(`• ${gap.description}`, 25, y);
-            y += 7;
-          }
+          drawSummaryPage(pdf, pw, ph, data);
         }
 
-        pdf.save('financial-structure.pdf');
+        // ── Page 3: Gaps ──
+        if (options.includeGaps && data.dataGaps.length > 0) {
+          pdf.addPage();
+          drawGapsPage(pdf, pw, ph, data);
+        }
+
+        // ── Footers ──
+        const pages = pdf.getNumberOfPages();
+        for (let i = 1; i <= pages; i++) {
+          pdf.setPage(i);
+          pdf.setFontSize(7.5);
+          pdf.setTextColor(180);
+          pdf.text(
+            `Generated by MindPlan  \u2022  ${new Date().toLocaleDateString('en-AU')}  \u2022  Page ${i} of ${pages}`,
+            pw / 2, ph - 5, { align: 'center' },
+          );
+        }
+
+        const safeName = options.preparedFor
+          ? `${options.preparedFor.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-')}-structure.pdf`
+          : 'financial-structure.pdf';
+        pdf.save(safeName);
       } finally {
         setExporting(false);
+        mapElement?.removeAttribute('data-pdf-light');
       }
     },
     [],
   );
 
   return { exportPdf, exporting };
+}
+
+// ── Helpers ──
+
+function drawHeader(pdf: jsPDF, pw: number, options: ExportOptions): number {
+  const m = 12;
+  let y = 12;
+
+  // Gradient-ish accent bar (blue → purple)
+  pdf.setFillColor(...BLUE);
+  pdf.rect(0, 0, pw * 0.6, 2.5, 'F');
+  pdf.setFillColor(...PURPLE);
+  pdf.rect(pw * 0.6, 0, pw * 0.4, 2.5, 'F');
+
+  y = 12;
+  pdf.setFontSize(18);
+  pdf.setTextColor(30);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text(options.title || 'Financial Structure Map', m, y);
+  y += 6;
+
+  pdf.setFontSize(8.5);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(130);
+  const parts: string[] = [];
+  if (options.preparedFor) parts.push(`Prepared for ${options.preparedFor}`);
+  if (options.preparedBy) parts.push(`By ${options.preparedBy}`);
+  parts.push(new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }));
+  pdf.text(parts.join('  \u2022  '), m, y);
+  y += 3;
+
+  pdf.setDrawColor(230);
+  pdf.setLineWidth(0.2);
+  pdf.line(m, y, pw - m, y);
+
+  return y + 2;
+}
+
+async function drawMap(pdf: jsPDF, dataUrl: string, pw: number, ph: number, startY: number) {
+  const img = new Image();
+  img.src = dataUrl;
+  await new Promise((r) => { img.onload = r; });
+
+  const m = 5; // tight margins
+  const availW = pw - m * 2;
+  const availH = ph - startY - 10;
+
+  const ratio = img.width / img.height;
+  let w = availW;
+  let h = w / ratio;
+  if (h > availH) { h = availH; w = h * ratio; }
+
+  const x = (pw - w) / 2;
+  pdf.addImage(dataUrl, 'PNG', x, startY, w, h);
+}
+
+// ── Summary Page ──
+
+function drawSummaryPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan) {
+  const m = 15;
+  let y = 10;
+
+  // Accent bar
+  pdf.setFillColor(...BLUE);
+  pdf.rect(0, 0, pw * 0.6, 2, 'F');
+  pdf.setFillColor(...PURPLE);
+  pdf.rect(pw * 0.6, 0, pw * 0.4, 2, 'F');
+
+  y = 14;
+  pdf.setFontSize(15);
+  pdf.setTextColor(50);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Financial Summary', m, y);
+  y += 10;
+
+  const nw = netWorth(data);
+  const ta = totalAssets(data);
+  const tl = totalLiabilities(data);
+
+  // ── Three metric cards ──
+  const cardW = (pw - m * 2 - 8) / 3;
+  const cardH = 28;
+  const nwColor = nw >= 0 ? EMERALD : RED;
+  const cards: { label: string; value: string; color: readonly [number, number, number]; accent: string }[] = [
+    { label: 'Net Worth', value: formatAUD(nw), color: nwColor, accent: nw >= 0 ? '#10b981' : '#ef4444' },
+    { label: 'Total Assets', value: formatAUD(ta), color: BLUE, accent: '#3b82f6' },
+    { label: 'Total Liabilities', value: formatAUD(tl), color: RED, accent: '#ef4444' },
+  ];
+
+  cards.forEach((card, i) => {
+    const cx = m + i * (cardW + 4);
+
+    // Card bg
+    pdf.setFillColor(248, 250, 252);
+    pdf.roundedRect(cx, y, cardW, cardH, 2, 2, 'F');
+
+    // Left accent bar
+    pdf.setFillColor(...card.color);
+    pdf.rect(cx, y + 3, 1, cardH - 6, 'F');
+
+    // Label
+    pdf.setFontSize(8);
+    pdf.setTextColor(140);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(card.label.toUpperCase(), cx + 6, y + 9);
+
+    // Value
+    pdf.setFontSize(16);
+    pdf.setTextColor(30);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(card.value, cx + 6, y + 20);
+  });
+
+  y += cardH + 8;
+
+  // ── Client info ──
+  if (data.clients.length > 0) {
+    pdf.setFontSize(10);
+    pdf.setTextColor(50);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Clients', m, y);
+    y += 5;
+
+    data.clients.forEach((client) => {
+      pdf.setFillColor(248, 250, 252);
+      pdf.roundedRect(m, y, pw - m * 2, 10, 1.5, 1.5, 'F');
+
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(40);
+      pdf.text(client.name, m + 4, y + 6.5);
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(110);
+      const info: string[] = [];
+      if (client.age) info.push(`Age ${client.age}`);
+      if (client.occupation) info.push(client.occupation);
+      if (client.income) info.push(`Income ${formatAUD(client.income)}`);
+      if (client.superBalance) info.push(`Super ${formatAUD(client.superBalance)}`);
+      pdf.text(info.join('  \u2022  '), m + 60, y + 6.5);
+      y += 12;
+    });
+
+    y += 4;
+  }
+
+  // ── Entity Breakdown Table ──
+  if (data.entities.length > 0 || data.personalAssets.length > 0) {
+    pdf.setFontSize(10);
+    pdf.setTextColor(50);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Entity Breakdown', m, y);
+    y += 6;
+
+    // Table header
+    const colX = {
+      name: m + 4,
+      type: m + 85,
+      assets: m + 125,
+      liab: m + 170,
+      equity: m + 215,
+    };
+
+    pdf.setFillColor(241, 245, 249); // slate-100
+    pdf.roundedRect(m, y - 3, pw - m * 2, 8, 1.5, 1.5, 'F');
+
+    pdf.setFontSize(7);
+    pdf.setTextColor(100);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('ENTITY', colX.name, y + 2);
+    pdf.text('TYPE', colX.type, y + 2);
+    pdf.text('ASSETS', colX.assets, y + 2);
+    pdf.text('LIABILITIES', colX.liab, y + 2);
+    pdf.text('NET EQUITY', colX.equity, y + 2);
+    y += 9;
+
+    // Rows
+    const rows: { name: string; type: string; assets: number; liab: number }[] = [];
+    for (const entity of data.entities) {
+      rows.push({
+        name: entity.name,
+        type: entity.type.toUpperCase(),
+        assets: entity.assets.reduce((s, a) => s + (a.value ?? 0), 0),
+        liab: entity.liabilities.reduce((s, l) => s + (l.amount ?? 0), 0),
+      });
+    }
+    if (data.personalAssets.length > 0 || data.personalLiabilities.length > 0) {
+      rows.push({
+        name: 'Personal',
+        type: '\u2014',
+        assets: data.personalAssets.reduce((s, a) => s + (a.value ?? 0), 0),
+        liab: data.personalLiabilities.reduce((s, l) => s + (l.amount ?? 0), 0),
+      });
+    }
+
+    rows.forEach((row, i) => {
+      if (i % 2 === 0) {
+        pdf.setFillColor(252, 252, 253);
+        pdf.rect(m, y - 3.5, pw - m * 2, 8, 'F');
+      }
+
+      const equity = row.assets - row.liab;
+
+      pdf.setFontSize(8.5);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(40);
+      pdf.text(row.name, colX.name, y + 1);
+
+      pdf.setTextColor(120);
+      pdf.setFontSize(7.5);
+      pdf.text(row.type, colX.type, y + 1);
+
+      pdf.setFontSize(8.5);
+      pdf.setTextColor(40);
+      pdf.text(formatAUD(row.assets), colX.assets, y + 1);
+
+      pdf.setTextColor(row.liab > 0 ? 100 : 180);
+      pdf.text(formatAUD(row.liab), colX.liab, y + 1);
+
+      // Equity with color
+      pdf.setFont('helvetica', 'bold');
+      if (equity >= 0) {
+        pdf.setTextColor(16, 185, 129); // emerald
+      } else {
+        pdf.setTextColor(239, 68, 68); // red
+      }
+      pdf.text(formatAUD(equity), colX.equity, y + 1);
+      pdf.setFont('helvetica', 'normal');
+
+      y += 8;
+    });
+
+    // Total row
+    y += 1;
+    pdf.setDrawColor(200);
+    pdf.setLineWidth(0.3);
+    pdf.line(m + 4, y - 3, pw - m - 4, y - 3);
+    y += 2;
+
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(30);
+    pdf.text('Total', colX.name, y);
+    pdf.text(formatAUD(ta), colX.assets, y);
+    pdf.setTextColor(100);
+    pdf.text(formatAUD(tl), colX.liab, y);
+    if (nw >= 0) {
+      pdf.setTextColor(16, 185, 129);
+    } else {
+      pdf.setTextColor(239, 68, 68);
+    }
+    pdf.text(formatAUD(nw), colX.equity, y);
+  }
+}
+
+// ── Gaps Page ──
+
+function drawGapsPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan) {
+  const m = 15;
+  let y = 10;
+
+  // Accent bar
+  pdf.setFillColor(...BLUE);
+  pdf.rect(0, 0, pw * 0.6, 2, 'F');
+  pdf.setFillColor(...PURPLE);
+  pdf.rect(pw * 0.6, 0, pw * 0.4, 2, 'F');
+
+  y = 14;
+  pdf.setFontSize(15);
+  pdf.setTextColor(50);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Information Needed', m, y);
+  y += 5;
+
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(130);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(`${data.dataGaps.length} items require attention to complete the financial picture`, m, y);
+  y += 8;
+
+  data.dataGaps.forEach((gap, i) => {
+    if (y > ph - 20) {
+      pdf.addPage();
+      y = 15;
+    }
+
+    // Alternating row background
+    if (i % 2 === 0) {
+      pdf.setFillColor(248, 250, 252);
+      pdf.roundedRect(m, y - 3, pw - m * 2, 8, 1, 1, 'F');
+    }
+
+    // Number badge
+    pdf.setFillColor(...BLUE);
+    pdf.circle(m + 3, y + 1, 2.5, 'F');
+    pdf.setFontSize(6);
+    pdf.setTextColor(255);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(String(i + 1), m + 3, y + 2, { align: 'center' });
+
+    // Description
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(50);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(gap.description, m + 10, y + 1.5);
+
+    y += 9;
+  });
 }

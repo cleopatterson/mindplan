@@ -1,1 +1,78 @@
 @import "tailwindcss";
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── PDF Export Light Mode ── */
+
+[data-pdf-light] .react-flow {
+  background: #ffffff !important;
+}
+
+[data-pdf-light] .react-flow__controls,
+[data-pdf-light] .react-flow__minimap,
+[data-pdf-light] .react-flow__background {
+  display: none !important;
+}
+
+[data-pdf-light] .react-flow__handle {
+  opacity: 0 !important;
+}
+
+[data-pdf-light] .react-flow__edge path {
+  stroke: #94a3b8 !important;
+  stroke-width: 1.5px !important;
+}
+
+[data-pdf-light] .react-flow__edge.animated path {
+  animation: none !important;
+  stroke-dasharray: none !important;
+}
+
+/* Family node — already light, just sharpen border */
+[data-pdf-light] .react-flow__node-familyNode > div {
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
+}
+
+/* Client nodes — remove blur, crisp shadow */
+[data-pdf-light] .react-flow__node-clientNode > div {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important;
+}
+
+/* Entity nodes — remove blur */
+[data-pdf-light] .react-flow__node-entityNode > div {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
+}
+
+/* Asset nodes — solid light background with dark text */
+[data-pdf-light] .react-flow__node-assetNode > div {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+}
+[data-pdf-light] .react-flow__node-assetNode > div,
+[data-pdf-light] .react-flow__node-assetNode > div * {
+  color: #334155 !important;
+}
+
+/* Liability nodes — solid light red background with dark red text */
+[data-pdf-light] .react-flow__node-liabilityNode > div {
+  background: #fef2f2 !important;
+  border-color: #fecaca !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+}
+[data-pdf-light] .react-flow__node-liabilityNode > div,
+[data-pdf-light] .react-flow__node-liabilityNode > div * {
+  color: #991b1b !important;
+}

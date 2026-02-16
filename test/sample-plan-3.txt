@@ -1,0 +1,140 @@
+ADVICE MAP
+Prepared for: James & Mary Wall
+Date: 7 September 2022
+Adviser: Katie McDonald, Boutique Advisers Private Wealth
+
+═══════════════════════════════════════════════════
+CLIENT DETAILS
+═══════════════════════════════════════════════════
+
+Client 1: James (Jim) Wall
+  Date of Birth: 1/01/1945
+  Occupation: Retired
+  Income: Pension Payment $83,420 p.a. (from Wall Superannuation Fund)
+  Risk Profile: Growth 85
+
+Client 2: Mary (Peggie) Wall
+  Date of Birth: 5/07/1946
+  Occupation: Retired
+  Income: Pension Payment $86,080 p.a. (from Wall Superannuation Fund)
+  Risk Profile: Growth 85
+
+═══════════════════════════════════════════════════
+ENTITY STRUCTURE
+═══════════════════════════════════════════════════
+
+1. Jim Wall and Associates Pty Limited (Company)
+   Trustees: Mary Margret Wall, James Wall, Nicholas Wall
+   Appointors: —
+
+   Assets:
+   - US Direct Properties ($1M USD)
+     Current Value: $1,424,964
+
+2. The Wall Family Trust (Discretionary Trust)
+   Trustees: Mary Margret Wall, James Wall
+   Appointors: —
+
+   Assets:
+   - Investment Property
+     Current Value: $1,800,000
+     Rental Income: $93,000 p.a. (before costs)
+
+   Liabilities:
+   - Investment Property Loan
+     Outstanding: $1,571,000
+     Interest Rate: 4.00%
+     Repayment: $0/month (interest only)
+
+3. Wall Superannuation Fund (SMSF)
+   Members: James Wall, Mary Margret Wall
+   Trustee: (corporate trustee structure)
+
+   Member Balances:
+   - James Wall: $2,657,891
+   - Mary Margret Wall: $143,144
+
+   Fund Assets:
+   - US Direct Shares ($ USD): $896,051
+   - Cash Management Accelerator Account: $793,376
+   - Macquarie Investment Consolidator II - Elevate: $2,381,255
+   - BT Cash Management Account: $1,850
+   - St George Cash Management Account: $75,131
+   - Macquarie Cash Management Account: $43
+   - BT Panorama: $1,880,470
+
+═══════════════════════════════════════════════════
+PERSONAL ASSETS & LIABILITIES
+═══════════════════════════════════════════════════
+
+Personal Assets (Joint):
+- Family Home: New House, Milsons Point
+  Estimated Value: $5,100,000
+
+- Holiday Home: Avoca Beach
+  Estimated Value: $4,000,000
+
+Personal Liabilities:
+  Nil
+
+═══════════════════════════════════════════════════
+CASHFLOW
+═══════════════════════════════════════════════════
+
+Income:
+- Pension Payment (Jim): $83,420 p.a.
+- Pension Payment (Peggie): $86,080 p.a.
+- Rent before costs (Wall Family Trust): $93,000 p.a.
+
+Expenditure:
+- Super Contributions ($27,500 each): $55,000 p.a.
+- Annual Family Expense: $400,000 p.a.
+
+═══════════════════════════════════════════════════
+ESTATE PLANNING
+═══════════════════════════════════════════════════
+
+James Wall:
+- Will: In Place
+  Executor: Mary Wall
+- Enduring Power of Attorney: Mary Wall
+  Alternates: Katie McDonald, Nicholas Wall, Anthony Wall, Elizabeth Wall
+- Enduring Guardianship (Medical): Mary Wall
+  Alternates: Katie McDonald, Nicholas Wall, Anthony Wall, Elizabeth Wall
+- Super Nominations: Margaret 100% - Binding (EXPIRED)
+
+Mary Wall:
+- Will: In Place
+  Executor: James Wall
+- Enduring Power of Attorney: James Wall
+  Alternates: Katie McDonald, Nicholas Wall, Anthony Wall, Elizabeth Wall
+- Enduring Guardianship (Medical): James Wall
+  Alternates: Katie McDonald, Nicholas Wall, Anthony Wall, Elizabeth Wall
+- Super Nominations: Jim 100% - Binding (EXPIRED)
+
+═══════════════════════════════════════════════════
+OBJECTIVES
+═══════════════════════════════════════════════════
+
+1. Maintain an income of $400,000 p.a. throughout retirement
+2. Require assistance managing investment portfolio (excluding Australian shares which Jim manages directly)
+
+═══════════════════════════════════════════════════
+FAMILY / RELATIONSHIPS
+═══════════════════════════════════════════════════
+
+Sons: Anthony Wall, Nicholas Wall
+Daughter: Elizabeth Wall
+Children (in-law): Adriana, Alex, Katie McDonald, Ethan McDonald
+Grandsons: Archie, Ryan McDonald, Alec McDonald, Eric
+Granddaughters: Clara, Georgia, Harriet
+
+═══════════════════════════════════════════════════
+PROFESSIONAL ADVISERS
+═══════════════════════════════════════════════════
+
+Financial Adviser: Katie McDonald (Boutique Advisers)
+Associate: Denys Orobchenko
+Client Service: Nicole Wieman
+Lawyer: RetireLaw
+Accountant: Michael Bowman, Allan Hall Business Advisors

@@ -49,7 +49,7 @@ export function UploadZone({ onUpload, error }: UploadZoneProps) {
         <input
           id="file-input"
           type="file"
-          accept=".pdf,.doc,.docx"
+          accept=".pdf,.doc,.docx,.txt"
           onChange={handleFileSelect}
           className="hidden"
         />

@@ -99,6 +99,46 @@ function sumLiabilities(liabilities: Liability[]): number {
   return liabilities.reduce((sum, l) => sum + (l.amount || 0), 0);
 }
 
+// ── Node ID selectors for highlighting ──
+
+/** All asset + liability IDs (net worth) */
+export function netWorthNodeIds(plan: FinancialPlan): string[] {
+  return [
+    ...plan.personalAssets.map((a) => a.id),
+    ...plan.personalLiabilities.map((l) => l.id),
+    ...plan.entities.flatMap((e) => [...e.assets.map((a) => a.id), ...e.liabilities.map((l) => l.id)]),
+  ];
+}
+
+/** All asset IDs (allocation) */
+export function allAssetNodeIds(plan: FinancialPlan): string[] {
+  return [
+    ...plan.personalAssets.map((a) => a.id),
+    ...plan.entities.flatMap((e) => e.assets.map((a) => a.id)),
+  ];
+}
+
+/** Liquid asset IDs */
+export function liquidAssetNodeIds(plan: FinancialPlan): string[] {
+  const liquidTypes = new Set(['cash', 'shares', 'managed_fund']);
+  const all = [...plan.personalAssets, ...plan.entities.flatMap((e) => e.assets)];
+  return all.filter((a) => liquidTypes.has(a.type)).map((a) => a.id);
+}
+
+/** Node IDs for a specific entity (its own ID + its assets + liabilities) */
+export function entityNodeIds(plan: FinancialPlan, entityName: string): string[] {
+  if (entityName === 'Personal') {
+    return [
+      ...plan.personalAssets.map((a) => a.id),
+      ...plan.personalLiabilities.map((l) => l.id),
+      ...plan.clients.map((c) => c.id),
+    ];
+  }
+  const entity = plan.entities.find((e) => e.name === entityName);
+  if (!entity) return [];
+  return [entity.id, ...entity.assets.map((a) => a.id), ...entity.liabilities.map((l) => l.id)];
+}
+
 export function formatAUD(value: number): string {
   return new Intl.NumberFormat('en-AU', {
     style: 'currency',

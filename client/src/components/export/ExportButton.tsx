@@ -10,8 +10,8 @@ export function ExportButton({ onClick, exporting }: ExportButtonProps) {
     <button
       onClick={onClick}
       disabled={exporting}
-      className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm
-        hover:bg-gray-800 disabled:opacity-50 transition-colors"
+      className="flex items-center gap-2 px-4 py-2 bg-white/10 text-white/70 rounded-lg text-sm
+        hover:bg-white/15 hover:text-white disabled:opacity-50 transition-colors border border-white/10"
     >
       {exporting ? (
         <Loader2 className="w-4 h-4 animate-spin" />

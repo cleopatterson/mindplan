@@ -15,5 +15,9 @@ export async function extractText(buffer: Buffer, mimetype: string): Promise<str
     return result.value;
   }
 
-  throw new Error(`Unsupported file type: ${mimetype}. Please upload a PDF or Word document.`);
+  if (mimetype === 'text/plain') {
+    return buffer.toString('utf-8');
+  }
+
+  throw new Error(`Unsupported file type: ${mimetype}. Please upload a PDF, Word, or text file.`);
 }

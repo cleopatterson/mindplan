@@ -13,11 +13,12 @@ const upload = multer({
       'application/pdf',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/msword',
+      'text/plain',
     ];
     if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only PDF and Word documents are supported'));
+      cb(new Error('Only PDF, Word, and text files are supported'));
     }
   },
 });

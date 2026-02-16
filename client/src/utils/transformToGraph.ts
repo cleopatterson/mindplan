@@ -1,15 +1,19 @@
 import type { FinancialPlan, Entity, Asset, Liability, Client } from 'shared/types';
 import type { Node, Edge } from '@xyflow/react';
+import { formatAUD } from './calculations';
+
+export type Side = 'left' | 'right' | 'center';
 
 export interface NodeData extends Record<string, unknown> {
   label: string;
   sublabel?: string;
   value?: number | null;
-  nodeType: 'client' | 'entity' | 'asset' | 'liability';
+  nodeType: 'family' | 'client' | 'entity' | 'asset' | 'liability';
   entityType?: Entity['type'];
   assetType?: Asset['type'];
   liabilityType?: Liability['type'];
   hasMissingData?: boolean;
+  side: Side;
   raw?: Client | Entity | Asset | Liability;
 }
 
@@ -18,23 +22,57 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
   const edges: Edge[] = [];
   const gapEntityIds = new Set(plan.dataGaps.map((g) => g.entityId));
 
-  // Client nodes
+  // Derive a family name from clients
+  const surnames = plan.clients.map((c) => c.name.split(' ').pop()).filter(Boolean);
+  const uniqueSurnames = [...new Set(surnames)];
+  const familyLabel =
+    uniqueSurnames.length === 1
+      ? `${uniqueSurnames[0]} Family`
+      : plan.clients.map((c) => c.name.split(' ')[0]).join(' & ');
+
+  // Central family node
+  const familyId = 'family-root';
+  nodes.push({
+    id: familyId,
+    type: 'familyNode',
+    position: { x: 0, y: 0 },
+    data: { label: familyLabel, nodeType: 'family', side: 'center' },
+  });
+
+  // LEFT SIDE — clients + personal assets/liabilities
   for (const client of plan.clients) {
     nodes.push({
       id: client.id,
       type: 'clientNode',
-      position: { x: 0, y: 0 }, // dagre will set this
+      position: { x: 0, y: 0 },
       data: {
         label: client.name,
         sublabel: client.occupation || undefined,
         nodeType: 'client',
         hasMissingData: client.age === null || client.income === null,
+        side: 'left',
         raw: client,
       },
     });
+    edges.push({
+      id: `${familyId}-${client.id}`,
+      source: familyId,
+      target: client.id,
+    });
   }
 
-  // Entity nodes + their assets/liabilities
+  // Personal assets/liabilities hang off first client
+  const primaryClientId = plan.clients[0]?.id;
+  if (primaryClientId) {
+    for (const asset of plan.personalAssets) {
+      addAssetNode(nodes, edges, asset, primaryClientId, 'left');
+    }
+    for (const liability of plan.personalLiabilities) {
+      addLiabilityNode(nodes, edges, liability, primaryClientId, 'left');
+    }
+  }
+
+  // RIGHT SIDE — entities + their assets/liabilities
   for (const entity of plan.entities) {
     nodes.push({
       id: entity.id,
@@ -46,57 +84,46 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
         nodeType: 'entity',
         entityType: entity.type,
         hasMissingData: gapEntityIds.has(entity.id),
+        side: 'right',
         raw: entity,
       },
     });
+    edges.push({
+      id: `${familyId}-${entity.id}`,
+      source: familyId,
+      target: entity.id,
+    });
 
-    // Connect entity to linked clients
-    for (const clientId of entity.linkedClientIds) {
-      edges.push({
-        id: `${clientId}-${entity.id}`,
-        source: clientId,
-        target: entity.id,
-        type: 'smoothstep',
-      });
-    }
-
-    // Assets under this entity
     for (const asset of entity.assets) {
-      addAssetNode(nodes, edges, asset, entity.id);
+      addAssetNode(nodes, edges, asset, entity.id, 'right');
     }
-
-    // Liabilities under this entity
     for (const liability of entity.liabilities) {
-      addLiabilityNode(nodes, edges, liability, entity.id);
-    }
-  }
-
-  // Personal assets connect to all clients (or first client)
-  const primaryClientId = plan.clients[0]?.id;
-  if (primaryClientId) {
-    for (const asset of plan.personalAssets) {
-      addAssetNode(nodes, edges, asset, primaryClientId);
-    }
-    for (const liability of plan.personalLiabilities) {
-      addLiabilityNode(nodes, edges, liability, primaryClientId);
+      addLiabilityNode(nodes, edges, liability, entity.id, 'right');
     }
   }
 
   return { nodes, edges };
 }
 
-function addAssetNode(nodes: Node<NodeData>[], edges: Edge[], asset: Asset, parentId: string) {
+function addAssetNode(
+  nodes: Node<NodeData>[],
+  edges: Edge[],
+  asset: Asset,
+  parentId: string,
+  side: Side,
+) {
   nodes.push({
     id: asset.id,
     type: 'assetNode',
     position: { x: 0, y: 0 },
     data: {
       label: asset.name,
-      sublabel: formatCurrency(asset.value),
+      sublabel: asset.value != null ? formatAUD(asset.value) : undefined,
       value: asset.value,
       nodeType: 'asset',
       assetType: asset.type,
       hasMissingData: asset.value === null,
+      side,
       raw: asset,
     },
   });
@@ -104,7 +131,6 @@ function addAssetNode(nodes: Node<NodeData>[], edges: Edge[], asset: Asset, pare
     id: `${parentId}-${asset.id}`,
     source: parentId,
     target: asset.id,
-    type: 'smoothstep',
   });
 }
 
@@ -113,6 +139,7 @@ function addLiabilityNode(
   edges: Edge[],
   liability: Liability,
   parentId: string,
+  side: Side,
 ) {
   nodes.push({
     id: liability.id,
@@ -120,11 +147,12 @@ function addLiabilityNode(
     position: { x: 0, y: 0 },
     data: {
       label: liability.name,
-      sublabel: formatCurrency(liability.amount),
+      sublabel: liability.amount != null ? formatAUD(liability.amount) : undefined,
       value: liability.amount,
       nodeType: 'liability',
       liabilityType: liability.type,
       hasMissingData: liability.amount === null,
+      side,
       raw: liability,
     },
   });
@@ -132,15 +160,5 @@ function addLiabilityNode(
     id: `${parentId}-${liability.id}`,
     source: parentId,
     target: liability.id,
-    type: 'smoothstep',
   });
-}
-
-function formatCurrency(value: number | null | undefined): string | undefined {
-  if (value == null) return undefined;
-  return new Intl.NumberFormat('en-AU', {
-    style: 'currency',
-    currency: 'AUD',
-    maximumFractionDigits: 0,
-  }).format(value);
 }
