@@ -1,16 +1,16 @@
 import { Handle, Position } from '@xyflow/react';
 import type { NodeData } from '../../../utils/transformToGraph';
+import { InlineEditSlot } from './InlineEditSlot';
 
-export function AssetNode({ data }: { data: NodeData }) {
+export function AssetNode({ id, data }: { id: string; data: NodeData }) {
   const isLeft = data.side === 'left';
 
   return (
     <div
       className={`
-        px-3 py-2 rounded-lg bg-white/10 backdrop-blur border border-white/20
+        cursor-pointer px-3 py-2 rounded-lg bg-white/10 backdrop-blur border border-white/20
         text-white/90 min-w-[140px] text-sm
         hover:bg-white/15 transition-colors
-        ${data.hasMissingData ? 'border-dashed' : ''}
       `}
     >
       <Handle
@@ -20,6 +20,14 @@ export function AssetNode({ data }: { data: NodeData }) {
       />
       <div className="font-medium">{data.label}</div>
       {data.sublabel && <div className="text-xs text-white/60 mt-0.5">{data.sublabel}</div>}
+      {data.missingFields?.map((mf) => (
+        <InlineEditSlot key={mf.field} nodeId={id} field={mf.field} placeholder={mf.placeholder} />
+      ))}
+      <Handle
+        type="source"
+        position={isLeft ? Position.Left : Position.Right}
+        className="!bg-white/20 !w-1.5 !h-1.5"
+      />
     </div>
   );
 }

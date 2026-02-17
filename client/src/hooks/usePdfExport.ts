@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { toPng } from 'html-to-image';
+import { toJpeg } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import type { FinancialPlan } from 'shared/types';
 import type { ExportOptions } from '../components/export/ExportModal';
@@ -47,40 +47,53 @@ export function usePdfExport() {
           p.style.strokeWidth = '1.5';
         });
 
-        // 4. Resize container to match A4 aspect ratio (off-screen)
-        //    This ensures fitView fills the space proportionally to the PDF page
+        // 4. Resize container to A4 aspect ratio for proportional capture.
+        //    Keep on-screen (React Flow stops rendering at -9999px).
+        //    Use a cover overlay so the user doesn't see the resize flash.
         const origStyle = mapElement.style.cssText;
-        const captureW = orientation === 'landscape' ? 2970 : 2100; // A4 ratio in px
+        const captureW = orientation === 'landscape' ? 2970 : 2100;
         const captureH = orientation === 'landscape' ? 2100 : 2970;
+
+        // Cover overlay to hide the resize
+        const cover = document.createElement('div');
+        cover.style.cssText = `
+          position: fixed; inset: 0; z-index: 99998;
+          background: #0f0f1a; display: flex; align-items: center; justify-content: center;
+          color: rgba(255,255,255,0.5); font-size: 14px; font-family: system-ui;
+        `;
+        cover.textContent = 'Generating PDF...';
+        document.body.appendChild(cover);
+
         mapElement.style.cssText = `
           position: fixed !important;
           width: ${captureW}px !important;
           height: ${captureH}px !important;
-          top: -9999px !important;
-          left: -9999px !important;
-          z-index: -1 !important;
+          top: 0px !important;
+          left: 0px !important;
+          z-index: 99999 !important;
           background: #ffffff;
         `;
 
         // 5. Wait for React Flow to resize into new container
-        await new Promise((r) => setTimeout(r, 300));
+        await new Promise((r) => setTimeout(r, 400));
 
         // 6. Tight fit view in the resized container
         mindMap?.fitView({ padding: 0.02 });
-        await new Promise((r) => setTimeout(r, 500));
+        await new Promise((r) => setTimeout(r, 600));
 
-        // 7. Capture at high res with white background
-        const dataUrl = await toPng(mapElement, {
-          quality: 1,
-          pixelRatio: 2,
+        // 7. Capture at 1x with JPEG for reasonable file size (~1-3MB vs 70MB)
+        const dataUrl = await toJpeg(mapElement, {
+          quality: 0.92,
+          pixelRatio: 1,
           backgroundColor: '#ffffff',
           width: captureW,
           height: captureH,
         });
 
-        // 8. Restore container
+        // 8. Restore container and remove cover
         mapElement.style.cssText = origStyle;
         mapElement.removeAttribute('data-pdf-light');
+        cover.remove();
 
         // Wait for container to restore before continuing
         await new Promise((r) => setTimeout(r, 100));
@@ -191,7 +204,7 @@ async function drawMap(pdf: jsPDF, dataUrl: string, pw: number, ph: number, star
   if (h > availH) { h = availH; w = h * ratio; }
 
   const x = (pw - w) / 2;
-  pdf.addImage(dataUrl, 'PNG', x, startY, w, h);
+  pdf.addImage(dataUrl, 'JPEG', x, startY, w, h);
 }
 
 // ── Summary Page ──

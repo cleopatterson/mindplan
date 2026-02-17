@@ -12,8 +12,10 @@ import { usePdfExport } from './hooks/usePdfExport';
 export default function App() {
   const {
     appState, data, error,
-    selectedNodeId, setSelectedNodeId,
+    selectedNodeIds, selectNode,
     highlightedNodeIds, toggleHighlight, clearHighlight,
+    hoveredNodeIds, hoverHighlight,
+    userLinks, addLink, removeLink,
     uploadFile, reset, resolveGap, updateNodeField,
   } = useFinancialData();
   const mapRef = useRef<HTMLDivElement>(null);
@@ -34,16 +36,16 @@ export default function App() {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-[#0f0f1a]">
       <header className="shrink-0 border-b border-white/10 px-5 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 cursor-pointer group" onClick={reset} title="Back to home">
           <LogoFull size="sm" />
-          <span className="text-xs text-white/25 hidden sm:block">Financial Structure Visualiser</span>
+          <span className="text-xs text-white/25 hidden sm:block group-hover:text-white/40 transition-colors">Financial Structure Visualiser</span>
         </div>
 
         <div className="flex items-center gap-3">
           {appState === 'dashboard' && (
             <button
               onClick={reset}
-              className="flex items-center gap-2 text-sm text-white/30 hover:text-white/60 transition-colors"
+              className="cursor-pointer flex items-center gap-2 text-sm text-white/30 hover:text-white/60 transition-colors"
               title="Upload new plan"
             >
               <RotateCcw className="w-4 h-4" />
@@ -53,10 +55,10 @@ export default function App() {
             <button
               onClick={() => setShowExportModal(true)}
               disabled={exporting}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white
+              className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white
                 bg-gradient-to-r from-blue-600 to-purple-600
                 hover:from-blue-500 hover:to-purple-500
-                disabled:opacity-50 transition-all shadow-lg shadow-purple-500/20"
+                disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-purple-500/20"
             >
               {exporting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -76,13 +78,18 @@ export default function App() {
             data={data}
             mapRef={mapRef}
             mindMapRef={mindMapRef}
-            selectedNodeId={selectedNodeId}
-            onSelectNode={setSelectedNodeId}
+            selectedNodeIds={selectedNodeIds}
+            onSelectNode={selectNode}
             highlightedNodeIds={highlightedNodeIds}
             onToggleHighlight={toggleHighlight}
             onClearHighlight={clearHighlight}
+            hoveredNodeIds={hoveredNodeIds}
+            onHoverHighlight={hoverHighlight}
             onResolveGap={resolveGap}
             onUpdateField={updateNodeField}
+            userLinks={userLinks}
+            onAddLink={addLink}
+            onRemoveLink={removeLink}
           />
         )}
       </main>
@@ -91,6 +98,7 @@ export default function App() {
       {showExportModal && data && (
         <ExportModal
           data={data}
+          mapElement={mapRef.current}
           exporting={exporting}
           onExport={handleExport}
           onClose={() => setShowExportModal(false)}

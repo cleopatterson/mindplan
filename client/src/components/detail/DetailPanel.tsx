@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import type { FinancialPlan, Client, Entity, Asset, Liability } from 'shared/types';
+import type { FinancialPlan, Client, Entity, Asset, Liability, EstatePlanItem, FamilyMember, Grandchild } from 'shared/types';
 import { formatAUD, totalAssets, totalLiabilities, entityEquity } from '../../utils/calculations';
 import {
   Check, X, Pencil, User, Building2, Landmark, CreditCard,
   Home, TrendingUp, Banknote, PieChart, Shield, Car, Package,
-  Briefcase, Info,
+  Briefcase, Info, ScrollText, Users, Baby,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -30,6 +30,34 @@ export function DetailPanel({ data, nodeId, onUpdateField }: DetailPanelProps) {
   for (const source of [data.personalLiabilities, ...data.entities.map((e) => e.liabilities)]) {
     const liability = source.find((l) => l.id === nodeId);
     if (liability) return <LiabilityDetail liability={liability} data={data} nodeId={nodeId} onUpdate={onUpdateField} />;
+  }
+
+  // Estate planning group
+  if (nodeId === 'estate-group') return <EstateGroupDetail data={data} />;
+
+  // Estate planning per-client node (e.g. "estate-client-client-1")
+  if (nodeId.startsWith('estate-client-')) {
+    const clientId = nodeId.replace('estate-client-', '');
+    const clientItems = data.estatePlanning?.filter((e) => e.clientId === clientId) ?? [];
+    const clientName = data.clients.find((c) => c.id === clientId)?.name ?? clientId;
+    if (clientItems.length > 0) return <EstateClientDetail clientName={clientName} items={clientItems} />;
+  }
+
+  // Estate planning items
+  const estateItem = data.estatePlanning?.find((e) => e.id === nodeId);
+  if (estateItem) return <EstateItemDetail item={estateItem} data={data} nodeId={nodeId} onUpdate={onUpdateField} />;
+
+  // Family group
+  if (nodeId === 'family-group') return <FamilyGroupDetail data={data} />;
+
+  // Family members (children)
+  const familyMember = data.familyMembers?.find((m) => m.id === nodeId);
+  if (familyMember) return <FamilyMemberDetail member={familyMember} data={data} nodeId={nodeId} onUpdate={onUpdateField} />;
+
+  // Grandchildren (nested under family members)
+  for (const member of data.familyMembers ?? []) {
+    const grandchild = member.children?.find((gc) => gc.id === nodeId);
+    if (grandchild) return <GrandchildDetail grandchild={grandchild} parent={member} data={data} nodeId={nodeId} onUpdate={onUpdateField} />;
   }
 
   return null;
@@ -177,6 +205,14 @@ function EntityDetail({ entity, data, nodeId, onUpdate }: { entity: Entity; data
       </div>
 
       <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        {(entity.type === 'trust' || entity.type === 'smsf') && (
+          <>
+            <EditableField label="Trustee Name" value={entity.trusteeName ?? ''} placeholder="e.g. Tony Wall" onSave={(v) => onUpdate(nodeId, 'trusteeName', v)} />
+            <div className="border-t border-white/5 my-2" />
+            <EditableField label="Trustee Type" value={entity.trusteeType ?? ''} placeholder="individual / corporate" onSave={(v) => onUpdate(nodeId, 'trusteeType', v)} />
+            <div className="border-t border-white/5 my-2" />
+          </>
+        )}
         <EditableField label="Role" value={entity.role ?? ''} placeholder="e.g. Trustee" onSave={(v) => onUpdate(nodeId, 'role', v)} />
       </div>
 
@@ -359,6 +395,296 @@ function LiabilityDetail({ liability, data, nodeId, onUpdate }: { liability: Lia
   );
 }
 
+// ── Estate Group Detail ──
+
+function EstateGroupDetail({ data }: { data: FinancialPlan }) {
+  const items = data.estatePlanning ?? [];
+  const issues = items.filter((i) => i.hasIssue);
+  const byClient = new Map<string, typeof items>();
+  for (const item of items) {
+    const list = byClient.get(item.clientId) ?? [];
+    list.push(item);
+    byClient.set(item.clientId, list);
+  }
+
+  return (
+    <div className="space-y-3">
+      <HeroBanner
+        icon={ScrollText}
+        label="Estate Planning"
+        sublabel={`${items.length} documents`}
+        gradient="bg-gradient-to-br from-indigo-500/20 via-indigo-600/10 to-indigo-900/20"
+        iconColor="text-indigo-400"
+      />
+
+      <div className="flex flex-wrap gap-1.5">
+        {issues.length > 0
+          ? <InsightPill color="red">{issues.length} {issues.length === 1 ? 'issue' : 'issues'} need attention</InsightPill>
+          : <InsightPill color="emerald">All documents current</InsightPill>}
+        <InsightPill color="white">{byClient.size} {byClient.size === 1 ? 'client' : 'clients'} covered</InsightPill>
+      </div>
+
+      {[...byClient.entries()].map(([clientId, clientItems]) => {
+        const clientName = data.clients.find((c) => c.id === clientId)?.name ?? clientId;
+        return (
+          <div key={clientId} className="rounded-lg bg-white/[0.02] border border-white/5 p-3">
+            <div className="text-[10px] text-white/30 uppercase tracking-wide mb-2">{clientName}</div>
+            <div className="space-y-1.5">
+              {clientItems.map((item) => {
+                const typeLabel = estateTypeLabels[item.type] ?? item.type;
+                const statusColor = item.hasIssue ? 'text-red-400' : 'text-emerald-400';
+                const statusLabel = item.status === 'expired' ? 'Expired'
+                  : item.status === 'not_established' ? 'Not established'
+                  : item.status === 'current' && item.hasIssue ? 'Needs review'
+                  : 'Current';
+                return (
+                  <div key={item.id} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <ScrollText className="w-3 h-3 text-indigo-400/50" />
+                      <span className="text-white/80">{typeLabel}</span>
+                    </div>
+                    <span className={`text-[10px] ${statusColor}`}>{statusLabel}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Estate Client Detail ──
+
+function EstateClientDetail({ clientName, items }: { clientName: string; items: EstatePlanItem[] }) {
+  const issues = items.filter((i) => i.hasIssue);
+
+  return (
+    <div className="space-y-3">
+      <HeroBanner
+        icon={ScrollText}
+        label={clientName}
+        sublabel="Estate Planning"
+        gradient={issues.length > 0
+          ? 'bg-gradient-to-br from-indigo-500/15 via-red-600/10 to-indigo-900/20'
+          : 'bg-gradient-to-br from-indigo-500/20 via-indigo-600/10 to-indigo-900/20'}
+        iconColor="text-indigo-400"
+      />
+
+      <div className="flex flex-wrap gap-1.5">
+        {issues.length > 0
+          ? <InsightPill color="red">{issues.length} {issues.length === 1 ? 'issue' : 'issues'} need attention</InsightPill>
+          : <InsightPill color="emerald">All documents in place</InsightPill>}
+        <InsightPill color="white">{items.length} documents</InsightPill>
+      </div>
+
+      <div className="rounded-lg bg-white/[0.02] border border-white/5 p-3 space-y-2">
+        {items.map((item) => {
+          const typeLabel = estateTypeLabels[item.type] ?? item.type;
+          const statusColor = item.hasIssue ? 'text-red-400' : 'text-emerald-400';
+          const statusLabel = item.status === 'expired' ? 'Expired'
+            : item.status === 'not_established' ? 'Not established'
+            : item.status === 'current' && item.hasIssue ? 'Needs review'
+            : 'In Place';
+
+          return (
+            <div key={item.id} className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <ScrollText className="w-3 h-3 text-indigo-400/50" />
+                  <span className="text-white/80 font-medium">{typeLabel}</span>
+                </div>
+                <span className={`text-[10px] ${statusColor}`}>{statusLabel}</span>
+              </div>
+              {item.primaryPerson && (
+                <div className="text-[10px] text-white/40 pl-5">
+                  {item.type === 'will' ? 'Executor' : item.type === 'guardianship' ? 'Guardian' : 'Attorney'}: {item.primaryPerson}
+                  {item.alternatePeople?.length ? ` + ${item.alternatePeople.length} alternates` : ''}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Family Group Detail ──
+
+function FamilyGroupDetail({ data }: { data: FinancialPlan }) {
+  const members = data.familyMembers ?? [];
+  const totalGrandchildren = members.reduce((n, m) => n + (m.children?.length ?? 0), 0);
+  const dependants = members.filter((m) => m.isDependant);
+  const dependantGrandchildren = members.flatMap((m) => m.children ?? []).filter((gc) => gc.isDependant);
+
+  return (
+    <div className="space-y-3">
+      <HeroBanner
+        icon={Users}
+        label="Family"
+        sublabel={`${members.length} children, ${totalGrandchildren} grandchildren`}
+        gradient="bg-gradient-to-br from-amber-500/20 via-amber-600/10 to-amber-900/20"
+        iconColor="text-amber-400"
+      />
+
+      <div className="flex flex-wrap gap-1.5">
+        {(dependants.length + dependantGrandchildren.length) > 0 && (
+          <InsightPill color="amber">{dependants.length + dependantGrandchildren.length} dependants</InsightPill>
+        )}
+        <InsightPill color="white">{members.length} {members.length === 1 ? 'child' : 'children'}</InsightPill>
+        {totalGrandchildren > 0 && <InsightPill color="white">{totalGrandchildren} grandchildren</InsightPill>}
+      </div>
+
+      {members.map((member) => (
+        <div key={member.id} className="rounded-lg bg-white/[0.02] border border-white/5 p-3">
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-xs text-white/80 font-medium">{member.name}</div>
+            <span className="text-[10px] text-white/30">{member.relationship}{member.partner ? ` · ${member.partner}` : ''}</span>
+          </div>
+          {(member.children?.length ?? 0) > 0 && (
+            <div className="space-y-1 mt-1.5">
+              {member.children!.map((gc) => (
+                <div key={gc.id} className="flex items-center gap-2 text-xs text-white/50 pl-2">
+                  <Baby className="w-3 h-3 text-amber-400/40" />
+                  <span className="text-white/60">{gc.name}</span>
+                  <span className="text-white/25">{gc.age != null ? `${gc.age}y` : gc.relationship}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Estate Item Detail ──
+
+const estateTypeLabels: Record<string, string> = {
+  will: 'Will',
+  poa: 'Power of Attorney',
+  guardianship: 'Guardianship',
+  super_nomination: 'Super Nomination',
+};
+
+function EstateItemDetail({ item, data, nodeId, onUpdate }: { item: EstatePlanItem; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void }) {
+  const clientName = data.clients.find((c) => c.id === item.clientId)?.name ?? 'Unknown';
+  const typeLabel = estateTypeLabels[item.type] ?? item.type;
+
+  return (
+    <div className="space-y-3">
+      <HeroBanner
+        icon={ScrollText}
+        label={typeLabel}
+        sublabel={`${clientName} · Estate Planning`}
+        gradient={item.hasIssue
+          ? 'bg-gradient-to-br from-red-500/20 via-red-600/10 to-red-900/20'
+          : 'bg-gradient-to-br from-indigo-500/20 via-indigo-600/10 to-indigo-900/20'}
+        iconColor={item.hasIssue ? 'text-red-400' : 'text-indigo-400'}
+      />
+
+      <div className="flex flex-wrap gap-1.5">
+        {item.status === 'expired' && <InsightPill color="red">Expired — needs renewal</InsightPill>}
+        {item.status === 'not_established' && <InsightPill color="red">Not established</InsightPill>}
+        {item.status === 'current' && item.hasIssue && <InsightPill color="amber">Needs review</InsightPill>}
+        {item.status === 'current' && !item.hasIssue && <InsightPill color="emerald">Current</InsightPill>}
+        {item.lastReviewed && <InsightPill color="white">Last reviewed {item.lastReviewed}</InsightPill>}
+      </div>
+
+      <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        <EditableField label="Status" value={item.status ?? ''} placeholder="current / expired / not_established" onSave={(v) => onUpdate(nodeId, 'status', v)} />
+        <div className="border-t border-white/5 my-2" />
+        <EditableField label="Primary Person" value={item.primaryPerson ?? ''} placeholder="e.g. Mary Wall" onSave={(v) => onUpdate(nodeId, 'primaryPerson', v)} />
+        <div className="border-t border-white/5 my-2" />
+        <EditableField label="Alternates" value={item.alternatePeople?.join(', ') ?? ''} placeholder="e.g. Katie McDonald, Nicholas Wall" onSave={(v) => onUpdate(nodeId, 'alternatePeople', v)} />
+        <div className="border-t border-white/5 my-2" />
+        <EditableField label="Details" value={item.details ?? ''} placeholder="Add notes..." onSave={(v) => onUpdate(nodeId, 'details', v)} />
+      </div>
+    </div>
+  );
+}
+
+// ── Family Member Detail ──
+
+function FamilyMemberDetail({ member, data, nodeId, onUpdate }: { member: FamilyMember; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void }) {
+  const grandchildCount = member.children?.length ?? 0;
+  const relLabel = member.relationship.charAt(0).toUpperCase() + member.relationship.slice(1);
+
+  return (
+    <div className="space-y-3">
+      <HeroBanner
+        icon={Users}
+        label={member.name}
+        sublabel={`${relLabel}${member.partner ? ` · married to ${member.partner}` : ''}`}
+        gradient="bg-gradient-to-br from-amber-500/20 via-amber-600/10 to-amber-900/20"
+        iconColor="text-amber-400"
+      />
+
+      <div className="flex flex-wrap gap-1.5">
+        {member.isDependant && <InsightPill color="amber">Dependant</InsightPill>}
+        {!member.isDependant && <InsightPill color="white">Non-dependant</InsightPill>}
+        {grandchildCount > 0 && <InsightPill color="amber">{grandchildCount} {grandchildCount === 1 ? 'child' : 'children'}</InsightPill>}
+        {member.partner && <InsightPill color="white">Partner: {member.partner}</InsightPill>}
+      </div>
+
+      <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        <EditableField label="Age" value={member.age?.toString() ?? ''} placeholder="e.g. 45" onSave={(v) => onUpdate(nodeId, 'age', v)} />
+        <div className="border-t border-white/5 my-2" />
+        <EditableField label="Partner" value={member.partner ?? ''} placeholder="e.g. Alex" onSave={(v) => onUpdate(nodeId, 'partner', v)} />
+        <div className="border-t border-white/5 my-2" />
+        <EditableField label="Details" value={member.details ?? ''} placeholder="Add notes..." onSave={(v) => onUpdate(nodeId, 'details', v)} />
+      </div>
+
+      {grandchildCount > 0 && (
+        <div className="rounded-lg bg-white/[0.02] border border-white/5 p-3">
+          <div className="text-[10px] text-white/30 uppercase tracking-wide mb-2">Children</div>
+          <div className="space-y-1.5">
+            {member.children!.map((gc) => (
+              <div key={gc.id} className="flex items-center gap-2 text-xs text-white/60">
+                <Baby className="w-3 h-3 text-amber-400/50" />
+                <span className="text-white/80">{gc.name}</span>
+                <span className="text-white/30">{gc.relationship}{gc.age != null ? `, ${gc.age}y` : ''}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Grandchild Detail ──
+
+function GrandchildDetail({ grandchild, parent, data, nodeId, onUpdate }: { grandchild: Grandchild; parent: FamilyMember; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void }) {
+  const relLabel = grandchild.relationship === 'grandson' ? 'Grandson' : 'Granddaughter';
+
+  return (
+    <div className="space-y-3">
+      <HeroBanner
+        icon={Baby}
+        label={grandchild.name}
+        sublabel={`${relLabel} · child of ${parent.name}`}
+        gradient="bg-gradient-to-br from-amber-400/15 via-amber-500/10 to-amber-900/15"
+        iconColor="text-amber-300"
+      />
+
+      <div className="flex flex-wrap gap-1.5">
+        {grandchild.isDependant && <InsightPill color="amber">Dependant</InsightPill>}
+        {grandchild.age != null && <InsightPill color="white">Age {grandchild.age}</InsightPill>}
+        <InsightPill color="white">Parent: {parent.name}{parent.partner ? ` & ${parent.partner}` : ''}</InsightPill>
+      </div>
+
+      <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        <EditableField label="Age" value={grandchild.age?.toString() ?? ''} placeholder="e.g. 8" onSave={(v) => onUpdate(nodeId, 'age', v)} />
+        <div className="border-t border-white/5 my-2" />
+        <EditableField label="Details" value={grandchild.details ?? ''} placeholder="e.g. School fees being funded" onSave={(v) => onUpdate(nodeId, 'details', v)} />
+      </div>
+    </div>
+  );
+}
+
 // ── Helpers ──
 
 function findAssetOwner(assetId: string, data: FinancialPlan): string | null {
@@ -427,10 +753,10 @@ function EditableField({
               if (e.key === 'Escape') cancel();
             }}
           />
-          <button onClick={save} className="p-1 text-emerald-400 hover:bg-emerald-500/10 rounded shrink-0">
+          <button onClick={save} className="cursor-pointer p-1 text-emerald-400 hover:bg-emerald-500/10 rounded shrink-0">
             <Check className="w-4 h-4" />
           </button>
-          <button onClick={cancel} className="p-1 text-white/30 hover:bg-white/5 rounded shrink-0">
+          <button onClick={cancel} className="cursor-pointer p-1 text-white/30 hover:bg-white/5 rounded shrink-0">
             <X className="w-4 h-4" />
           </button>
         </div>

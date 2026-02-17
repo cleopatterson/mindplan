@@ -6,12 +6,14 @@ import {
   Background,
   Controls,
   MiniMap,
+  ConnectionMode,
   applyNodeChanges,
   applyEdgeChanges,
   type NodeTypes,
   type NodeMouseHandler,
   type OnNodesChange,
   type OnEdgesChange,
+  type OnConnect,
   type Node,
   type Edge,
 } from '@xyflow/react';
@@ -24,6 +26,12 @@ import { ClientNode } from './nodes/ClientNode';
 import { EntityNode } from './nodes/EntityNode';
 import { AssetNode } from './nodes/AssetNode';
 import { LiabilityNode } from './nodes/LiabilityNode';
+import { EstateGroupNode } from './nodes/EstateGroupNode';
+import { EstateClientNode } from './nodes/EstateClientNode';
+import { EstateItemNode } from './nodes/EstateItemNode';
+import { FamilyGroupNode } from './nodes/FamilyGroupNode';
+import { FamilyMemberNode } from './nodes/FamilyMemberNode';
+import { MindMapContext } from './MindMapContext';
 
 const nodeTypes: NodeTypes = {
   familyNode: FamilyNode,
@@ -31,17 +39,28 @@ const nodeTypes: NodeTypes = {
   entityNode: EntityNode,
   assetNode: AssetNode,
   liabilityNode: LiabilityNode,
+  estateGroupNode: EstateGroupNode,
+  estateClientNode: EstateClientNode,
+  estateItemNode: EstateItemNode,
+  familyGroupNode: FamilyGroupNode,
+  familyMemberNode: FamilyMemberNode,
 };
 
 interface MindMapProps {
   data: FinancialPlan;
-  selectedNodeId: string | null;
-  onSelectNode: (id: string | null) => void;
+  selectedNodeIds: Set<string>;
+  onSelectNode: (id: string | null, additive: boolean) => void;
   highlightedNodeIds: Set<string>;
+  hoveredNodeIds: Set<string>;
+  userLinks: Edge[];
+  onAddLink: (edge: Edge) => void;
+  onRemoveLink: (edgeId: string) => void;
+  onUpdateField: (nodeId: string, field: string, value: string) => void;
 }
 
 export interface MindMapHandle {
   fitView: (opts?: { padding?: number }) => void;
+  focusNode: (nodeId: string) => void;
   getContentBounds: () => { width: number; height: number };
 }
 
@@ -53,19 +72,40 @@ export const MindMap = forwardRef<MindMapHandle, MindMapProps>(function MindMap(
   );
 });
 
+const LINK_STYLE: React.CSSProperties = {
+  stroke: 'rgba(168,85,247,0.45)',
+  strokeWidth: 1.5,
+  strokeDasharray: '6 4',
+};
+
+const DEFAULT_EDGE_STYLE: React.CSSProperties = {
+  stroke: 'rgba(255,255,255,0.25)',
+  strokeWidth: 2,
+};
+
 const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInner(
-  { data, selectedNodeId, onSelectNode, highlightedNodeIds },
+  { data, selectedNodeIds, onSelectNode, highlightedNodeIds, hoveredNodeIds, userLinks, onAddLink, onRemoveLink, onUpdateField },
   ref,
 ) {
-  const { fitView, getNodes } = useReactFlow();
+  const { fitView, getNodes, setCenter } = useReactFlow();
   const { nodes: rawNodes, edges: rawEdges } = useMemo(() => transformToGraph(data), [data]);
   const { nodes: layoutedNodes, edges: layoutedEdges } = useGraphLayout(rawNodes, rawEdges);
 
+  // Merge structural edges with user-drawn cross-links
+  const allEdges = useMemo(() => [...layoutedEdges, ...userLinks], [layoutedEdges, userLinks]);
+
   const [nodes, setNodes] = useState<Node<NodeData>[]>(layoutedNodes);
-  const [edges, setEdges] = useState<Edge[]>(layoutedEdges);
+  const [edges, setEdges] = useState<Edge[]>(allEdges);
 
   useImperativeHandle(ref, () => ({
     fitView: (opts) => fitView({ padding: opts?.padding ?? 0.03, duration: 0 }),
+    focusNode: (nodeId: string) => {
+      const node = getNodes().find((n) => n.id === nodeId);
+      if (!node) return;
+      const x = node.position.x + (node.measured?.width ?? 200) / 2;
+      const y = node.position.y + (node.measured?.height ?? 50) / 2;
+      setCenter(x, y, { zoom: 1.5, duration: 400 });
+    },
     getContentBounds: () => {
       const allNodes = getNodes();
       if (allNodes.length === 0) return { width: 800, height: 600 };
@@ -80,44 +120,51 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
       }
       return { width: maxX - minX, height: maxY - minY };
     },
-  }), [fitView, getNodes]);
+  }), [fitView, setCenter, getNodes]);
 
   useEffect(() => { setNodes(layoutedNodes); }, [layoutedNodes]);
-  useEffect(() => { setEdges(layoutedEdges); }, [layoutedEdges]);
+  useEffect(() => { setEdges(allEdges); }, [allEdges]);
 
-  // Compute the branch node IDs for a selected node (ancestors + descendants)
+  // Compute the branch node IDs for all selected nodes (ancestors + descendants)
   const selectedBranchIds = useMemo(() => {
-    if (!selectedNodeId || highlightedNodeIds.size > 0) return new Set<string>();
-    const ids = new Set<string>([selectedNodeId]);
-    let current = selectedNodeId;
-    for (let i = 0; i < 10; i++) {
-      const parentEdge = layoutedEdges.find((e) => e.target === current);
-      if (!parentEdge) break;
-      ids.add(parentEdge.source);
-      current = parentEdge.source;
-    }
-    const queue = [selectedNodeId];
-    while (queue.length > 0) {
-      const node = queue.shift()!;
-      for (const edge of layoutedEdges) {
-        if (edge.source === node && !ids.has(edge.target)) {
-          ids.add(edge.target);
-          queue.push(edge.target);
+    if (selectedNodeIds.size === 0 || highlightedNodeIds.size > 0) return new Set<string>();
+    const ids = new Set<string>();
+    for (const nodeId of selectedNodeIds) {
+      ids.add(nodeId);
+      // Walk up to ancestors
+      let current = nodeId;
+      for (let i = 0; i < 10; i++) {
+        const parentEdge = layoutedEdges.find((e) => e.target === current);
+        if (!parentEdge) break;
+        ids.add(parentEdge.source);
+        current = parentEdge.source;
+      }
+      // Walk down to descendants
+      const queue = [nodeId];
+      while (queue.length > 0) {
+        const n = queue.shift()!;
+        for (const edge of layoutedEdges) {
+          if (edge.source === n && !ids.has(edge.target)) {
+            ids.add(edge.target);
+            queue.push(edge.target);
+          }
         }
       }
     }
     return ids;
-  }, [selectedNodeId, highlightedNodeIds, layoutedEdges]);
+  }, [selectedNodeIds, highlightedNodeIds, layoutedEdges]);
 
   // Apply highlight dimming to nodes AND edges
+  // Priority: clicked highlight > hovered preview > branch selection > default
   useEffect(() => {
     const hasSummaryHighlight = highlightedNodeIds.size > 0;
+    const hasHover = hoveredNodeIds.size > 0;
     const hasBranchHighlight = selectedBranchIds.size > 0;
-    const hasAnyHighlight = hasSummaryHighlight || hasBranchHighlight;
-    const activeIds = hasSummaryHighlight ? highlightedNodeIds : selectedBranchIds;
+    const hasAnyHighlight = hasSummaryHighlight || hasHover || hasBranchHighlight;
+    const activeIds = hasSummaryHighlight ? highlightedNodeIds : hasHover ? hoveredNodeIds : selectedBranchIds;
+    const isPreview = !hasSummaryHighlight && hasHover; // lighter effect for hover
 
     setNodes((prev) => {
-      // Skip creating new objects when nothing is highlighted and nothing was highlighted before
       const wasHighlighted = prev.some((n) => n.style?.opacity !== undefined && n.style.opacity !== 1);
       if (!hasAnyHighlight && !wasHighlighted) return prev;
 
@@ -127,9 +174,9 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
           ...node.style,
           opacity:
             hasAnyHighlight && !activeIds.has(node.id) && node.data.nodeType !== 'family'
-              ? 0.15
+              ? (isPreview ? 0.35 : 0.15)
               : 1,
-          transition: 'opacity 0.3s ease',
+          transition: 'opacity 0.2s ease',
         },
       }));
     });
@@ -138,27 +185,32 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
       if (!hasAnyHighlight && !wasStyled) return prev;
 
       return prev.map((edge) => {
-        const connected = hasSummaryHighlight
-          ? highlightedNodeIds.has(edge.source) || highlightedNodeIds.has(edge.target)
+        const isLink = !!edge.data?.isUserLink;
+        const connected = (hasSummaryHighlight || hasHover)
+          ? activeIds.has(edge.source) || activeIds.has(edge.target)
           : hasBranchHighlight
             ? activeIds.has(edge.source) && activeIds.has(edge.target)
             : false;
+        // When no highlight is active, restore original style (cross-links keep dashed purple)
+        const baseStyle = isLink ? LINK_STYLE : DEFAULT_EDGE_STYLE;
         return {
           ...edge,
           style: {
-            stroke: hasAnyHighlight && connected
-              ? 'rgba(96,165,250,0.6)'
-              : hasAnyHighlight
-                ? 'rgba(255,255,255,0.06)'
-                : 'rgba(255,255,255,0.25)',
-            strokeWidth: hasAnyHighlight && connected ? 2.5 : 2,
-            transition: 'stroke 0.3s ease, stroke-width 0.3s ease, opacity 0.3s ease',
+            ...(hasAnyHighlight
+              ? {
+                  stroke: connected
+                    ? (isPreview ? 'rgba(96,165,250,0.35)' : 'rgba(96,165,250,0.6)')
+                    : 'rgba(255,255,255,0.06)',
+                  strokeWidth: connected ? 2.5 : 2,
+                }
+              : baseStyle),
+            transition: 'stroke 0.2s ease, stroke-width 0.2s ease, opacity 0.2s ease',
           },
-          animated: hasAnyHighlight && connected,
+          animated: hasAnyHighlight && connected && !isPreview,
         };
       });
     });
-  }, [highlightedNodeIds, selectedBranchIds]);
+  }, [highlightedNodeIds, hoveredNodeIds, selectedBranchIds]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds) as Node<NodeData>[]),
@@ -170,13 +222,56 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
   );
 
   const onNodeClick: NodeMouseHandler = useCallback(
-    (_event, node) => {
-      onSelectNode(node.id === selectedNodeId ? null : node.id);
+    (event, node) => {
+      const isAdditive = event.shiftKey;
+      if (!isAdditive && selectedNodeIds.has(node.id) && selectedNodeIds.size === 1) {
+        // Clicking the only selected node deselects it
+        onSelectNode(null, false);
+      } else {
+        onSelectNode(node.id, isAdditive);
+      }
     },
-    [onSelectNode, selectedNodeId],
+    [onSelectNode, selectedNodeIds],
   );
 
+  const onConnect: OnConnect = useCallback(
+    (params) => {
+      if (!params.source || !params.target || params.source === params.target) return;
+      // Don't duplicate existing edges (structural or user)
+      const exists = edges.some(
+        (e) =>
+          (e.source === params.source && e.target === params.target) ||
+          (e.source === params.target && e.target === params.source),
+      );
+      if (exists) return;
+
+      const newEdge: Edge = {
+        id: `link-${params.source}-${params.target}`,
+        source: params.source,
+        target: params.target,
+        type: 'smoothstep',
+        style: LINK_STYLE,
+        data: { isUserLink: true },
+      };
+      onAddLink(newEdge);
+    },
+    [edges, onAddLink],
+  );
+
+  // Double-click edge to remove user links
+  const onEdgeDoubleClick = useCallback(
+    (_event: React.MouseEvent, edge: Edge) => {
+      if (edge.data?.isUserLink) {
+        onRemoveLink(edge.id);
+      }
+    },
+    [onRemoveLink],
+  );
+
+  const ctxValue = useMemo(() => ({ onUpdateField }), [onUpdateField]);
+
   return (
+    <MindMapContext.Provider value={ctxValue}>
     <div style={{ width: '100%', height: '100%' }}>
       <ReactFlow
         nodes={nodes}
@@ -184,7 +279,11 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
+        onConnect={onConnect}
+        onEdgeDoubleClick={onEdgeDoubleClick}
         nodeTypes={nodeTypes}
+        connectionMode={ConnectionMode.Loose}
+        connectionLineStyle={{ stroke: 'rgba(168,85,247,0.5)', strokeWidth: 1.5, strokeDasharray: '6 4' }}
         defaultEdgeOptions={{
           type: 'smoothstep',
           style: { stroke: 'rgba(255,255,255,0.25)', strokeWidth: 2 },
@@ -207,10 +306,13 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
             if (type === 'client') return '#3b82f6';
             if (type === 'entity') return '#22c55e';
             if (type === 'liability') return '#ef4444';
+            if (type === 'estateGroup' || type === 'estateClient' || type === 'estateItem') return '#6366f1';
+            if (type === 'familyGroup' || type === 'familyMember') return '#f59e0b';
             return '#6b7280';
           }}
         />
       </ReactFlow>
     </div>
+    </MindMapContext.Provider>
   );
 });

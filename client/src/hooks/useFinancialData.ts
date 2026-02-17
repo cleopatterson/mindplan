@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import type { Edge } from '@xyflow/react';
 import type { FinancialPlan, ParseResponse } from 'shared/types';
 
 export type AppState = 'upload' | 'parsing' | 'dashboard';
@@ -7,8 +8,10 @@ export function useFinancialData() {
   const [appState, setAppState] = useState<AppState>('upload');
   const [data, setData] = useState<FinancialPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [highlightedNodeIds, setHighlightedNodeIds] = useState<Set<string>>(new Set());
+  const [hoveredNodeIds, setHoveredNodeIds] = useState<Set<string>>(new Set());
+  const [userLinks, setUserLinks] = useState<Edge[]>([]);
 
   const uploadFile = useCallback(async (file: File) => {
     setAppState('parsing');
@@ -36,9 +39,44 @@ export function useFinancialData() {
   const reset = useCallback(() => {
     setData(null);
     setError(null);
-    setSelectedNodeId(null);
+    setSelectedNodeIds(new Set());
     setHighlightedNodeIds(new Set());
+    setHoveredNodeIds(new Set());
+    setUserLinks([]);
     setAppState('upload');
+  }, []);
+
+  const addLink = useCallback((edge: Edge) => {
+    setUserLinks((prev) => [...prev, edge]);
+  }, []);
+
+  const removeLink = useCallback((edgeId: string) => {
+    setUserLinks((prev) => prev.filter((e) => e.id !== edgeId));
+  }, []);
+
+  /** Select a node — shift-click adds to selection, normal click replaces */
+  const selectNode = useCallback((id: string | null, additive: boolean) => {
+    if (id === null) {
+      setSelectedNodeIds(new Set());
+      return;
+    }
+    setSelectedNodeIds((prev) => {
+      if (additive) {
+        const next = new Set(prev);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        return next;
+      }
+      return new Set([id]);
+    });
+  }, []);
+
+  /** Preview highlight on hover (lighter effect) */
+  const hoverHighlight = useCallback((nodeIds: string[]) => {
+    setHoveredNodeIds(new Set(nodeIds));
   }, []);
 
   /** Toggle highlight — if same IDs already highlighted, clear them */
@@ -102,6 +140,8 @@ export function useFinancialData() {
         if (entity.id === nodeId) {
           if (field === 'name') entity.name = value;
           else if (field === 'role') entity.role = value || null;
+          else if (field === 'trusteeName') entity.trusteeName = value || null;
+          else if (field === 'trusteeType') entity.trusteeType = (value === 'individual' || value === 'corporate') ? value : null;
           return updated;
         }
       }
@@ -137,8 +177,10 @@ export function useFinancialData() {
 
   return {
     appState, data, error,
-    selectedNodeId, setSelectedNodeId,
+    selectedNodeIds, selectNode,
     highlightedNodeIds, toggleHighlight, clearHighlight,
+    hoveredNodeIds, hoverHighlight,
+    userLinks, addLink, removeLink,
     uploadFile, reset, resolveGap, updateNodeField,
   };
 }

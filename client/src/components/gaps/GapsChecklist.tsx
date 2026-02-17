@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import type { DataGap, Entity } from 'shared/types';
-import { Check, X } from 'lucide-react';
+import { Check, X, Crosshair } from 'lucide-react';
 
 interface GapsChecklistProps {
   gaps: DataGap[];
   entities: Entity[];
   onResolveGap: (gapIndex: number, value?: string) => void;
+  onHoverGap: (nodeIds: string[]) => void;
+  onFocusGap: (nodeId: string) => void;
 }
 
-export function GapsChecklist({ gaps, entities, onResolveGap }: GapsChecklistProps) {
+export function GapsChecklist({ gaps, entities, onResolveGap, onHoverGap, onFocusGap }: GapsChecklistProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editValue, setEditValue] = useState('');
   const entityMap = new Map(entities.map((e) => [e.id, e.name]));
@@ -55,13 +57,13 @@ export function GapsChecklist({ gaps, entities, onResolveGap }: GapsChecklistPro
                   />
                   <button
                     onClick={() => submitEdit(i)}
-                    className="p-1 text-emerald-400 hover:bg-emerald-500/10 rounded"
+                    className="cursor-pointer p-1 text-emerald-400 hover:bg-emerald-500/10 rounded"
                   >
                     <Check className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setEditingIndex(null)}
-                    className="p-1 text-white/30 hover:bg-white/5 rounded"
+                    className="cursor-pointer p-1 text-white/30 hover:bg-white/5 rounded"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -73,13 +75,13 @@ export function GapsChecklist({ gaps, entities, onResolveGap }: GapsChecklistPro
                   </span>
                   <button
                     onClick={() => dismissGap(i)}
-                    className="text-xs text-amber-400 hover:text-amber-300 font-medium"
+                    className="cursor-pointer text-xs text-amber-400 hover:text-amber-300 font-medium"
                   >
                     Dismiss
                   </button>
                   <button
                     onClick={() => setEditingIndex(null)}
-                    className="p-1 text-white/30 hover:bg-white/5 rounded"
+                    className="cursor-pointer p-1 text-white/30 hover:bg-white/5 rounded"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -88,7 +90,12 @@ export function GapsChecklist({ gaps, entities, onResolveGap }: GapsChecklistPro
             </div>
           ) : (
             <div
-              onClick={() => startEdit(i)}
+              onClick={() => {
+                startEdit(i);
+                if (gap.nodeId) onFocusGap(gap.nodeId);
+              }}
+              onMouseEnter={() => { if (gap.nodeId) onHoverGap([gap.nodeId]); }}
+              onMouseLeave={() => onHoverGap([])}
               className="flex items-start gap-2 text-sm text-amber-300/70 cursor-pointer
                 hover:bg-amber-500/5 rounded-lg px-2 py-1.5 -mx-2 transition-colors"
             >
@@ -101,9 +108,13 @@ export function GapsChecklist({ gaps, entities, onResolveGap }: GapsChecklistPro
                   </span>
                 )}
               </span>
-              <span className="text-amber-400/30 text-xs opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5">
-                edit
-              </span>
+              {gap.nodeId ? (
+                <Crosshair className="w-3.5 h-3.5 text-amber-400/30 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5" />
+              ) : (
+                <span className="text-amber-400/30 text-xs opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5">
+                  edit
+                </span>
+              )}
             </div>
           )}
         </li>

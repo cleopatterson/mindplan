@@ -6,9 +6,14 @@ import type { NodeData } from '../utils/transformToGraph';
 const NODE_WIDTH: Record<NodeData['nodeType'], number> = {
   family: 200,
   client: 200,
-  entity: 200,
-  asset: 180,
-  liability: 180,
+  entity: 240,
+  asset: 230,
+  liability: 230,
+  estateGroup: 200,
+  estateClient: 200,
+  estateItem: 200,
+  familyGroup: 180,
+  familyMember: 180,
 };
 
 const NODE_HEIGHT: Record<NodeData['nodeType'], number> = {
@@ -17,6 +22,11 @@ const NODE_HEIGHT: Record<NodeData['nodeType'], number> = {
   entity: 56,
   asset: 50,
   liability: 50,
+  estateGroup: 56,
+  estateClient: 50,
+  estateItem: 50,
+  familyGroup: 56,
+  familyMember: 50,
 };
 
 /**
@@ -34,13 +44,16 @@ export function useGraphLayout(nodes: Node<NodeData>[], edges: Edge[]) {
     const leftIds = new Set(leftNodes.map((n) => n.id));
     const rightIds = new Set(rightNodes.map((n) => n.id));
 
+    // Structural edges only (exclude cross-links from layout)
+    const structuralEdges = edges.filter((e) => !e.data?.isUserLink);
+
     // Edges for each side (include family node in both)
-    const leftEdges = edges.filter(
+    const leftEdges = structuralEdges.filter(
       (e) =>
         (leftIds.has(e.source) || e.source === familyNode.id) &&
         (leftIds.has(e.target) || e.target === familyNode.id),
     );
-    const rightEdges = edges.filter(
+    const rightEdges = structuralEdges.filter(
       (e) =>
         (rightIds.has(e.source) || e.source === familyNode.id) &&
         (rightIds.has(e.target) || e.target === familyNode.id),
@@ -66,7 +79,8 @@ export function useGraphLayout(nodes: Node<NodeData>[], edges: Edge[]) {
 
     const positioned = nodes.map((node) => {
       const w = NODE_WIDTH[node.data.nodeType];
-      const h = NODE_HEIGHT[node.data.nodeType];
+      const placeholderCount = node.data.missingFields?.length ?? 0;
+      const h = NODE_HEIGHT[node.data.nodeType] + placeholderCount * 24;
 
       if (node.id === familyNode.id) {
         return { ...node, position: { x: -w / 2, y: -h / 2 } };
@@ -112,11 +126,12 @@ function runDagre(
 ): Map<string, { x: number; y: number }> {
   const g = new dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir, nodesep: 40, ranksep: 80 });
+  g.setGraph({ rankdir, nodesep: 50, ranksep: 100 });
 
   for (const node of nodes) {
     const type = node.data.nodeType;
-    g.setNode(node.id, { width: NODE_WIDTH[type], height: NODE_HEIGHT[type] });
+    const placeholderCount = node.data.missingFields?.length ?? 0;
+    g.setNode(node.id, { width: NODE_WIDTH[type], height: NODE_HEIGHT[type] + placeholderCount * 24 });
   }
 
   for (const edge of edges) {

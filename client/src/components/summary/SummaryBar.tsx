@@ -19,9 +19,10 @@ import type { ReactNode } from 'react';
 interface SummaryBarProps {
   data: FinancialPlan;
   onToggleHighlight: (nodeIds: string[]) => void;
+  onHoverHighlight: (nodeIds: string[]) => void;
 }
 
-export function SummaryBar({ data, onToggleHighlight }: SummaryBarProps) {
+export function SummaryBar({ data, onToggleHighlight, onHoverHighlight }: SummaryBarProps) {
   const [expanded, setExpanded] = useState(true);
   const [activeCard, setActiveCard] = useState<string | null>(null);
 
@@ -98,7 +99,7 @@ export function SummaryBar({ data, onToggleHighlight }: SummaryBarProps) {
       <div className="flex justify-center">
         <button
           onClick={toggleExpanded}
-          className="flex items-center gap-1.5 px-4 py-1
+          className="cursor-pointer flex items-center gap-1.5 px-4 py-1
             text-white/40 text-xs hover:text-white/60 transition-colors"
         >
           {expanded ? (
@@ -127,20 +128,29 @@ export function SummaryBar({ data, onToggleHighlight }: SummaryBarProps) {
             <div
               key={card.id}
               onClick={() => handleCardClick(card.id, card.nodeIds)}
+              onMouseEnter={() => {
+                if (activeCard !== card.id) onHoverHighlight(card.nodeIds);
+              }}
+              onMouseLeave={() => onHoverHighlight([])}
               className={`
-                flex-1 min-w-[180px] rounded-xl border px-4 py-3 cursor-pointer transition-all
+                group flex-1 min-w-[180px] rounded-xl border px-4 py-3 cursor-pointer
+                transition-all duration-200
                 ${activeCard === card.id
-                  ? 'bg-white/10 border-blue-500/50 ring-1 ring-blue-500/30'
-                  : 'bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-white/20'
+                  ? 'bg-white/10 border-blue-500/50 ring-1 ring-blue-500/30 scale-[1.02] shadow-lg shadow-blue-500/10'
+                  : 'bg-white/[0.03] border-white/10 hover:bg-white/[0.06] hover:border-white/25 hover:scale-[1.01] hover:shadow-md hover:shadow-white/5'
                 }
               `}
             >
-              <div className="flex items-center gap-1.5 text-white/40 mb-1">
+              <div className={`flex items-center gap-1.5 mb-1 transition-colors duration-200 ${
+                activeCard === card.id ? 'text-blue-400/70' : 'text-white/40 group-hover:text-white/60'
+              }`}>
                 {card.icon}
                 <span className="text-[10px] font-medium uppercase tracking-wide">{card.title}</span>
               </div>
-              <div className={`text-sm font-semibold ${card.color} truncate`}>{card.value}</div>
-              <div className="text-[10px] text-white/25 mt-0.5 truncate">{card.detail}</div>
+              <div className={`text-sm font-semibold ${card.color} truncate transition-colors duration-200`}>{card.value}</div>
+              <div className={`text-[10px] mt-0.5 truncate transition-colors duration-200 ${
+                activeCard === card.id ? 'text-white/40' : 'text-white/25 group-hover:text-white/35'
+              }`}>{card.detail}</div>
             </div>
           ))}
         </div>

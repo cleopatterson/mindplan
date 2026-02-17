@@ -125,6 +125,51 @@ Sarah Mitchell:
 - TPD Insurance: $500,000 (via REST Super)
 
 ═══════════════════════════════════════════════════
+ESTATE PLANNING
+═══════════════════════════════════════════════════
+
+John Mitchell:
+- Will: In Place (last updated March 2022)
+  Executor: Sarah Mitchell
+  Alternate Executor: Andrew Mitchell (John's brother)
+- Enduring Power of Attorney: Sarah Mitchell
+  Alternates: Andrew Mitchell, Rebecca Mitchell
+- Enduring Guardianship (Medical): Sarah Mitchell
+  Alternates: Andrew Mitchell
+- Superannuation Binding Death Benefit Nomination:
+  Sarah Mitchell 100% — Binding (expires December 2025)
+
+Sarah Mitchell:
+- Will: In Place (last updated March 2022)
+  Executor: John Mitchell
+  Alternate Executor: Karen Thompson (Sarah's sister)
+- Enduring Power of Attorney: John Mitchell
+  Alternates: Karen Thompson
+- Enduring Guardianship (Medical): John Mitchell
+  Alternates: Karen Thompson
+- Superannuation Binding Death Benefit Nomination:
+  John Mitchell 100% — Non-binding
+
+Notes:
+- Trust succession plan not yet documented — who takes over as appointer if John is incapacitated?
+- No testamentary trust provisions in current wills — recommend review given trust assets
+
+═══════════════════════════════════════════════════
+FAMILY / RELATIONSHIPS
+═══════════════════════════════════════════════════
+
+Dependants:
+- Oliver Mitchell (Son, age 14) — Year 9, Shore School
+- Charlotte Mitchell (Daughter, age 11) — Year 6, Wenona
+
+Non-Dependants:
+- Emily Mitchell (Daughter, age 24) — Graduate Accountant, lives independently
+
+Other Key Relationships:
+- Andrew Mitchell (John's brother) — named as alternate executor and attorney
+- Karen Thompson (Sarah's sister) — named as alternate executor and attorney
+
+═══════════════════════════════════════════════════
 OBJECTIVES
 ═══════════════════════════════════════════════════
 
