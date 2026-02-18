@@ -6,14 +6,14 @@ import {
   totalLiabilities,
   assetAllocation,
   liquidityBreakdown,
-  entityConcentration,
+  debtRatio,
   formatAUD,
   netWorthNodeIds,
   allAssetNodeIds,
   liquidAssetNodeIds,
-  entityNodeIds,
+  allLiabilityNodeIds,
 } from '../../utils/calculations';
-import { ChevronDown, ChevronUp, DollarSign, PieChart, Droplets, Building2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, DollarSign, PieChart, Droplets, TrendingDown } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 interface SummaryBarProps {
@@ -48,7 +48,7 @@ export function SummaryBar({ data, onToggleHighlight, onHoverHighlight }: Summar
     const nw = netWorth(data);
     const allocation = assetAllocation(data);
     const liquidity = liquidityBreakdown(data);
-    const concentration = entityConcentration(data);
+    const debt = debtRatio(data);
 
     return [
       {
@@ -82,13 +82,13 @@ export function SummaryBar({ data, onToggleHighlight, onHoverHighlight }: Summar
         nodeIds: liquidAssetNodeIds(data),
       },
       {
-        id: 'concentration',
-        icon: <Building2 className="w-4 h-4" />,
-        title: 'Concentration',
-        value: concentration[0] ? `${concentration[0].name}: ${concentration[0].pct}%` : 'N/A',
-        detail: `${concentration.length} entities`,
-        color: 'text-white/70',
-        nodeIds: concentration[0] ? entityNodeIds(data, concentration[0].name) : [],
+        id: 'debt-ratio',
+        icon: <TrendingDown className="w-4 h-4" />,
+        title: 'Debt Ratio',
+        value: `${debt}%`,
+        detail: `Liabilities ${formatAUD(totalLiabilities(data))} of ${formatAUD(totalAssets(data))} assets`,
+        color: debt > 50 ? 'text-red-400' : debt > 30 ? 'text-amber-400' : 'text-emerald-400',
+        nodeIds: allLiabilityNodeIds(data),
       },
     ];
   }, [data]);

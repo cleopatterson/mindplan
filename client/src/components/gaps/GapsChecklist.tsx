@@ -37,7 +37,7 @@ export function GapsChecklist({ gaps, entities, onResolveGap, onHoverGap, onFocu
   return (
     <ul className="space-y-2">
       {gaps.map((gap, i) => (
-        <li key={i} className="group">
+        <li key={gap.nodeId ? `${gap.nodeId}-${gap.field}` : `${gap.field}-${gap.entityId ?? 'p'}-${gap.description.slice(0, 40)}`} className="group">
           {editingIndex === i ? (
             <div className="flex flex-col gap-2 bg-white/5 rounded-lg p-3 border border-amber-500/30">
               <div className="text-xs text-amber-300/70">{gap.description}</div>

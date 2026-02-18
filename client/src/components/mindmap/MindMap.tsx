@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { useMemo, useCallback, useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -31,7 +31,6 @@ import { EstateClientNode } from './nodes/EstateClientNode';
 import { EstateItemNode } from './nodes/EstateItemNode';
 import { FamilyGroupNode } from './nodes/FamilyGroupNode';
 import { FamilyMemberNode } from './nodes/FamilyMemberNode';
-import { MindMapContext } from './MindMapContext';
 
 const nodeTypes: NodeTypes = {
   familyNode: FamilyNode,
@@ -55,7 +54,6 @@ interface MindMapProps {
   userLinks: Edge[];
   onAddLink: (edge: Edge) => void;
   onRemoveLink: (edgeId: string) => void;
-  onUpdateField: (nodeId: string, field: string, value: string) => void;
 }
 
 export interface MindMapHandle {
@@ -83,12 +81,28 @@ const DEFAULT_EDGE_STYLE: React.CSSProperties = {
   strokeWidth: 2,
 };
 
+const CONNECTION_LINE_STYLE: React.CSSProperties = {
+  stroke: 'rgba(168,85,247,0.5)',
+  strokeWidth: 1.5,
+  strokeDasharray: '6 4',
+};
+
+const DEFAULT_EDGE_OPTIONS = {
+  type: 'smoothstep' as const,
+  style: DEFAULT_EDGE_STYLE,
+};
+
 const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInner(
-  { data, selectedNodeIds, onSelectNode, highlightedNodeIds, hoveredNodeIds, userLinks, onAddLink, onRemoveLink, onUpdateField },
+  { data, selectedNodeIds, onSelectNode, highlightedNodeIds, hoveredNodeIds, userLinks, onAddLink, onRemoveLink },
   ref,
 ) {
   const { fitView, getNodes, setCenter } = useReactFlow();
-  const { nodes: rawNodes, edges: rawEdges } = useMemo(() => transformToGraph(data), [data]);
+  const { nodes: rawNodes, edges: rawEdges } = useMemo(() => {
+    const t0 = performance.now();
+    const result = transformToGraph(data);
+    console.log(`⏱ [mindmap] transformToGraph: ${(performance.now() - t0).toFixed(1)}ms (${result.nodes.length} nodes, ${result.edges.length} edges)`);
+    return result;
+  }, [data]);
   const { nodes: layoutedNodes, edges: layoutedEdges } = useGraphLayout(rawNodes, rawEdges);
 
   // Merge structural edges with user-drawn cross-links
@@ -125,34 +139,54 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
   useEffect(() => { setNodes(layoutedNodes); }, [layoutedNodes]);
   useEffect(() => { setEdges(allEdges); }, [allEdges]);
 
-  // Compute the branch node IDs for all selected nodes (ancestors + descendants)
+  // Log once per data change when layout is first applied (marks the end of the pipeline)
+  const didLogMount = useRef(false);
+  useEffect(() => { didLogMount.current = false; }, [data]);
+  useEffect(() => {
+    if (!didLogMount.current && layoutedNodes.length > 0) {
+      didLogMount.current = true;
+      console.timeEnd('⏱ [client] Total upload→render');
+    }
+  }, [layoutedNodes]);
+
+  // Pre-build adjacency maps once — O(E), stable between data changes
+  const { parentOf, childrenOf } = useMemo(() => {
+    const parentOf = new Map<string, string>();
+    const childrenOf = new Map<string, string[]>();
+    for (const e of layoutedEdges) {
+      if (!e.data?.isUserLink) {
+        parentOf.set(e.target, e.source);
+        const children = childrenOf.get(e.source);
+        if (children) children.push(e.target);
+        else childrenOf.set(e.source, [e.target]);
+      }
+    }
+    return { parentOf, childrenOf };
+  }, [layoutedEdges]);
+
+  // Compute the branch node IDs for all selected nodes — O(N) with adjacency maps
   const selectedBranchIds = useMemo(() => {
     if (selectedNodeIds.size === 0 || highlightedNodeIds.size > 0) return new Set<string>();
     const ids = new Set<string>();
     for (const nodeId of selectedNodeIds) {
       ids.add(nodeId);
-      // Walk up to ancestors
-      let current = nodeId;
-      for (let i = 0; i < 10; i++) {
-        const parentEdge = layoutedEdges.find((e) => e.target === current);
-        if (!parentEdge) break;
-        ids.add(parentEdge.source);
-        current = parentEdge.source;
-      }
-      // Walk down to descendants
+      // Walk up to ancestors via O(1) map lookups
+      let current: string | undefined = nodeId;
+      while ((current = parentOf.get(current!))) ids.add(current);
+      // Walk down to descendants via O(1) map lookups
       const queue = [nodeId];
       while (queue.length > 0) {
         const n = queue.shift()!;
-        for (const edge of layoutedEdges) {
-          if (edge.source === n && !ids.has(edge.target)) {
-            ids.add(edge.target);
-            queue.push(edge.target);
-          }
+        for (const child of childrenOf.get(n) ?? []) {
+          if (!ids.has(child)) { ids.add(child); queue.push(child); }
         }
       }
     }
     return ids;
-  }, [selectedNodeIds, highlightedNodeIds, layoutedEdges]);
+  }, [selectedNodeIds, highlightedNodeIds, parentOf, childrenOf]);
+
+  // Track the previous active highlight set to skip identical updates
+  const prevActiveRef = useRef<{ ids: Set<string>; isPreview: boolean }>({ ids: new Set(), isPreview: false });
 
   // Apply highlight dimming to nodes AND edges
   // Priority: clicked highlight > hovered preview > branch selection > default
@@ -164,11 +198,22 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
     const activeIds = hasSummaryHighlight ? highlightedNodeIds : hasHover ? hoveredNodeIds : selectedBranchIds;
     const isPreview = !hasSummaryHighlight && hasHover; // lighter effect for hover
 
-    setNodes((prev) => {
-      const wasHighlighted = prev.some((n) => n.style?.opacity !== undefined && n.style.opacity !== 1);
-      if (!hasAnyHighlight && !wasHighlighted) return prev;
+    // Skip if the active set content and mode haven't changed
+    const prev = prevActiveRef.current;
+    if (
+      activeIds.size === prev.ids.size &&
+      isPreview === prev.isPreview &&
+      (activeIds.size === 0 || [...activeIds].every((id) => prev.ids.has(id)))
+    ) {
+      return;
+    }
+    prevActiveRef.current = { ids: activeIds, isPreview };
 
-      return prev.map((node) => ({
+    setNodes((prevNodes) => {
+      const wasHighlighted = prevNodes.some((n) => n.style?.opacity !== undefined && n.style.opacity !== 1);
+      if (!hasAnyHighlight && !wasHighlighted) return prevNodes;
+
+      return prevNodes.map((node) => ({
         ...node,
         style: {
           ...node.style,
@@ -180,11 +225,11 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
         },
       }));
     });
-    setEdges((prev) => {
-      const wasStyled = prev.some((e) => e.animated);
-      if (!hasAnyHighlight && !wasStyled) return prev;
+    setEdges((prevEdges) => {
+      const wasStyled = prevEdges.some((e) => e.animated);
+      if (!hasAnyHighlight && !wasStyled) return prevEdges;
 
-      return prev.map((edge) => {
+      return prevEdges.map((edge) => {
         const isLink = !!edge.data?.isUserLink;
         const connected = (hasSummaryHighlight || hasHover)
           ? activeIds.has(edge.source) || activeIds.has(edge.target)
@@ -202,6 +247,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
                     ? (isPreview ? 'rgba(96,165,250,0.35)' : 'rgba(96,165,250,0.6)')
                     : 'rgba(255,255,255,0.06)',
                   strokeWidth: connected ? 2.5 : 2,
+                  ...(isLink ? { strokeDasharray: '6 4' } : {}),
                 }
               : baseStyle),
             transition: 'stroke 0.2s ease, stroke-width 0.2s ease, opacity 0.2s ease',
@@ -268,10 +314,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
     [onRemoveLink],
   );
 
-  const ctxValue = useMemo(() => ({ onUpdateField }), [onUpdateField]);
-
   return (
-    <MindMapContext.Provider value={ctxValue}>
     <div style={{ width: '100%', height: '100%' }}>
       <ReactFlow
         nodes={nodes}
@@ -283,11 +326,8 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
         onEdgeDoubleClick={onEdgeDoubleClick}
         nodeTypes={nodeTypes}
         connectionMode={ConnectionMode.Loose}
-        connectionLineStyle={{ stroke: 'rgba(168,85,247,0.5)', strokeWidth: 1.5, strokeDasharray: '6 4' }}
-        defaultEdgeOptions={{
-          type: 'smoothstep',
-          style: { stroke: 'rgba(255,255,255,0.25)', strokeWidth: 2 },
-        }}
+        connectionLineStyle={CONNECTION_LINE_STYLE}
+        defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
         proOptions={{ hideAttribution: true }}
         fitView
         fitViewOptions={{ padding: 0.15 }}
@@ -313,6 +353,5 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
         />
       </ReactFlow>
     </div>
-    </MindMapContext.Provider>
   );
 });

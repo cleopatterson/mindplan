@@ -35,6 +35,7 @@ const NODE_HEIGHT: Record<NodeData['nodeType'], number> = {
  */
 export function useGraphLayout(nodes: Node<NodeData>[], edges: Edge[]) {
   return useMemo(() => {
+    const t0 = performance.now();
     const familyNode = nodes.find((n) => n.data.nodeType === 'family');
     if (!familyNode) return { nodes, edges };
 
@@ -44,8 +45,8 @@ export function useGraphLayout(nodes: Node<NodeData>[], edges: Edge[]) {
     const leftIds = new Set(leftNodes.map((n) => n.id));
     const rightIds = new Set(rightNodes.map((n) => n.id));
 
-    // Structural edges only (exclude cross-links from layout)
-    const structuralEdges = edges.filter((e) => !e.data?.isUserLink);
+    // Structural edges only (exclude user links and auto cross-links from dagre)
+    const structuralEdges = edges.filter((e) => !e.data?.isUserLink && !e.data?.isCrossLink);
 
     // Edges for each side (include family node in both)
     const leftEdges = structuralEdges.filter(
@@ -77,10 +78,13 @@ export function useGraphLayout(nodes: Node<NodeData>[], edges: Edge[]) {
     const familyRight = rightPositions.get(familyNode.id);
     const familyLeft = leftPositions.get(familyNode.id);
 
+    // Build max-width per rank so we can right-align left-side / left-align right-side
+    const leftRankMaxW = rankMaxWidths(leftNodes, leftPositions);
+    const rightRankMaxW = rankMaxWidths(rightNodes, rightPositions);
+
     const positioned = nodes.map((node) => {
       const w = NODE_WIDTH[node.data.nodeType];
-      const placeholderCount = node.data.missingFields?.length ?? 0;
-      const h = NODE_HEIGHT[node.data.nodeType] + placeholderCount * 24;
+      const h = NODE_HEIGHT[node.data.nodeType];
 
       if (node.id === familyNode.id) {
         return { ...node, position: { x: -w / 2, y: -h / 2 } };
@@ -89,10 +93,12 @@ export function useGraphLayout(nodes: Node<NodeData>[], edges: Edge[]) {
       if (node.data.side === 'right' && familyRight) {
         const pos = rightPositions.get(node.id);
         if (pos) {
+          const maxW = rightRankMaxW.get(Math.round(pos.x)) ?? w;
           return {
             ...node,
             position: {
-              x: pos.x - familyRight.x - w / 2,
+              // Left-align: shift left so left edges align within each rank
+              x: pos.x - familyRight.x - maxW / 2,
               y: pos.y - familyRight.y - h / 2,
             },
           };
@@ -102,10 +108,12 @@ export function useGraphLayout(nodes: Node<NodeData>[], edges: Edge[]) {
       if (node.data.side === 'left' && familyLeft) {
         const pos = leftPositions.get(node.id);
         if (pos) {
+          const maxW = leftRankMaxW.get(Math.round(pos.x)) ?? w;
           return {
             ...node,
             position: {
-              x: pos.x - familyLeft.x - w / 2,
+              // Right-align: shift right so right edges align within each rank
+              x: pos.x - familyLeft.x + maxW / 2 - w,
               y: pos.y - familyLeft.y - h / 2,
             },
           };
@@ -115,8 +123,25 @@ export function useGraphLayout(nodes: Node<NodeData>[], edges: Edge[]) {
       return node;
     });
 
+    console.log(`⏱ [layout] Dagre layout: ${(performance.now() - t0).toFixed(1)}ms (${nodes.length} nodes, left: ${leftNodes.length}, right: ${rightNodes.length})`);
     return { nodes: positioned, edges };
   }, [nodes, edges]);
+}
+
+/** Group nodes by dagre x (rank) and return the max width per rank */
+function rankMaxWidths(
+  nodes: Node<NodeData>[],
+  positions: Map<string, { x: number; y: number }>,
+): Map<number, number> {
+  const maxW = new Map<number, number>();
+  for (const node of nodes) {
+    const pos = positions.get(node.id);
+    if (!pos) continue;
+    const rank = Math.round(pos.x);
+    const w = NODE_WIDTH[node.data.nodeType];
+    maxW.set(rank, Math.max(maxW.get(rank) ?? 0, w));
+  }
+  return maxW;
 }
 
 function runDagre(
@@ -130,8 +155,7 @@ function runDagre(
 
   for (const node of nodes) {
     const type = node.data.nodeType;
-    const placeholderCount = node.data.missingFields?.length ?? 0;
-    g.setNode(node.id, { width: NODE_WIDTH[type], height: NODE_HEIGHT[type] + placeholderCount * 24 });
+    g.setNode(node.id, { width: NODE_WIDTH[type], height: NODE_HEIGHT[type] });
   }
 
   for (const edge of edges) {

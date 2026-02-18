@@ -1,21 +1,34 @@
 import type { FinancialPlan, Asset, Liability, Entity } from 'shared/types';
 
+/** Flatten all assets across personal + entities (shared helper) */
+function flatAssets(plan: FinancialPlan): Asset[] {
+  const result = [...plan.personalAssets];
+  for (const entity of plan.entities) {
+    for (const asset of entity.assets) result.push(asset);
+  }
+  return result;
+}
+
+function sumValues(assets: Asset[]): number {
+  let total = 0;
+  for (const a of assets) total += a.value || 0;
+  return total;
+}
+
+function sumAmounts(liabilities: Liability[]): number {
+  let total = 0;
+  for (const l of liabilities) total += l.amount || 0;
+  return total;
+}
+
 /** Sum of all asset values across all entities + personal */
 export function totalAssets(plan: FinancialPlan): number {
-  let total = sumAssets(plan.personalAssets);
-  for (const entity of plan.entities) {
-    total += sumAssets(entity.assets);
-  }
-  return total;
+  return sumValues(plan.personalAssets) + plan.entities.reduce((s, e) => s + sumValues(e.assets), 0);
 }
 
 /** Sum of all liability amounts across all entities + personal */
 export function totalLiabilities(plan: FinancialPlan): number {
-  let total = sumLiabilities(plan.personalLiabilities);
-  for (const entity of plan.entities) {
-    total += sumLiabilities(entity.liabilities);
-  }
-  return total;
+  return sumAmounts(plan.personalLiabilities) + plan.entities.reduce((s, e) => s + sumAmounts(e.liabilities), 0);
 }
 
 export function netWorth(plan: FinancialPlan): number {
@@ -24,15 +37,13 @@ export function netWorth(plan: FinancialPlan): number {
 
 /** Net equity per entity */
 export function entityEquity(entity: Entity): number {
-  return sumAssets(entity.assets) - sumLiabilities(entity.liabilities);
+  return sumValues(entity.assets) - sumAmounts(entity.liabilities);
 }
 
 /** Asset allocation by type as { type: percentage } */
 export function assetAllocation(plan: FinancialPlan): Record<string, number> {
   const byType: Record<string, number> = {};
-  const allAssets = [...plan.personalAssets, ...plan.entities.flatMap((e) => e.assets)];
-
-  for (const asset of allAssets) {
+  for (const asset of flatAssets(plan)) {
     byType[asset.type] = (byType[asset.type] || 0) + (asset.value || 0);
   }
 
@@ -49,11 +60,9 @@ export function assetAllocation(plan: FinancialPlan): Record<string, number> {
 /** Liquid (cash, shares, managed_fund) vs illiquid percentage */
 export function liquidityBreakdown(plan: FinancialPlan): { liquid: number; illiquid: number } {
   const liquidTypes = new Set(['cash', 'shares', 'managed_fund']);
-  const allAssets = [...plan.personalAssets, ...plan.entities.flatMap((e) => e.assets)];
-
   let liquid = 0;
   let illiquid = 0;
-  for (const asset of allAssets) {
+  for (const asset of flatAssets(plan)) {
     if (liquidTypes.has(asset.type)) {
       liquid += asset.value || 0;
     } else {
@@ -69,34 +78,34 @@ export function liquidityBreakdown(plan: FinancialPlan): { liquid: number; illiq
   };
 }
 
-/** % of wealth per entity */
+/** Debt-to-asset ratio as a percentage */
+export function debtRatio(plan: FinancialPlan): number {
+  const assets = totalAssets(plan);
+  if (assets === 0) return 0;
+  return Math.round((totalLiabilities(plan) / assets) * 100);
+}
+
+/** All liability node IDs */
+export function allLiabilityNodeIds(plan: FinancialPlan): string[] {
+  return [
+    ...plan.personalLiabilities.map((l) => l.id),
+    ...plan.entities.flatMap((e) => e.liabilities.map((l) => l.id)),
+  ];
+}
+
+/** % of wealth per entity — single-pass computation */
 export function entityConcentration(plan: FinancialPlan): { name: string; pct: number }[] {
-  const total = totalAssets(plan);
-  if (total === 0) return [];
+  const personalTotal = sumValues(plan.personalAssets);
+  const entityTotals = plan.entities.map((e) => ({ name: e.name, total: sumValues(e.assets) }));
+  const grandTotal = personalTotal + entityTotals.reduce((s, e) => s + e.total, 0);
+  if (grandTotal === 0) return [];
 
   const result: { name: string; pct: number }[] = [];
-
-  const personalTotal = sumAssets(plan.personalAssets);
-  if (personalTotal > 0) {
-    result.push({ name: 'Personal', pct: Math.round((personalTotal / total) * 100) });
+  if (personalTotal > 0) result.push({ name: 'Personal', pct: Math.round((personalTotal / grandTotal) * 100) });
+  for (const { name, total } of entityTotals) {
+    if (total > 0) result.push({ name, pct: Math.round((total / grandTotal) * 100) });
   }
-
-  for (const entity of plan.entities) {
-    const entityTotal = sumAssets(entity.assets);
-    if (entityTotal > 0) {
-      result.push({ name: entity.name, pct: Math.round((entityTotal / total) * 100) });
-    }
-  }
-
   return result.sort((a, b) => b.pct - a.pct);
-}
-
-function sumAssets(assets: Asset[]): number {
-  return assets.reduce((sum, a) => sum + (a.value || 0), 0);
-}
-
-function sumLiabilities(liabilities: Liability[]): number {
-  return liabilities.reduce((sum, l) => sum + (l.amount || 0), 0);
 }
 
 // ── Node ID selectors for highlighting ──
@@ -139,10 +148,12 @@ export function entityNodeIds(plan: FinancialPlan, entityName: string): string[]
   return [entity.id, ...entity.assets.map((a) => a.id), ...entity.liabilities.map((l) => l.id)];
 }
 
+const AUD_FORMATTER = new Intl.NumberFormat('en-AU', {
+  style: 'currency',
+  currency: 'AUD',
+  maximumFractionDigits: 0,
+});
+
 export function formatAUD(value: number): string {
-  return new Intl.NumberFormat('en-AU', {
-    style: 'currency',
-    currency: 'AUD',
-    maximumFractionDigits: 0,
-  }).format(value);
+  return AUD_FORMATTER.format(value);
 }

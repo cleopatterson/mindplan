@@ -1,11 +1,12 @@
+import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeData } from '../../../utils/transformToGraph';
 
-export function FamilyGroupNode({ data }: { data: NodeData }) {
+export const FamilyGroupNode = memo(function FamilyGroupNode({ data }: { data: NodeData }) {
   return (
     <div
       className={`
-        cursor-pointer px-4 py-2.5 rounded-xl bg-amber-500/90 backdrop-blur text-white min-w-[160px]
+        cursor-pointer px-4 py-2.5 rounded-xl bg-amber-500/90 backdrop-blur text-white w-[180px]
         shadow-md shadow-amber-500/20 hover:shadow-lg hover:shadow-amber-500/30 transition-shadow
       `}
     >
@@ -15,4 +16,4 @@ export function FamilyGroupNode({ data }: { data: NodeData }) {
       <Handle type="source" position={Position.Right} className="!bg-amber-300" />
     </div>
   );
-}
+});

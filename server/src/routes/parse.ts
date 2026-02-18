@@ -26,14 +26,19 @@ const upload = multer({
 export const parseRouter = Router();
 
 parseRouter.post('/parse', upload.single('file'), async (req, res) => {
+  const t0 = performance.now();
   try {
     if (!req.file) {
       res.status(400).json({ success: false, error: 'No file uploaded' } satisfies ParseResponse);
       return;
     }
 
+    console.log(`⏱ [parse] File received: ${req.file.originalname} (${(req.file.size / 1024).toFixed(1)} KB, ${req.file.mimetype})`);
+
     // Step 1: Extract text
+    const t1 = performance.now();
     const text = await extractText(req.file.buffer, req.file.mimetype);
+    console.log(`⏱ [parse] Step 1 — Text extraction: ${(performance.now() - t1).toFixed(0)}ms (${text.length} chars)`);
 
     if (text.trim().length < 50) {
       res.status(400).json({
@@ -44,10 +49,16 @@ parseRouter.post('/parse', upload.single('file'), async (req, res) => {
     }
 
     // Step 2: Parse with Claude
+    const t2 = performance.now();
     const plan = await parseWithClaude(text);
+    console.log(`⏱ [parse] Step 2 — Claude API: ${(performance.now() - t2).toFixed(0)}ms`);
 
     // Step 3: Enrich data gaps
+    const t3 = performance.now();
     enrichGaps(plan);
+    console.log(`⏱ [parse] Step 3 — Gap enrichment: ${(performance.now() - t3).toFixed(0)}ms (${plan.dataGaps.length} gaps)`);
+
+    console.log(`⏱ [parse] Total request: ${(performance.now() - t0).toFixed(0)}ms`);
 
     res.json({
       success: true,
@@ -56,7 +67,7 @@ parseRouter.post('/parse', upload.single('file'), async (req, res) => {
     } satisfies ParseResponse);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    console.error('Parse error:', message);
+    console.error(`Parse error (after ${(performance.now() - t0).toFixed(0)}ms):`, message);
     res.status(500).json({ success: false, error: message } satisfies ParseResponse);
   }
 });

@@ -76,6 +76,7 @@ export const DataGapSchema = z.object({
   entityId: z.nullable(z.string()).describe('Related entity ID, or null for personal gaps'),
   field: z.string().describe('Field name that is missing'),
   description: z.string().describe('Human-readable description of what is needed'),
+  nodeId: z.string().optional().describe('Graph node ID this gap refers to'),
 });
 
 export const FinancialPlanSchema = z.object({

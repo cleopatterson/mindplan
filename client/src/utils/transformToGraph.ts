@@ -4,11 +4,6 @@ import { formatAUD } from './calculations';
 
 export type Side = 'left' | 'right' | 'center';
 
-export interface MissingField {
-  field: string;
-  placeholder: string;
-}
-
 export interface NodeData extends Record<string, unknown> {
   label: string;
   sublabel?: string;
@@ -21,7 +16,6 @@ export interface NodeData extends Record<string, unknown> {
   familyRelationship?: FamilyMember['relationship'] | Grandchild['relationship'];
   hasIssue?: boolean;
   trusteeName?: string | null;
-  missingFields?: MissingField[];
   side: Side;
   raw?: Client | Entity | Asset | Liability | EstatePlanItem | FamilyMember | Grandchild;
 }
@@ -49,11 +43,6 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
 
   // LEFT SIDE — clients + personal assets/liabilities
   for (const client of plan.clients) {
-    const clientMissing: MissingField[] = [];
-    if (client.age === null) clientMissing.push({ field: 'age', placeholder: 'Age?' });
-    if (client.income === null) clientMissing.push({ field: 'income', placeholder: 'Income?' });
-    if (client.superBalance === null) clientMissing.push({ field: 'superBalance', placeholder: 'Super?' });
-
     nodes.push({
       id: client.id,
       type: 'clientNode',
@@ -62,7 +51,6 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
         label: client.name,
         sublabel: client.occupation || undefined,
         nodeType: 'client',
-        missingFields: clientMissing.length > 0 ? clientMissing : undefined,
         side: 'left',
         raw: client,
       },
@@ -71,6 +59,7 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
       id: `${familyId}-${client.id}`,
       source: familyId,
       target: client.id,
+      sourceHandle: 'left',
     });
   }
 
@@ -85,15 +74,14 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
     if (!primaryOwner) continue;
 
     addAssetNode(nodes, edges, asset, primaryOwner, 'left');
-    // Cross-link edges to additional owners
+    // Cross-link edges to additional owners (joint ownership — same style as structural edges)
     for (const ownerId of owners.slice(1)) {
       edges.push({
         id: `link-${ownerId}-${asset.id}`,
         source: ownerId,
         target: asset.id,
         type: 'smoothstep',
-        style: { stroke: 'rgba(168,85,247,0.4)', strokeWidth: 1.5, strokeDasharray: '6 4' },
-        data: { isUserLink: true },
+        data: { isCrossLink: true },
       });
     }
   }
@@ -111,8 +99,7 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
         source: ownerId,
         target: liability.id,
         type: 'smoothstep',
-        style: { stroke: 'rgba(168,85,247,0.4)', strokeWidth: 1.5, strokeDasharray: '6 4' },
-        data: { isUserLink: true },
+        data: { isCrossLink: true },
       });
     }
   }
@@ -146,6 +133,7 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
       id: `${familyId}-${estateGroupId}`,
       source: familyId,
       target: estateGroupId,
+      sourceHandle: 'right',
     });
 
     // Per-client intermediate nodes
@@ -184,10 +172,6 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
           : item.status === 'not_established' ? 'Not established'
           : 'Unknown';
 
-        const estateMissing: MissingField[] = [];
-        if (item.status === null) estateMissing.push({ field: 'status', placeholder: 'Status?' });
-        if (item.primaryPerson === null) estateMissing.push({ field: 'primaryPerson', placeholder: 'Person?' });
-
         nodes.push({
           id: item.id,
           type: 'estateItemNode',
@@ -198,7 +182,6 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
             nodeType: 'estateItem',
             estateItemType: item.type,
             hasIssue: item.hasIssue,
-            missingFields: estateMissing.length > 0 ? estateMissing : undefined,
             side: 'right',
             raw: item,
           },
@@ -234,6 +217,7 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
       id: `${familyId}-${familyGroupId}`,
       source: familyId,
       target: familyGroupId,
+      sourceHandle: 'right',
     });
 
     for (const member of plan.familyMembers) {
@@ -241,9 +225,6 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
       const parts: string[] = [];
       if (member.partner) parts.push(`& ${member.partner}`);
       if (member.isDependant) parts.push('Dep.');
-
-      const memberMissing: MissingField[] = [];
-      if (member.isDependant && member.age === null) memberMissing.push({ field: 'age', placeholder: 'Age?' });
 
       nodes.push({
         id: member.id,
@@ -254,7 +235,6 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
           sublabel: parts.join(' · ') || member.relationship,
           nodeType: 'familyMember',
           familyRelationship: member.relationship,
-          missingFields: memberMissing.length > 0 ? memberMissing : undefined,
           side: 'right',
           raw: member,
         },
@@ -271,9 +251,6 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
         if (grandchild.isDependant) gcParts.push('Dep.');
         if (grandchild.age != null) gcParts.push(`${grandchild.age}y`);
 
-        const gcMissing: MissingField[] = [];
-        if (grandchild.isDependant && grandchild.age === null) gcMissing.push({ field: 'age', placeholder: 'Age?' });
-
         nodes.push({
           id: grandchild.id,
           type: 'familyMemberNode',
@@ -283,7 +260,6 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
             sublabel: gcParts.join(', ') || grandchild.relationship,
             nodeType: 'familyMember',
             familyRelationship: grandchild.relationship,
-            missingFields: gcMissing.length > 0 ? gcMissing : undefined,
             side: 'right',
             raw: grandchild,
           },
@@ -300,9 +276,6 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
   // LEFT SIDE — entities + their assets/liabilities
   for (const entity of plan.entities) {
     const isTrustLike = entity.type === 'trust' || entity.type === 'smsf';
-    const entityMissing: MissingField[] = [];
-    if (isTrustLike && !entity.trusteeName) entityMissing.push({ field: 'trusteeName', placeholder: 'Trustee?' });
-    if (!entity.role) entityMissing.push({ field: 'role', placeholder: 'Role?' });
 
     // For trusts/SMSFs with a trustee, sublabel becomes "Trustee ATF" — entity name is the trust name
     const sublabel = isTrustLike && entity.trusteeName
@@ -319,7 +292,6 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
         nodeType: 'entity',
         entityType: entity.type,
         trusteeName: entity.trusteeName,
-        missingFields: entityMissing.length > 0 ? entityMissing : undefined,
         side: 'left',
         raw: entity,
       },
@@ -328,6 +300,7 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
       id: `${familyId}-${entity.id}`,
       source: familyId,
       target: entity.id,
+      sourceHandle: 'left',
     });
 
     for (const asset of entity.assets) {
@@ -348,9 +321,6 @@ function addAssetNode(
   parentId: string,
   side: Side,
 ) {
-  const assetMissing: MissingField[] = [];
-  if (asset.value === null) assetMissing.push({ field: 'value', placeholder: 'Value?' });
-
   nodes.push({
     id: asset.id,
     type: 'assetNode',
@@ -361,7 +331,6 @@ function addAssetNode(
       value: asset.value,
       nodeType: 'asset',
       assetType: asset.type,
-      missingFields: assetMissing.length > 0 ? assetMissing : undefined,
       side,
       raw: asset,
     },
@@ -380,9 +349,6 @@ function addLiabilityNode(
   parentId: string,
   side: Side,
 ) {
-  const liabilityMissing: MissingField[] = [];
-  if (liability.amount === null) liabilityMissing.push({ field: 'amount', placeholder: 'Amount?' });
-
   nodes.push({
     id: liability.id,
     type: 'liabilityNode',
@@ -393,7 +359,6 @@ function addLiabilityNode(
       value: liability.amount,
       nodeType: 'liability',
       liabilityType: liability.type,
-      missingFields: liabilityMissing.length > 0 ? liabilityMissing : undefined,
       side,
       raw: liability,
     },

@@ -1,4 +1,4 @@
-import { useState, useMemo, type RefObject } from 'react';
+import { useState, useMemo, useCallback, type RefObject } from 'react';
 import type { Edge } from '@xyflow/react';
 import type { FinancialPlan, DataGap } from 'shared/types';
 import { MindMap, type MindMapHandle } from './mindmap/MindMap';
@@ -45,27 +45,26 @@ export function Dashboard({
   // The most recently selected node drives the detail panel
   const primaryNodeId = selectedNodeIds.size > 0 ? [...selectedNodeIds].pop()! : null;
 
-  const handleSelectNode = (id: string | null, additive: boolean) => {
+  const handleSelectNode = useCallback((id: string | null, additive: boolean) => {
     onSelectNode(id, additive);
     if (id) {
       setRightPanelOpen(true);
-      if (showGaps) onClearHighlight();
-      setShowGaps(false);
+      setShowGaps((prev) => { if (prev) onClearHighlight(); return false; });
     }
-  };
+  }, [onSelectNode, onClearHighlight]);
 
-  const closeRightPanel = () => {
+  const closeRightPanel = useCallback(() => {
     setRightPanelOpen(false);
     setShowGaps(false);
     onSelectNode(null, false);
     onClearHighlight();
-  };
+  }, [onSelectNode, onClearHighlight]);
 
-  const openGaps = () => {
+  const openGaps = useCallback(() => {
     setShowGaps(true);
     setRightPanelOpen(true);
     onSelectNode(null, false);
-  };
+  }, [onSelectNode]);
 
   const rightPanelVisible = rightPanelOpen && (primaryNodeId || showGaps);
 
@@ -86,7 +85,6 @@ export function Dashboard({
               userLinks={userLinks}
               onAddLink={onAddLink}
               onRemoveLink={onRemoveLink}
-              onUpdateField={onUpdateField}
             />
           </div>
 

@@ -140,11 +140,13 @@ export function usePdfExport() {
         // Ensure container is always restored even if capture fails
         if (mapElement) {
           mapElement.removeAttribute('data-pdf-light');
-          // Reset any leftover off-screen positioning
-          if (mapElement.style.top === '-9999px') {
+          // If styles still show the capture sizing, restore to normal
+          if (mapElement.style.zIndex === '99999') {
             mapElement.style.cssText = '';
           }
         }
+        // Remove cover overlay if still present
+        document.querySelector('[style*="z-index: 99998"]')?.remove();
       }
     },
     [],

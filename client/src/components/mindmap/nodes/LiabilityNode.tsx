@@ -1,16 +1,17 @@
+import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeData } from '../../../utils/transformToGraph';
-import { InlineEditSlot } from './InlineEditSlot';
 
-export function LiabilityNode({ id, data }: { id: string; data: NodeData }) {
+export const LiabilityNode = memo(function LiabilityNode({ data }: { data: NodeData }) {
   const isLeft = data.side === 'left';
 
   return (
     <div
       className={`
         cursor-pointer px-3 py-2 rounded-lg bg-red-500/20 backdrop-blur border border-red-400/40
-        text-red-200 min-w-[140px] text-sm
+        text-red-200 w-[230px] text-sm
         hover:bg-red-500/30 transition-colors
+        ${isLeft ? 'text-right' : 'text-left'}
       `}
     >
       <Handle
@@ -20,9 +21,6 @@ export function LiabilityNode({ id, data }: { id: string; data: NodeData }) {
       />
       <div className="font-medium">{data.label}</div>
       {data.sublabel && <div className="text-xs text-red-300/70 mt-0.5">{data.sublabel}</div>}
-      {data.missingFields?.map((mf) => (
-        <InlineEditSlot key={mf.field} nodeId={id} field={mf.field} placeholder={mf.placeholder} />
-      ))}
       <Handle
         type="source"
         position={isLeft ? Position.Left : Position.Right}
@@ -30,4 +28,4 @@ export function LiabilityNode({ id, data }: { id: string; data: NodeData }) {
       />
     </div>
   );
-}
+});

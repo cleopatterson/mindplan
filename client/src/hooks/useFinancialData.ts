@@ -21,13 +21,17 @@ export function useFinancialData() {
       const formData = new FormData();
       formData.append('file', file);
 
+      console.time('⏱ [client] Total upload→render');
+      console.time('⏱ [client] Fetch /api/parse');
       const res = await fetch('/api/parse', { method: 'POST', body: formData });
       const json: ParseResponse = await res.json();
+      console.timeEnd('⏱ [client] Fetch /api/parse');
 
       if (!json.success || !json.data) {
         throw new Error(json.error || 'Failed to parse document');
       }
 
+      console.log(`⏱ [client] Response payload: ${JSON.stringify(json.data).length} chars`);
       setData(json.data);
       setAppState('dashboard');
     } catch (err) {
@@ -99,20 +103,23 @@ export function useFinancialData() {
   const resolveGap = useCallback((gapIndex: number, value?: string) => {
     setData((prev) => {
       if (!prev) return prev;
-      const updated = structuredClone(prev);
-      const gap = updated.dataGaps[gapIndex];
+      const gap = prev.dataGaps[gapIndex];
       if (!gap) return prev;
+
+      // Start with gap removal (targeted — only clone the dataGaps array)
+      let updated: FinancialPlan = {
+        ...prev,
+        dataGaps: prev.dataGaps.filter((_, i) => i !== gapIndex),
+      };
 
       // Try to update the actual field if a numeric value was provided
       if (value && gap.field) {
         const numVal = parseFloat(value.replace(/[,$]/g, ''));
         if (!isNaN(numVal)) {
-          applyGapValue(updated, gap.entityId, gap.field, numVal);
+          updated = applyGapValue(updated, gap.entityId, gap.field, numVal);
         }
       }
 
-      // Remove the gap
-      updated.dataGaps.splice(gapIndex, 1);
       return updated;
     });
   }, []);
@@ -121,53 +128,90 @@ export function useFinancialData() {
   const updateNodeField = useCallback((nodeId: string, field: string, value: string) => {
     setData((prev) => {
       if (!prev) return prev;
-      const updated = structuredClone(prev);
 
-      // Try clients
-      for (const client of updated.clients) {
-        if (client.id === nodeId) {
-          if (field === 'name') client.name = value;
-          else if (field === 'age') client.age = value ? parseInt(value.replace(/[,$]/g, '')) : null;
-          else if (field === 'occupation') client.occupation = value || null;
-          else if (field === 'income') client.income = value ? parseFloat(value.replace(/[,$]/g, '')) : null;
-          else if (field === 'superBalance') client.superBalance = value ? parseFloat(value.replace(/[,$]/g, '')) : null;
-          return updated;
+      // Helper to apply a field update to a client
+      const updateClient = (c: typeof prev.clients[0]) => {
+        if (field === 'name') return { ...c, name: value };
+        if (field === 'age') return { ...c, age: value ? parseInt(value.replace(/[,$]/g, '')) : null };
+        if (field === 'occupation') return { ...c, occupation: value || null };
+        if (field === 'income') return { ...c, income: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
+        if (field === 'superBalance') return { ...c, superBalance: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
+        return c;
+      };
+
+      // Helper to apply a field update to an entity
+      const updateEntity = (e: typeof prev.entities[0]) => {
+        if (field === 'name') return { ...e, name: value };
+        if (field === 'role') return { ...e, role: value || null };
+        if (field === 'trusteeName') return { ...e, trusteeName: value || null };
+        if (field === 'trusteeType') return { ...e, trusteeType: (value === 'individual' || value === 'corporate') ? value as 'individual' | 'corporate' : null };
+        return e;
+      };
+
+      // Helper to apply a field update to an asset
+      const updateAsset = (a: typeof prev.personalAssets[0]) => {
+        if (field === 'name') return { ...a, name: value };
+        if (field === 'value') return { ...a, value: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
+        if (field === 'details') return { ...a, details: value || null };
+        return a;
+      };
+
+      // Helper to apply a field update to a liability
+      const updateLiability = (l: typeof prev.personalLiabilities[0]) => {
+        if (field === 'name') return { ...l, name: value };
+        if (field === 'amount') return { ...l, amount: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
+        if (field === 'interestRate') return { ...l, interestRate: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
+        if (field === 'details') return { ...l, details: value || null };
+        return l;
+      };
+
+      // Try clients — only clone the matched client
+      const clientIdx = prev.clients.findIndex((c) => c.id === nodeId);
+      if (clientIdx !== -1) {
+        const clients = prev.clients.map((c, i) => i === clientIdx ? updateClient(c) : c);
+        return { ...prev, clients };
+      }
+
+      // Try entities (entity-level fields only)
+      const entityIdx = prev.entities.findIndex((e) => e.id === nodeId);
+      if (entityIdx !== -1) {
+        const entities = prev.entities.map((e, i) => i === entityIdx ? updateEntity(e) : e);
+        return { ...prev, entities };
+      }
+
+      // Try personal assets
+      const personalAssetIdx = prev.personalAssets.findIndex((a) => a.id === nodeId);
+      if (personalAssetIdx !== -1) {
+        const personalAssets = prev.personalAssets.map((a, i) => i === personalAssetIdx ? updateAsset(a) : a);
+        return { ...prev, personalAssets };
+      }
+
+      // Try entity-owned assets
+      for (let ei = 0; ei < prev.entities.length; ei++) {
+        const assetIdx = prev.entities[ei].assets.findIndex((a) => a.id === nodeId);
+        if (assetIdx !== -1) {
+          const entities = prev.entities.map((e, i) =>
+            i === ei ? { ...e, assets: e.assets.map((a, j) => j === assetIdx ? updateAsset(a) : a) } : e
+          );
+          return { ...prev, entities };
         }
       }
 
-      // Try entities
-      for (const entity of updated.entities) {
-        if (entity.id === nodeId) {
-          if (field === 'name') entity.name = value;
-          else if (field === 'role') entity.role = value || null;
-          else if (field === 'trusteeName') entity.trusteeName = value || null;
-          else if (field === 'trusteeType') entity.trusteeType = (value === 'individual' || value === 'corporate') ? value : null;
-          return updated;
-        }
+      // Try personal liabilities
+      const personalLiabilityIdx = prev.personalLiabilities.findIndex((l) => l.id === nodeId);
+      if (personalLiabilityIdx !== -1) {
+        const personalLiabilities = prev.personalLiabilities.map((l, i) => i === personalLiabilityIdx ? updateLiability(l) : l);
+        return { ...prev, personalLiabilities };
       }
 
-      // Try assets (personal + entity-owned) — search without flattening
-      for (const assets of [updated.personalAssets, ...updated.entities.map((e) => e.assets)]) {
-        for (const asset of assets) {
-          if (asset.id === nodeId) {
-            if (field === 'name') asset.name = value;
-            else if (field === 'value') asset.value = value ? parseFloat(value.replace(/[,$]/g, '')) : null;
-            else if (field === 'details') asset.details = value || null;
-            return updated;
-          }
-        }
-      }
-
-      // Try liabilities (personal + entity-owned) — search without flattening
-      for (const liabilities of [updated.personalLiabilities, ...updated.entities.map((e) => e.liabilities)]) {
-        for (const liability of liabilities) {
-          if (liability.id === nodeId) {
-            if (field === 'name') liability.name = value;
-            else if (field === 'amount') liability.amount = value ? parseFloat(value.replace(/[,$]/g, '')) : null;
-            else if (field === 'interestRate') liability.interestRate = value ? parseFloat(value.replace(/[,$]/g, '')) : null;
-            else if (field === 'details') liability.details = value || null;
-            return updated;
-          }
+      // Try entity-owned liabilities
+      for (let ei = 0; ei < prev.entities.length; ei++) {
+        const liabilityIdx = prev.entities[ei].liabilities.findIndex((l) => l.id === nodeId);
+        if (liabilityIdx !== -1) {
+          const entities = prev.entities.map((e, i) =>
+            i === ei ? { ...e, liabilities: e.liabilities.map((l, j) => j === liabilityIdx ? updateLiability(l) : l) } : e
+          );
+          return { ...prev, entities };
         }
       }
 
@@ -185,30 +229,44 @@ export function useFinancialData() {
   };
 }
 
-/** Apply a resolved value to the matching object in the plan */
-function applyGapValue(plan: FinancialPlan, entityId: string | null, field: string, value: number) {
+/** Apply a resolved value to the matching object in the plan (immutable) */
+function applyGapValue(plan: FinancialPlan, entityId: string | null, field: string, value: number): FinancialPlan {
   // Client-level fields
   if (!entityId) {
-    for (const client of plan.clients) {
-      if (field === 'age' && client.age === null) { client.age = value; return; }
-      if (field === 'income' && client.income === null) { client.income = value; return; }
-      if (field === 'superBalance' && client.superBalance === null) { client.superBalance = value; return; }
+    const clientIdx = plan.clients.findIndex(
+      (c) => (field === 'age' && c.age === null) || (field === 'income' && c.income === null) || (field === 'superBalance' && c.superBalance === null)
+    );
+    if (clientIdx !== -1) {
+      const c = plan.clients[clientIdx];
+      const updated = field === 'age' ? { ...c, age: value }
+        : field === 'income' ? { ...c, income: value }
+        : { ...c, superBalance: value };
+      return { ...plan, clients: plan.clients.map((cl, i) => i === clientIdx ? updated : cl) };
     }
     // Personal asset values
-    for (const asset of plan.personalAssets) {
-      if (field === 'value' && asset.value === null) { asset.value = value; return; }
+    const assetIdx = plan.personalAssets.findIndex((a) => field === 'value' && a.value === null);
+    if (assetIdx !== -1) {
+      return { ...plan, personalAssets: plan.personalAssets.map((a, i) => i === assetIdx ? { ...a, value } : a) };
     }
-    return;
+    return plan;
   }
 
   // Entity-level fields
-  const entity = plan.entities.find((e) => e.id === entityId);
-  if (!entity) return;
+  const entityIdx = plan.entities.findIndex((e) => e.id === entityId);
+  if (entityIdx === -1) return plan;
+  const entity = plan.entities[entityIdx];
 
-  for (const asset of entity.assets) {
-    if (field === 'value' && asset.value === null) { asset.value = value; return; }
+  const assetIdx = entity.assets.findIndex((a) => field === 'value' && a.value === null);
+  if (assetIdx !== -1) {
+    const updatedEntity = { ...entity, assets: entity.assets.map((a, i) => i === assetIdx ? { ...a, value } : a) };
+    return { ...plan, entities: plan.entities.map((e, i) => i === entityIdx ? updatedEntity : e) };
   }
-  for (const liability of entity.liabilities) {
-    if (field === 'amount' && liability.amount === null) { liability.amount = value; return; }
+
+  const liabilityIdx = entity.liabilities.findIndex((l) => field === 'amount' && l.amount === null);
+  if (liabilityIdx !== -1) {
+    const updatedEntity = { ...entity, liabilities: entity.liabilities.map((l, i) => i === liabilityIdx ? { ...l, amount: value } : l) };
+    return { ...plan, entities: plan.entities.map((e, i) => i === entityIdx ? updatedEntity : e) };
   }
+
+  return plan;
 }
