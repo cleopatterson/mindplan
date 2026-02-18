@@ -34,7 +34,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-[#0f0f1a]">
+    <div className="h-screen flex flex-col overflow-hidden bg-[#0f0f1a] select-none">
       <header className="shrink-0 border-b border-white/10 px-5 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3 cursor-pointer group" onClick={reset} title="Back to home">
           <LogoFull size="sm" />

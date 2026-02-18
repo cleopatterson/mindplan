@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 
-const TOTAL_DURATION = 30000; // estimated 30s total
+// Time constant for exponential decay — controls how fast progress decelerates.
+// At 15s ≈ 60%, at 30s ≈ 82%, at 60s ≈ 93%, at 90s ≈ 94.8% — never stalls.
+const TAU = 15000;
 
 const quips = [
   'Untangling trust structures...',
@@ -19,15 +21,14 @@ export function ParseProgress() {
   const [quipIndex, setQuipIndex] = useState(() => Math.floor(Math.random() * quips.length));
   const startTime = useRef(Date.now());
 
-  // Progress toward ~95% with ease-out deceleration
+  // Asymptotic progress — always creeping, never stalling
   useEffect(() => {
     const id = setInterval(() => {
       const elapsed = Date.now() - startTime.current;
-      const linear = Math.min(elapsed / TOTAL_DURATION, 1);
-      // Ease-out: decelerates as it approaches 95%
-      const eased = 1 - Math.pow(1 - linear, 2.5);
-      setProgress(Math.min(eased * 95, 95));
-    }, 100);
+      // Exponential decay: approaches 95% but never arrives
+      const pct = 95 * (1 - Math.exp(-elapsed / TAU));
+      setProgress(pct);
+    }, 200);
     return () => clearInterval(id);
   }, []);
 

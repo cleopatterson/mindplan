@@ -82,7 +82,8 @@ export function useGraphLayout(nodes: Node<NodeData>[], edges: Edge[]) {
     const leftRankMaxW = rankMaxWidths(leftNodes, leftPositions);
     const rightRankMaxW = rankMaxWidths(rightNodes, rightPositions);
 
-    const positioned = nodes.map((node) => {
+    // First pass: compute raw positions anchored at family node
+    const rawPositioned = nodes.map((node) => {
       const w = NODE_WIDTH[node.data.nodeType];
       const h = NODE_HEIGHT[node.data.nodeType];
 
@@ -97,7 +98,6 @@ export function useGraphLayout(nodes: Node<NodeData>[], edges: Edge[]) {
           return {
             ...node,
             position: {
-              // Left-align: shift left so left edges align within each rank
               x: pos.x - familyRight.x - maxW / 2,
               y: pos.y - familyRight.y - h / 2,
             },
@@ -112,7 +112,6 @@ export function useGraphLayout(nodes: Node<NodeData>[], edges: Edge[]) {
           return {
             ...node,
             position: {
-              // Right-align: shift right so right edges align within each rank
               x: pos.x - familyLeft.x + maxW / 2 - w,
               y: pos.y - familyLeft.y - h / 2,
             },
@@ -120,6 +119,27 @@ export function useGraphLayout(nodes: Node<NodeData>[], edges: Edge[]) {
         }
       }
 
+      return node;
+    });
+
+    // Second pass: align the top edges of both sides so the tree looks balanced
+    let leftMinY = Infinity;
+    let rightMinY = Infinity;
+    for (const node of rawPositioned) {
+      if (node.data.side === 'left') leftMinY = Math.min(leftMinY, node.position.y);
+      if (node.data.side === 'right') rightMinY = Math.min(rightMinY, node.position.y);
+    }
+    const targetTopY = Math.min(leftMinY, rightMinY);
+    const leftShift = leftMinY === Infinity ? 0 : targetTopY - leftMinY;
+    const rightShift = rightMinY === Infinity ? 0 : targetTopY - rightMinY;
+
+    const positioned = rawPositioned.map((node) => {
+      if (node.data.side === 'left' && leftShift !== 0) {
+        return { ...node, position: { x: node.position.x, y: node.position.y + leftShift } };
+      }
+      if (node.data.side === 'right' && rightShift !== 0) {
+        return { ...node, position: { x: node.position.x, y: node.position.y + rightShift } };
+      }
       return node;
     });
 

@@ -99,24 +99,24 @@ export function useFinancialData() {
     setHighlightedNodeIds(new Set());
   }, []);
 
-  /** Resolve a gap — remove it from the list and optionally update a numeric field */
+  /** Resolve a gap — remove it from the list and optionally update the field value */
   const resolveGap = useCallback((gapIndex: number, value?: string) => {
     setData((prev) => {
       if (!prev) return prev;
       const gap = prev.dataGaps[gapIndex];
       if (!gap) return prev;
 
-      // Start with gap removal (targeted — only clone the dataGaps array)
+      // Remove the gap
       let updated: FinancialPlan = {
         ...prev,
         dataGaps: prev.dataGaps.filter((_, i) => i !== gapIndex),
       };
 
-      // Try to update the actual field if a numeric value was provided
-      if (value && gap.field) {
+      // Apply the value if provided, using nodeId for precise targeting
+      if (value && gap.nodeId && gap.field) {
         const numVal = parseFloat(value.replace(/[,$]/g, ''));
         if (!isNaN(numVal)) {
-          updated = applyGapValue(updated, gap.entityId, gap.field, numVal);
+          updated = applyGapValue(updated, gap.nodeId, gap.field, numVal);
         }
       }
 
@@ -229,43 +229,60 @@ export function useFinancialData() {
   };
 }
 
-/** Apply a resolved value to the matching object in the plan (immutable) */
-function applyGapValue(plan: FinancialPlan, entityId: string | null, field: string, value: number): FinancialPlan {
-  // Client-level fields
-  if (!entityId) {
-    const clientIdx = plan.clients.findIndex(
-      (c) => (field === 'age' && c.age === null) || (field === 'income' && c.income === null) || (field === 'superBalance' && c.superBalance === null)
-    );
-    if (clientIdx !== -1) {
-      const c = plan.clients[clientIdx];
-      const updated = field === 'age' ? { ...c, age: value }
-        : field === 'income' ? { ...c, income: value }
-        : { ...c, superBalance: value };
-      return { ...plan, clients: plan.clients.map((cl, i) => i === clientIdx ? updated : cl) };
-    }
-    // Personal asset values
-    const assetIdx = plan.personalAssets.findIndex((a) => field === 'value' && a.value === null);
-    if (assetIdx !== -1) {
-      return { ...plan, personalAssets: plan.personalAssets.map((a, i) => i === assetIdx ? { ...a, value } : a) };
-    }
-    return plan;
+/** Apply a resolved value to the exact node by ID (immutable) */
+function applyGapValue(plan: FinancialPlan, nodeId: string, field: string, value: number): FinancialPlan {
+  // Clients
+  const ci = plan.clients.findIndex((c) => c.id === nodeId);
+  if (ci !== -1) {
+    const c = plan.clients[ci];
+    const updated = field === 'age' ? { ...c, age: value }
+      : field === 'income' ? { ...c, income: value }
+      : field === 'superBalance' ? { ...c, superBalance: value }
+      : c;
+    return { ...plan, clients: plan.clients.map((cl, i) => i === ci ? updated : cl) };
   }
 
-  // Entity-level fields
-  const entityIdx = plan.entities.findIndex((e) => e.id === entityId);
-  if (entityIdx === -1) return plan;
-  const entity = plan.entities[entityIdx];
-
-  const assetIdx = entity.assets.findIndex((a) => field === 'value' && a.value === null);
-  if (assetIdx !== -1) {
-    const updatedEntity = { ...entity, assets: entity.assets.map((a, i) => i === assetIdx ? { ...a, value } : a) };
-    return { ...plan, entities: plan.entities.map((e, i) => i === entityIdx ? updatedEntity : e) };
+  // Family members
+  for (let mi = 0; mi < (plan.familyMembers ?? []).length; mi++) {
+    const member = plan.familyMembers[mi];
+    if (member.id === nodeId && field === 'age') {
+      const members = plan.familyMembers.map((m, i) => i === mi ? { ...m, age: value } : m);
+      return { ...plan, familyMembers: members };
+    }
+    for (let gi = 0; gi < (member.children ?? []).length; gi++) {
+      if (member.children[gi].id === nodeId && field === 'age') {
+        const children = member.children.map((gc, j) => j === gi ? { ...gc, age: value } : gc);
+        const members = plan.familyMembers.map((m, i) => i === mi ? { ...m, children } : m);
+        return { ...plan, familyMembers: members };
+      }
+    }
   }
 
-  const liabilityIdx = entity.liabilities.findIndex((l) => field === 'amount' && l.amount === null);
-  if (liabilityIdx !== -1) {
-    const updatedEntity = { ...entity, liabilities: entity.liabilities.map((l, i) => i === liabilityIdx ? { ...l, amount: value } : l) };
-    return { ...plan, entities: plan.entities.map((e, i) => i === entityIdx ? updatedEntity : e) };
+  // Personal assets
+  const pai = plan.personalAssets.findIndex((a) => a.id === nodeId);
+  if (pai !== -1) {
+    return { ...plan, personalAssets: plan.personalAssets.map((a, i) => i === pai ? { ...a, value } : a) };
+  }
+
+  // Personal liabilities
+  const pli = plan.personalLiabilities.findIndex((l) => l.id === nodeId);
+  if (pli !== -1) {
+    return { ...plan, personalLiabilities: plan.personalLiabilities.map((l, i) => i === pli ? { ...l, amount: value } : l) };
+  }
+
+  // Entity assets and liabilities
+  for (let ei = 0; ei < plan.entities.length; ei++) {
+    const entity = plan.entities[ei];
+    const ai = entity.assets.findIndex((a) => a.id === nodeId);
+    if (ai !== -1) {
+      const updated = { ...entity, assets: entity.assets.map((a, i) => i === ai ? { ...a, value } : a) };
+      return { ...plan, entities: plan.entities.map((e, i) => i === ei ? updated : e) };
+    }
+    const li = entity.liabilities.findIndex((l) => l.id === nodeId);
+    if (li !== -1) {
+      const updated = { ...entity, liabilities: entity.liabilities.map((l, i) => i === li ? { ...l, amount: value } : l) };
+      return { ...plan, entities: plan.entities.map((e, i) => i === ei ? updated : e) };
+    }
   }
 
   return plan;

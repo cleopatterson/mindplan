@@ -3,6 +3,7 @@ import multer from 'multer';
 import { extractText } from '../services/extractor.js';
 import { parseWithClaude } from '../services/claude.js';
 import { enrichGaps } from '../services/validator.js';
+import { anonymize } from '../services/anonymize.js';
 import type { ParseResponse } from 'shared/types';
 
 const upload = multer({
@@ -57,6 +58,9 @@ parseRouter.post('/parse', upload.single('file'), async (req, res) => {
     const t3 = performance.now();
     enrichGaps(plan);
     console.log(`⏱ [parse] Step 3 — Gap enrichment: ${(performance.now() - t3).toFixed(0)}ms (${plan.dataGaps.length} gaps)`);
+
+    // Step 4: Anonymize — strip surnames for privacy
+    anonymize(plan);
 
     console.log(`⏱ [parse] Total request: ${(performance.now() - t0).toFixed(0)}ms`);
 

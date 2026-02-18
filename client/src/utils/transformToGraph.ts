@@ -24,11 +24,13 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
   const nodes: Node<NodeData>[] = [];
   const edges: Edge[] = [];
 
-  // Derive a family name from clients
+  // Derive a family label from clients
   const surnames = plan.clients.map((c) => c.name.split(' ').pop()).filter(Boolean);
   const uniqueSurnames = [...new Set(surnames)];
-  const familyLabel =
-    uniqueSurnames.length === 1
+  const isSingleWordNames = plan.clients.every((c) => !c.name.includes(' '));
+  const familyLabel = isSingleWordNames
+    ? plan.clients.map((c) => c.name).join(' & ')
+    : uniqueSurnames.length === 1
       ? `${uniqueSurnames[0]} Family`
       : plan.clients.map((c) => c.name.split(' ')[0]).join(' & ');
 

@@ -40,21 +40,34 @@ export function entityEquity(entity: Entity): number {
   return sumValues(entity.assets) - sumAmounts(entity.liabilities);
 }
 
-/** Asset allocation by type as { type: percentage } */
+/** Map raw asset types to display-friendly grouped categories */
+const ASSET_GROUP: Record<string, string> = {
+  property: 'Property',
+  shares: 'Shares',
+  managed_fund: 'Shares',   // managed funds grouped with shares
+  cash: 'Cash',
+  super: 'Super',
+  insurance: 'Insurance',
+  vehicle: 'Vehicle',
+  other: 'Other',
+};
+
+/** Asset allocation by grouped category as { label: percentage }, sorted descending */
 export function assetAllocation(plan: FinancialPlan): Record<string, number> {
-  const byType: Record<string, number> = {};
+  const byGroup: Record<string, number> = {};
   for (const asset of flatAssets(plan)) {
-    byType[asset.type] = (byType[asset.type] || 0) + (asset.value || 0);
+    const group = ASSET_GROUP[asset.type] ?? 'Other';
+    byGroup[group] = (byGroup[group] || 0) + (asset.value || 0);
   }
 
-  const total = Object.values(byType).reduce((a, b) => a + b, 0);
-  if (total === 0) return byType;
+  const total = Object.values(byGroup).reduce((a, b) => a + b, 0);
+  if (total === 0) return byGroup;
 
-  const percentages: Record<string, number> = {};
-  for (const [type, value] of Object.entries(byType)) {
-    percentages[type] = Math.round((value / total) * 100);
-  }
-  return percentages;
+  const entries = Object.entries(byGroup)
+    .map(([group, value]) => [group, Math.round((value / total) * 100)] as const)
+    .sort((a, b) => b[1] - a[1]);
+
+  return Object.fromEntries(entries);
 }
 
 /** Liquid (cash, shares, managed_fund) vs illiquid percentage */
