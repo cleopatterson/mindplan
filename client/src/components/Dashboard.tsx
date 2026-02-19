@@ -1,11 +1,15 @@
 import { useState, useMemo, useCallback, type RefObject } from 'react';
 import type { Edge } from '@xyflow/react';
-import type { FinancialPlan, DataGap } from 'shared/types';
+import type { FinancialPlan, DataGap, Insight } from 'shared/types';
 import { MindMap, type MindMapHandle } from './mindmap/MindMap';
 import { DetailPanel } from './detail/DetailPanel';
 import { SummaryBar } from './summary/SummaryBar';
+import { SummaryDetailPanel } from './summary/SummaryDetailPanel';
 import { GapsChecklist } from './gaps/GapsChecklist';
+import { InsightsBadge } from './insights/InsightsBadge';
+import { InsightsPanel } from './insights/InsightsPanel';
 import { X, AlertTriangle } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface DashboardProps {
   data: FinancialPlan;
@@ -23,6 +27,9 @@ interface DashboardProps {
   userLinks: Edge[];
   onAddLink: (edge: Edge) => void;
   onRemoveLink: (edgeId: string) => void;
+  insights: Insight[] | null;
+  insightsLoading: boolean;
+  onDismissInsight: (index: number) => void;
 }
 
 export function Dashboard({
@@ -31,9 +38,14 @@ export function Dashboard({
   hoveredNodeIds, onHoverHighlight,
   onResolveGap, onUpdateField,
   userLinks, onAddLink, onRemoveLink,
+  insights, insightsLoading, onDismissInsight,
 }: DashboardProps) {
+  const theme = useTheme();
+  const isDark = theme === 'dark';
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [showGaps, setShowGaps] = useState(false);
+  const [showInsights, setShowInsights] = useState(false);
+  const [activeCard, setActiveCard] = useState<string | null>(null);
 
   // Enrich gaps with nodeIds (fallback for data parsed before nodeId was added)
   const enrichedGaps = useMemo(() =>
@@ -50,31 +62,70 @@ export function Dashboard({
     if (id) {
       setRightPanelOpen(true);
       setShowGaps((prev) => { if (prev) onClearHighlight(); return false; });
+      setShowInsights(false);
+      setActiveCard(null);
     }
   }, [onSelectNode, onClearHighlight]);
+
+  const handleCardClick = useCallback((id: string | null, nodeIds: string[]) => {
+    if (id) {
+      setActiveCard(id);
+      setRightPanelOpen(true);
+      setShowGaps(false);
+      setShowInsights(false);
+      onSelectNode(null, false);
+      onToggleHighlight(nodeIds);
+    } else {
+      setActiveCard(null);
+      onToggleHighlight([]);
+    }
+  }, [onSelectNode, onToggleHighlight]);
 
   const closeRightPanel = useCallback(() => {
     setRightPanelOpen(false);
     setShowGaps(false);
+    setShowInsights(false);
+    setActiveCard(null);
     onSelectNode(null, false);
     onClearHighlight();
   }, [onSelectNode, onClearHighlight]);
 
   const openGaps = useCallback(() => {
     setShowGaps(true);
+    setShowInsights(false);
     setRightPanelOpen(true);
+    setActiveCard(null);
     onSelectNode(null, false);
   }, [onSelectNode]);
 
-  const rightPanelVisible = rightPanelOpen && (primaryNodeId || showGaps);
+  const openInsights = useCallback(() => {
+    setShowInsights(true);
+    setShowGaps(false);
+    setRightPanelOpen(true);
+    setActiveCard(null);
+    onSelectNode(null, false);
+    onClearHighlight();
+  }, [onSelectNode, onClearHighlight]);
+
+  const handleInsightFocus = useCallback((nodeIds: string[]) => {
+    if (nodeIds.length > 0) {
+      onToggleHighlight(nodeIds);
+      mindMapRef.current?.focusNode(nodeIds[0]);
+    }
+  }, [onToggleHighlight, mindMapRef]);
+
+  const rightPanelVisible = rightPanelOpen && (primaryNodeId || showGaps || showInsights || activeCard);
+
+  // Panel header title
+  const panelTitle = showInsights ? 'AI Insights' : showGaps ? 'Information Needed' : activeCard ? 'Summary' : 'Details';
 
   return (
-    <div className="w-full h-full flex">
+    <div className="w-full h-full flex" data-theme={theme}>
       {/* Left column: map + summary bar stacked vertically */}
       <div className="flex-1 min-w-0 flex flex-col transition-all duration-300 ease-out">
         {/* Map — takes remaining height */}
         <div className="flex-1 min-h-0 relative">
-          <div ref={mapRef} className="absolute inset-0 bg-[#1a1a2e]">
+          <div ref={mapRef} className={`absolute inset-0 ${isDark ? 'bg-[#1a1a2e]' : 'bg-slate-100'}`}>
             <MindMap
               ref={mindMapRef}
               data={data}
@@ -88,51 +139,81 @@ export function Dashboard({
             />
           </div>
 
-          {/* Gaps badge — top left floating over map */}
-          {hasGaps && !showGaps && (
-            <button
-              onClick={openGaps}
-              className="cursor-pointer absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-2
-                bg-amber-500/15 backdrop-blur-md border border-amber-500/30 rounded-lg
-                text-amber-300 text-sm font-medium hover:bg-amber-500/25 transition-all"
-            >
-              <AlertTriangle className="w-4 h-4" />
-              {enrichedGaps.length} gaps
-            </button>
-          )}
+          {/* Floating badges — top left over map */}
+          <div className="absolute top-3 left-3 z-20 flex flex-col gap-2">
+            {hasGaps && !showGaps && (
+              <button
+                onClick={openGaps}
+                className="gaps-badge cursor-pointer flex items-center gap-2 px-3 py-2
+                  bg-amber-500/15 backdrop-blur-md border border-amber-500/30 rounded-lg
+                  text-amber-300 text-sm font-medium hover:bg-amber-500/25 transition-all"
+              >
+                <AlertTriangle className="w-4 h-4" />
+                {enrichedGaps.length} gaps
+              </button>
+            )}
+            {(insightsLoading || insights) && (
+              <InsightsBadge
+                insights={insights}
+                loading={insightsLoading}
+                active={showInsights}
+                onClick={openInsights}
+              />
+            )}
+          </div>
+
         </div>
 
         {/* Summary bar — squeezes map height */}
-        <SummaryBar data={data} onToggleHighlight={onToggleHighlight} onHoverHighlight={onHoverHighlight} />
+        <SummaryBar
+          data={data}
+          activeCard={activeCard}
+          onCardClick={handleCardClick}
+          onHoverHighlight={onHoverHighlight}
+        />
       </div>
 
       {/* Right panel — always rendered, width animates between 0 and 384px */}
       <div
         className={`
-          shrink-0 bg-[#0f0f1a] border-l border-white/10 flex flex-col overflow-hidden
+          right-panel shrink-0 border-l flex flex-col overflow-hidden
           transition-[width] duration-300 ease-out
+          ${isDark ? 'bg-[#0f0f1a] border-white/10' : 'bg-white border-gray-200'}
           ${rightPanelVisible ? 'w-96' : 'w-0 border-l-0'}
         `}
       >
         <div className="w-96 h-full flex flex-col">
-          <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-white/10">
-            <h3 className="font-semibold text-white/90 text-sm whitespace-nowrap">
-              {showGaps ? 'Information Needed' : 'Details'}
+          <div className={`panel-header shrink-0 flex items-center justify-between px-5 py-4 border-b ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
+            <h3 className={`panel-title font-semibold text-sm whitespace-nowrap ${isDark ? 'text-white/90' : 'text-gray-900'}`}>
+              {panelTitle}
             </h3>
             <button
               onClick={closeRightPanel}
-              className="cursor-pointer text-white/30 hover:text-white/60 transition-colors"
+              className={`panel-close cursor-pointer transition-colors ${isDark ? 'text-white/30 hover:text-white/60' : 'text-gray-400 hover:text-gray-600'}`}
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
-            {primaryNodeId && !showGaps && (
+          <div className="panel-content flex-1 overflow-y-auto p-5 space-y-4">
+            {primaryNodeId && !showGaps && !activeCard && (
               <DetailPanel
                 data={data}
                 nodeId={primaryNodeId}
                 onUpdateField={onUpdateField}
+              />
+            )}
+            {activeCard && !showGaps && (
+              <SummaryDetailPanel
+                data={data}
+                activeCard={activeCard}
+              />
+            )}
+            {showInsights && insights && (
+              <InsightsPanel
+                insights={insights}
+                onDismiss={onDismissInsight}
+                onFocus={handleInsightFocus}
               />
             )}
             {showGaps && hasGaps && (

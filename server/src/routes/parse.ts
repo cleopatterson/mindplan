@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { extractText } from '../services/extractor.js';
+import { scrubSensitiveData, restoreSurnames } from '../services/scrub.js';
 import { parseWithClaude } from '../services/claude.js';
 import { enrichGaps } from '../services/validator.js';
 import { anonymize } from '../services/anonymize.js';
@@ -49,17 +50,25 @@ parseRouter.post('/parse', upload.single('file'), async (req, res) => {
       return;
     }
 
-    // Step 2: Parse with Claude
+    // Step 2: Scrub sensitive data before sending to API
     const t2 = performance.now();
-    const plan = await parseWithClaude(text);
-    console.log(`⏱ [parse] Step 2 — Claude API: ${(performance.now() - t2).toFixed(0)}ms`);
+    const { text: scrubbedText, surnames } = scrubSensitiveData(text);
+    console.log(`⏱ [parse] Step 2 — Scrub: ${(performance.now() - t2).toFixed(0)}ms (${text.length - scrubbedText.length} chars removed)`);
 
-    // Step 3: Enrich data gaps
+    // Step 3: Parse with Claude (using scrubbed text)
     const t3 = performance.now();
-    enrichGaps(plan);
-    console.log(`⏱ [parse] Step 3 — Gap enrichment: ${(performance.now() - t3).toFixed(0)}ms (${plan.dataGaps.length} gaps)`);
+    const plan = await parseWithClaude(scrubbedText);
+    console.log(`⏱ [parse] Step 3 — Claude API: ${(performance.now() - t3).toFixed(0)}ms`);
 
-    // Step 4: Anonymize — strip surnames for privacy
+    // Step 4: Restore surnames in structured data (before anonymize strips them from person fields)
+    restoreSurnames(plan, surnames);
+
+    // Step 5: Enrich data gaps
+    const t5 = performance.now();
+    enrichGaps(plan);
+    console.log(`⏱ [parse] Step 5 — Gap enrichment: ${(performance.now() - t5).toFixed(0)}ms (${plan.dataGaps.length} gaps)`);
+
+    // Step 6: Anonymize — strip surnames from person-name fields
     anonymize(plan);
 
     console.log(`⏱ [parse] Total request: ${(performance.now() - t0).toFixed(0)}ms`);

@@ -1,0 +1,131 @@
+CLIENT FACT FIND
+Type of Advice Limited Advice
+Prepared for Jim Wall and Peggie Wall
+Prepared as at 16 February 2026
+Prepared by Katie McDonald
+Financial Adviser No. 444059
+Licensee Nexia Perth Financial Solutions Pty Ltd
+Australian Financial Services Licence
+No 482926
+In order for us to provide financial planning advice to you, we need to have a reasonable basis for
+that advice. We have documented the information we have about you in this Fact Find. This
+information is one of the tools we use to establish a basis for the advice we will provide. It is
+therefore important for you to read this information carefully and let us know if there are any
+amendments you wish to make.
+#CLIENT_DOB#,#PARTNER_DOB#
+Nexia Perth Nexia Perth Financial Solutions Pty Ltd
+Level 3, 88 William Street, Perth ABN 54 164 264 331
+GPO Box 2570, Perth 6001 AFSL Number 482926
+Telephone +61 8 9463 2463
+Facsimile +61 8 9463 2499
+
+FACT FIND QUESTIONNAIRE
+About you
+Personal details
+1 January 1945,5 July 1946
+Description Client Partner
+Full name James Arthur Wall Mary Margaret Wall
+Date of birth 1 January 1945 5 July 1946
+Age 81 79
+Occupation Retired Retired
+Jim,1 January 1945
+Jim,1 January 1945
+Relationships
+From Relationship To Notes
+Jim & Peggie Wall stockbroker Ord Minnett Private Wealth Advisor
+Jim & Peggie Wall stockbroker Ord Minnett Tom Nicholson
+Jim & Peggie Wall accountant Allan Hall Accountant
+Goals and objectives
+Goal Detail Timeframe
+Living & Lifestyle
+Living expenses Maintain your current regular living expenditure of $400,000 (indexed to inflation). Ongoing
+Family Support Provide ongoing financial support for Kids and Grand Kids when needed Ongoing
+School Fees - Archie School fees for Archie $20,000 (indexed to inflation). From July 2027 to June 2034
+School Fees - Eric School fees for Eric $40,000 (indexed to inflation). Ongoing to June 2029
+Renovations Fund one-off expenditure of $160,000. Now
+Financial position
+Your income
+No information recorded.
+Entities
+Description Type Directors/trustees Shareholders/beneficiaries
+Jim Wall and Associates Company (Trading) Jim Nicholas
+Wall Family Trust Trust (Discretionary) Wall Famly Pty Ltd Jim & Peggie
+Wall Superannuation Fund SMSF Jim Peggie Katie McDonald Nicholas Wall
+
+Entities
+Description Type Amount
+Jim Wall and Associates
+Cash from Sale of Ohio Property Everyday cash account $140,000
+Default cash a/c Jim Wall and Associates (AUD) Everyday cash account $145,000
+US Cash in AUD Everyday cash account $340,000
+Ord Minnett - Jim & Associate Investment portfolio $134,563
+US Property (AUD) Residential property $1,100,000
+Total $1,859,563
+Wall Family Trust
+Default cash a/c Wall Family Trust Everyday cash account $200,000
+Investment Property Home Loan Investment loan -$1,500,000
+Perth Property Residential property $2,300,000
+Total $1,000,000
+Wall Superannuation Fund
+Macquarie CMA (..2798) Everyday cash account $150
+St George Cash Management Account Everyday cash account $62,000
+BT Investment portfolio $2,205,333
+SMSF Macquarie Investment portfolio $3,315,218
+US direct Share portfolio (in USD) AUD $661,743 Investment portfolio $438,791
+AN3PL - ANZ Capital Notes 9 Listed on ASX $68,829
+NABZZ - National Aust. Bank - Broker Firm Offer And Institutional Offer Listed on ASX $200,000
+Mac Accelerator #1844 Savings $102,697
+SMSF BT cash Savings $70,524
+Total $6,463,542
+Regular expenses
+Description Owner Details Amount
+Living expenses James & Mary Essential living expenditure (Variable) $400,000
+School Fees - Archie James & Mary Essential living expenditure (Variable) $0
+School Fees - Eric James & Mary Discretionary lifestyle expenditure (Variable) $0
+Total $400,000
+One off expenses
+Description Owner Details Amount
+Renovations James & Mary One-off expenditure $160,000
+Total $160,000
+Lifestyle assets
+Description Owner Details Amount
+Milson Point James & Mary Residential home $7,000,000
+Total $7,000,000
+Bank accounts
+Description Owner Details Amount
+Everyday cash a/c James & Mary Everyday cash account $10,000
+Total $10,000
+Financial investments
+No information recorded.
+Investment property
+Description Owner Details Amount
+Holiday Home - Avoca Beach James & Mary Residential property Cost base: $0 Tax deductible depreciation: $0 CGT: 100.0% $4,000,000
+Total $4,000,000
+Shares
+No information recorded.
+Loans
+No information recorded.
+Estate Planning
+Superannuation/pension fund Owner Nomination type Beneficiaries
+Accumulation James Unknown
+Pension James Unknown
+Accumulation Mary Unknown
+Pension Mary Unknown
+Wills, EPA, EPG
+Description Jim Peggie
+Will Yes Yes
+Enduring power of attorney Yes Yes
+Enduring power of guardianship Not recorded Not recorded
+
+RISK PROFILE SUMMARY
+Investment Profile for Jim
+We are currently using a 'SMA - Growth' investor profile and you are you happy to maintain this investor profile.
+Investment Profile for Peggie
+We are currently using a 'SMA - Growth' investor profile and you are you happy to maintain this investor profile.
+Investment Profile for Wall Superannuation Fund
+We are currently using a 'SMA - Growth' investor profile and you are you happy to maintain this investor profile.
+
+CLIENT ACKNOWLEDGEMENT
+James Arthur Wall
+Mary Margaret Wall
+I/We hereby grant Katie McDonald and the representatives of Nexia Perth Financial Solutions the authority to collect my/our Tax File Number(s) for financial planning related matters.

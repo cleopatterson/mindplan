@@ -1,6 +1,15 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
+import { Scale, PiggyBank, Building2, Users } from 'lucide-react';
 import type { NodeData } from '../../../utils/transformToGraph';
+
+const ENTITY_ICONS: Record<string, typeof Scale> = {
+  trust: Scale,
+  smsf: PiggyBank,
+  company: Building2,
+  partnership: Users,
+};
+
 const ENTITY_COLORS: Record<string, { bg: string; shadow: string; handle: string; badge: string }> = {
   trust:       { bg: 'bg-emerald-500/90', shadow: 'shadow-emerald-500/20', handle: '!bg-emerald-300', badge: 'text-emerald-100' },
   smsf:        { bg: 'bg-orange-500/90',  shadow: 'shadow-orange-500/20',  handle: '!bg-orange-300',  badge: 'text-orange-100' },
@@ -11,6 +20,7 @@ const ENTITY_COLORS: Record<string, { bg: string; shadow: string; handle: string
 export const EntityNode = memo(function EntityNode({ data }: { data: NodeData }) {
   const c = ENTITY_COLORS[data.entityType || 'trust'];
   const isTrustLike = data.entityType === 'trust' || data.entityType === 'smsf';
+  const Icon = ENTITY_ICONS[data.entityType || 'trust'] || Scale;
 
   return (
     <div
@@ -25,12 +35,18 @@ export const EntityNode = memo(function EntityNode({ data }: { data: NodeData })
       {isTrustLike && data.trusteeName ? (
         <>
           <div className={`text-[10px] ${c.badge} opacity-80`}>{data.trusteeName}</div>
-          <div className="font-semibold text-sm">ATF {data.label}</div>
+          <div className="flex items-center gap-1.5 justify-end">
+            <div className="font-semibold text-sm">ATF {data.label}</div>
+            <Icon className="w-3.5 h-3.5 text-white/60 shrink-0" />
+          </div>
           <div className={`text-[10px] ${c.badge} mt-0.5 uppercase tracking-wide opacity-60`}>{data.entityType}</div>
         </>
       ) : (
         <>
-          <div className="font-semibold text-sm">{data.label}</div>
+          <div className="flex items-center gap-1.5 justify-end">
+            <div className="font-semibold text-sm">{data.label}</div>
+            <Icon className="w-3.5 h-3.5 text-white/60 shrink-0" />
+          </div>
           {data.sublabel && <div className={`text-xs ${c.badge} mt-0.5`}>{data.sublabel}</div>}
         </>
       )}

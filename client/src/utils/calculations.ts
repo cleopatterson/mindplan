@@ -161,6 +161,105 @@ export function entityNodeIds(plan: FinancialPlan, entityName: string): string[]
   return [entity.id, ...entity.assets.map((a) => a.id), ...entity.liabilities.map((l) => l.id)];
 }
 
+// ── Enriched helpers for summary detail panels ──
+
+export interface AllocationItem { group: string; value: number; pct: number }
+
+/** Asset allocation with dollar amounts and percentages, sorted descending */
+export function assetAllocationDetailed(plan: FinancialPlan): AllocationItem[] {
+  const byGroup: Record<string, number> = {};
+  for (const asset of flatAssets(plan)) {
+    const group = ASSET_GROUP[asset.type] ?? 'Other';
+    byGroup[group] = (byGroup[group] || 0) + (asset.value || 0);
+  }
+  const total = Object.values(byGroup).reduce((a, b) => a + b, 0);
+  if (total === 0) return [];
+  return Object.entries(byGroup)
+    .map(([group, value]) => ({ group, value, pct: Math.round((value / total) * 100) }))
+    .sort((a, b) => b.value - a.value);
+}
+
+export interface LiquidityItem { name: string; value: number; owner: string }
+export interface LiquidityDetailed {
+  liquidTotal: number;
+  illiquidTotal: number;
+  liquidPct: number;
+  illiquidPct: number;
+  liquidAssets: LiquidityItem[];
+  illiquidAssets: LiquidityItem[];
+}
+
+/** Liquidity breakdown with per-asset lists and owner names */
+export function liquidityBreakdownDetailed(plan: FinancialPlan): LiquidityDetailed {
+  const liquidTypes = new Set(['cash', 'shares', 'managed_fund']);
+  const liquidAssets: LiquidityItem[] = [];
+  const illiquidAssets: LiquidityItem[] = [];
+
+  // Personal assets
+  for (const a of plan.personalAssets) {
+    const item = { name: a.name, value: a.value || 0, owner: 'Personal' };
+    if (liquidTypes.has(a.type)) liquidAssets.push(item);
+    else illiquidAssets.push(item);
+  }
+  // Entity assets
+  for (const entity of plan.entities) {
+    for (const a of entity.assets) {
+      const item = { name: a.name, value: a.value || 0, owner: entity.name };
+      if (liquidTypes.has(a.type)) liquidAssets.push(item);
+      else illiquidAssets.push(item);
+    }
+  }
+
+  liquidAssets.sort((a, b) => b.value - a.value);
+  illiquidAssets.sort((a, b) => b.value - a.value);
+
+  const liquidTotal = liquidAssets.reduce((s, a) => s + a.value, 0);
+  const illiquidTotal = illiquidAssets.reduce((s, a) => s + a.value, 0);
+  const total = liquidTotal + illiquidTotal;
+
+  return {
+    liquidTotal,
+    illiquidTotal,
+    liquidPct: total > 0 ? Math.round((liquidTotal / total) * 100) : 0,
+    illiquidPct: total > 0 ? Math.round((illiquidTotal / total) * 100) : 0,
+    liquidAssets,
+    illiquidAssets,
+  };
+}
+
+export interface LiabilityItem { name: string; amount: number; interestRate: number | null; owner: string; type: string }
+
+/** All liabilities sorted by amount, with owner names */
+export function allLiabilitiesDetailed(plan: FinancialPlan): LiabilityItem[] {
+  const items: LiabilityItem[] = [];
+  for (const l of plan.personalLiabilities) {
+    items.push({ name: l.name, amount: l.amount || 0, interestRate: l.interestRate, owner: 'Personal', type: l.type });
+  }
+  for (const entity of plan.entities) {
+    for (const l of entity.liabilities) {
+      items.push({ name: l.name, amount: l.amount || 0, interestRate: l.interestRate, owner: entity.name, type: l.type });
+    }
+  }
+  return items.sort((a, b) => b.amount - a.amount);
+}
+
+export interface ConcentrationItem { name: string; value: number; pct: number }
+
+/** Per-entity dollar values and percentages */
+export function entityConcentrationDetailed(plan: FinancialPlan): ConcentrationItem[] {
+  const personalTotal = sumValues(plan.personalAssets);
+  const entityTotals = plan.entities.map((e) => ({ name: e.name, total: sumValues(e.assets) }));
+  const grandTotal = personalTotal + entityTotals.reduce((s, e) => s + e.total, 0);
+  if (grandTotal === 0) return [];
+
+  const result: ConcentrationItem[] = [];
+  if (personalTotal > 0) result.push({ name: 'Personal', value: personalTotal, pct: Math.round((personalTotal / grandTotal) * 100) });
+  for (const { name, total } of entityTotals) {
+    if (total > 0) result.push({ name, value: total, pct: Math.round((total / grandTotal) * 100) });
+  }
+  return result.sort((a, b) => b.value - a.value);
+}
+
 const AUD_FORMATTER = new Intl.NumberFormat('en-AU', {
   style: 'currency',
   currency: 'AUD',

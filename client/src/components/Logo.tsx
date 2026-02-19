@@ -23,7 +23,7 @@ export function LogoIcon({ className = 'w-8 h-8' }: { className?: string }) {
   );
 }
 
-export function LogoFull({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' | 'xl' }) {
+export function LogoFull({ size = 'md', dark = true }: { size?: 'sm' | 'md' | 'lg' | 'xl'; dark?: boolean }) {
   const sizes = {
     sm: { icon: 'w-6 h-6', text: 'text-lg', gap: 'gap-2' },
     md: { icon: 'w-8 h-8', text: 'text-xl', gap: 'gap-2.5' },
@@ -36,7 +36,9 @@ export function LogoFull({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' | 'xl' }) 
     <div className={`inline-flex items-center ${s.gap}`}>
       <LogoIcon className={s.icon} />
       <span className={`${s.text} font-bold tracking-tight`}>
-        <span className="bg-gradient-to-r from-white via-white to-white/60 bg-clip-text text-transparent">
+        <span className={`bg-clip-text text-transparent bg-gradient-to-r ${
+          dark ? 'from-white via-white to-white/60' : 'from-gray-800 via-gray-800 to-gray-500'
+        }`}>
           Mind
         </span>
         <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">

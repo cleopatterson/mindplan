@@ -47,7 +47,7 @@ Optional env vars:
 
 ## Deployment
 
-Configured for Railway via `railway.json`. Build runs `npm run build` across all workspaces; start runs the Express server which also serves the built client as static files.
+Configured for Railway via `railway.json`. Build runs `npm run build` across all workspaces; start runs the Express server which also serves the built client as static files. Railway uses `/api/health` as the healthcheck endpoint.
 
 ```bash
 npm run build        # Build shared → client → server

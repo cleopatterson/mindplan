@@ -106,6 +106,22 @@ export interface DataGap {
   nodeId?: string;             // graph node ID this gap refers to (set by validator)
 }
 
+// ── Insight types ──
+
+export interface Insight {
+  category: 'concentration' | 'liquidity' | 'tax' | 'estate' | 'debt' | 'insurance' | 'structure';
+  severity: 'info' | 'warning' | 'critical';
+  title: string;
+  detail: string;
+  nodeIds: string[];
+}
+
+export interface InsightsResponse {
+  success: boolean;
+  insights?: Insight[];
+  error?: string;
+}
+
 // ── API types ──
 
 export interface ParseResponse {

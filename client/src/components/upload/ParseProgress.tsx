@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // Time constant for exponential decay — controls how fast progress decelerates.
 // At 15s ≈ 60%, at 30s ≈ 82%, at 60s ≈ 93%, at 90s ≈ 94.8% — never stalls.
@@ -17,6 +18,8 @@ const quips = [
 ];
 
 export function ParseProgress() {
+  const theme = useTheme();
+  const isDark = theme === 'dark';
   const [progress, setProgress] = useState(0);
   const [quipIndex, setQuipIndex] = useState(() => Math.floor(Math.random() * quips.length));
   const startTime = useRef(Date.now());
@@ -65,7 +68,7 @@ export function ParseProgress() {
           {/* Track */}
           <circle
             cx="32" cy="32" r={radius}
-            stroke="rgba(255,255,255,0.06)"
+            stroke={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)'}
             strokeWidth="4"
             fill="none"
           />
@@ -83,14 +86,14 @@ export function ParseProgress() {
         </svg>
         {/* Percentage in center */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-sm font-medium text-white/50">{Math.round(progress)}%</span>
+          <span className={`text-sm font-medium ${isDark ? 'text-white/50' : 'text-gray-500'}`}>{Math.round(progress)}%</span>
         </div>
       </div>
 
       {/* Witty saying only */}
       <p
         key={quipIndex}
-        className="text-sm text-white/40 animate-[fadeIn_0.4s_ease-out]"
+        className={`text-sm animate-[fadeIn_0.4s_ease-out] ${isDark ? 'text-white/40' : 'text-gray-500'}`}
       >
         {quips[quipIndex]}
       </p>

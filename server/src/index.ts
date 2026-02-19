@@ -8,6 +8,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import express from 'express';
 import cors from 'cors';
 import { parseRouter } from './routes/parse.js';
+import { insightsRouter } from './routes/insights.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001');
@@ -15,10 +16,11 @@ const PORT = parseInt(process.env.PORT || '3001');
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' ? false : 'http://localhost:5173',
 }));
-app.use(express.json({ limit: '10kb' }));
+app.use(express.json({ limit: '50kb' }));
 
 // API routes
 app.use('/api', parseRouter);
+app.use('/api', insightsRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {

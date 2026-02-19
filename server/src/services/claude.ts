@@ -1,8 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { FinancialPlanSchema } from '../schema/financialPlan.js';
+import { InsightsOutputSchema } from '../schema/insights.js';
 import { PARSE_SYSTEM_PROMPT } from '../prompts/parseFinancialPlan.js';
-import type { FinancialPlan } from 'shared/types';
+import { INSIGHTS_SYSTEM_PROMPT } from '../prompts/generateInsights.js';
+import type { FinancialPlan, Insight } from 'shared/types';
 
 let _client: Anthropic;
 function getClient() {
@@ -61,4 +63,53 @@ export async function parseWithClaude(documentText: string): Promise<FinancialPl
   }
 
   return result.data as FinancialPlan;
+}
+
+// ── Insights generation ──
+
+const insightsJsonSchema = zodToJsonSchema(InsightsOutputSchema, {
+  target: 'openApi3',
+  $refStrategy: 'seen',
+});
+
+export async function generateInsights(plan: FinancialPlan): Promise<Insight[]> {
+  const planJson = JSON.stringify(plan);
+  console.log(`⏱ [insights] Input plan: ${planJson.length} chars, model: ${MODEL}`);
+
+  const t0 = performance.now();
+  const response = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 4000,
+    system: INSIGHTS_SYSTEM_PROMPT,
+    tools: [
+      {
+        name: 'generate_insights',
+        description: 'Generate actionable financial insights from the structured plan data.',
+        input_schema: insightsJsonSchema as Anthropic.Tool['input_schema'],
+      },
+    ],
+    tool_choice: { type: 'tool' as const, name: 'generate_insights' },
+    messages: [
+      {
+        role: 'user',
+        content: `Analyze this financial plan and produce actionable insights:\n\n${planJson}`,
+      },
+    ],
+  });
+  const apiMs = performance.now() - t0;
+
+  console.log(`⏱ [insights] API response: ${apiMs.toFixed(0)}ms | tokens: ${response.usage.input_tokens} in / ${response.usage.output_tokens} out`);
+
+  const toolBlock = response.content.find((b) => b.type === 'tool_use');
+  if (!toolBlock || toolBlock.type !== 'tool_use') {
+    throw new Error('Claude did not return insights');
+  }
+
+  const result = InsightsOutputSchema.safeParse(toolBlock.input);
+  if (!result.success) {
+    console.error('[insights] Zod validation failed:', result.error.issues);
+    throw new Error('Insights did not match the expected schema.');
+  }
+
+  return result.data.insights as Insight[];
 }

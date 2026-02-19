@@ -108,13 +108,18 @@ export function GapsChecklist({ gaps, entities, onResolveGap, onHoverGap, onFocu
                   </span>
                 )}
               </span>
-              {gap.nodeId ? (
-                <Crosshair className="w-3.5 h-3.5 text-amber-400/30 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5" />
-              ) : (
-                <span className="text-amber-400/30 text-xs opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5">
-                  edit
-                </span>
-              )}
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5">
+                {gap.nodeId && (
+                  <Crosshair className="w-3.5 h-3.5 text-amber-400/30" />
+                )}
+                <button
+                  onClick={(e) => { e.stopPropagation(); dismissGap(i); }}
+                  className="cursor-pointer p-0.5 text-white/20 hover:text-red-400 rounded transition-colors"
+                  title="Dismiss gap"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           )}
         </li>

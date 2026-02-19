@@ -19,6 +19,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { FinancialPlan } from 'shared/types';
+import { useTheme } from '../../contexts/ThemeContext';
 import { transformToGraph, type NodeData } from '../../utils/transformToGraph';
 import { useGraphLayout } from '../../hooks/useGraphLayout';
 import { FamilyNode } from './nodes/FamilyNode';
@@ -96,7 +97,19 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
   { data, selectedNodeIds, onSelectNode, highlightedNodeIds, hoveredNodeIds, userLinks, onAddLink, onRemoveLink },
   ref,
 ) {
+  const theme = useTheme();
+  const isDark = theme === 'dark';
   const { fitView, getNodes, setCenter } = useReactFlow();
+  const edgeStyle = useMemo<React.CSSProperties>(() => ({
+    stroke: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)',
+    strokeWidth: 2,
+  }), [isDark]);
+
+  const edgeOptions = useMemo(() => ({
+    type: 'smoothstep' as const,
+    style: edgeStyle,
+  }), [edgeStyle]);
+
   const { nodes: rawNodes, edges: rawEdges } = useMemo(() => {
     const t0 = performance.now();
     const result = transformToGraph(data);
@@ -237,7 +250,8 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
             ? activeIds.has(edge.source) && activeIds.has(edge.target)
             : false;
         // When no highlight is active, restore original style (cross-links keep dashed purple)
-        const baseStyle = isLink ? LINK_STYLE : DEFAULT_EDGE_STYLE;
+        const baseStyle = isLink ? LINK_STYLE : edgeStyle;
+        const dimmedStroke = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
         return {
           ...edge,
           style: {
@@ -245,7 +259,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
               ? {
                   stroke: connected
                     ? (isPreview ? 'rgba(96,165,250,0.35)' : 'rgba(96,165,250,0.6)')
-                    : 'rgba(255,255,255,0.06)',
+                    : dimmedStroke,
                   strokeWidth: connected ? 2.5 : 2,
                   ...(isLink ? { strokeDasharray: '6 4' } : {}),
                 }
@@ -256,7 +270,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
         };
       });
     });
-  }, [highlightedNodeIds, hoveredNodeIds, selectedBranchIds]);
+  }, [highlightedNodeIds, hoveredNodeIds, selectedBranchIds, isDark, edgeStyle]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds) as Node<NodeData>[]),
@@ -327,19 +341,19 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
         nodeTypes={nodeTypes}
         connectionMode={ConnectionMode.Loose}
         connectionLineStyle={CONNECTION_LINE_STYLE}
-        defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
+        defaultEdgeOptions={edgeOptions}
         proOptions={{ hideAttribution: true }}
         fitView
         fitViewOptions={{ padding: 0.15 }}
         minZoom={0.2}
         maxZoom={2}
-        colorMode="dark"
+        colorMode={isDark ? 'dark' : 'light'}
       >
-        <Background color="rgba(255,255,255,0.03)" gap={20} />
+        <Background color={isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)'} gap={20} />
         <Controls />
         <MiniMap
-          style={{ background: '#1e1e2e' }}
-          maskColor="rgba(0,0,0,0.6)"
+          style={{ background: isDark ? '#1e1e2e' : '#f8fafc' }}
+          maskColor={isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.15)'}
           nodeColor={(node) => {
             const type = node.data?.nodeType;
             if (type === 'family') return '#ffffff';

@@ -20,16 +20,25 @@ npm run build        # Build all workspaces (shared → client → server)
 npm start            # Start production server
 ```
 
-TypeScript checks (no top-level tsconfig, check each workspace):
+TypeScript checks (workspaces extend `tsconfig.base.json`, check each individually):
 ```bash
 cd client && npx tsc --noEmit
 cd server && npx tsc --noEmit
 ```
 
+Environment variables (`.env` at root):
+- `ANTHROPIC_API_KEY` — **required**
+- `CLAUDE_MODEL` — override Claude model (default: `claude-sonnet-4-5-20250929`)
+- `PORT` — server port (default: 3001)
+
 ## Architecture Decisions
 
 ### Data Flow
 Upload → text extraction → Claude API (tool use + Zod schema) → gap enrichment → anonymization → JSON response → ReactFlow mind map
+
+### Key Server Files
+- `server/src/schema/financialPlan.ts` — Zod schema defining the `FinancialPlan` structure (used as Claude tool schema)
+- `server/src/prompts/parseFinancialPlan.ts` — System/user prompts sent to Claude for document parsing
 
 ### Mind Map Layout
 - Dagre runs twice: RL for left side (clients/entities/assets), LR for right side (estate/family)

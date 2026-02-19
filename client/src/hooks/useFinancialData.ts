@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { Edge } from '@xyflow/react';
-import type { FinancialPlan, ParseResponse } from 'shared/types';
+import type { FinancialPlan, ParseResponse, Insight, InsightsResponse } from 'shared/types';
 
 export type AppState = 'upload' | 'parsing' | 'dashboard';
 
@@ -12,6 +12,8 @@ export function useFinancialData() {
   const [highlightedNodeIds, setHighlightedNodeIds] = useState<Set<string>>(new Set());
   const [hoveredNodeIds, setHoveredNodeIds] = useState<Set<string>>(new Set());
   const [userLinks, setUserLinks] = useState<Edge[]>([]);
+  const [insights, setInsights] = useState<Insight[] | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
 
   const uploadFile = useCallback(async (file: File) => {
     setAppState('parsing');
@@ -34,10 +36,38 @@ export function useFinancialData() {
       console.log(`⏱ [client] Response payload: ${JSON.stringify(json.data).length} chars`);
       setData(json.data);
       setAppState('dashboard');
+
+      // Fire-and-forget insights fetch (non-blocking)
+      fetchInsights(json.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       setAppState('upload');
     }
+  }, []);
+
+  const fetchInsights = useCallback(async (plan: FinancialPlan) => {
+    setInsightsLoading(true);
+    try {
+      console.time('⏱ [client] Fetch /api/insights');
+      const res = await fetch('/api/insights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: plan }),
+      });
+      const json: InsightsResponse = await res.json();
+      console.timeEnd('⏱ [client] Fetch /api/insights');
+      if (json.success && json.insights) {
+        setInsights(json.insights);
+      }
+    } catch (err) {
+      console.error('[insights] Failed to fetch insights:', err);
+    } finally {
+      setInsightsLoading(false);
+    }
+  }, []);
+
+  const dismissInsight = useCallback((index: number) => {
+    setInsights((prev) => prev ? prev.filter((_, i) => i !== index) : prev);
   }, []);
 
   const reset = useCallback(() => {
@@ -47,6 +77,8 @@ export function useFinancialData() {
     setHighlightedNodeIds(new Set());
     setHoveredNodeIds(new Set());
     setUserLinks([]);
+    setInsights(null);
+    setInsightsLoading(false);
     setAppState('upload');
   }, []);
 
@@ -225,6 +257,7 @@ export function useFinancialData() {
     highlightedNodeIds, toggleHighlight, clearHighlight,
     hoveredNodeIds, hoverHighlight,
     userLinks, addLink, removeLink,
+    insights, insightsLoading, dismissInsight,
     uploadFile, reset, resolveGap, updateNodeField,
   };
 }
