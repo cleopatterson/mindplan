@@ -251,6 +251,22 @@ export function useFinancialData() {
     });
   }, []);
 
+  /** Delete a node by ID — removes from plan data and deselects */
+  const deleteNode = useCallback((nodeId: string) => {
+    setData((prev) => {
+      if (!prev) return prev;
+      return removeNode(prev, nodeId);
+    });
+    setSelectedNodeIds((prev) => {
+      if (!prev.has(nodeId)) return prev;
+      const next = new Set(prev);
+      next.delete(nodeId);
+      return next;
+    });
+    // Clean up any user links referencing this node
+    setUserLinks((prev) => prev.filter((e) => e.source !== nodeId && e.target !== nodeId));
+  }, []);
+
   return {
     appState, data, error,
     selectedNodeIds, selectNode,
@@ -258,7 +274,7 @@ export function useFinancialData() {
     hoveredNodeIds, hoverHighlight,
     userLinks, addLink, removeLink,
     insights, insightsLoading, dismissInsight,
-    uploadFile, reset, resolveGap, updateNodeField,
+    uploadFile, reset, resolveGap, updateNodeField, deleteNode,
   };
 }
 
@@ -315,6 +331,90 @@ function applyGapValue(plan: FinancialPlan, nodeId: string, field: string, value
     if (li !== -1) {
       const updated = { ...entity, liabilities: entity.liabilities.map((l, i) => i === li ? { ...l, amount: value } : l) };
       return { ...plan, entities: plan.entities.map((e, i) => i === ei ? updated : e) };
+    }
+  }
+
+  return plan;
+}
+
+/** Remove a node by ID from the plan (immutable) */
+function removeNode(plan: FinancialPlan, nodeId: string): FinancialPlan {
+  // Clients
+  if (plan.clients.some((c) => c.id === nodeId)) {
+    return { ...plan, clients: plan.clients.filter((c) => c.id !== nodeId) };
+  }
+
+  // Personal assets
+  if (plan.personalAssets.some((a) => a.id === nodeId)) {
+    return {
+      ...plan,
+      personalAssets: plan.personalAssets.filter((a) => a.id !== nodeId),
+      dataGaps: plan.dataGaps.filter((g) => g.nodeId !== nodeId),
+    };
+  }
+
+  // Personal liabilities
+  if (plan.personalLiabilities.some((l) => l.id === nodeId)) {
+    return {
+      ...plan,
+      personalLiabilities: plan.personalLiabilities.filter((l) => l.id !== nodeId),
+      dataGaps: plan.dataGaps.filter((g) => g.nodeId !== nodeId),
+    };
+  }
+
+  // Entities (remove entire entity + its gaps)
+  if (plan.entities.some((e) => e.id === nodeId)) {
+    const entity = plan.entities.find((e) => e.id === nodeId)!;
+    const childIds = new Set([
+      ...entity.assets.map((a) => a.id),
+      ...entity.liabilities.map((l) => l.id),
+    ]);
+    return {
+      ...plan,
+      entities: plan.entities.filter((e) => e.id !== nodeId),
+      dataGaps: plan.dataGaps.filter((g) => g.nodeId !== nodeId && !childIds.has(g.nodeId ?? '')),
+    };
+  }
+
+  // Entity-owned assets
+  for (const entity of plan.entities) {
+    if (entity.assets.some((a) => a.id === nodeId)) {
+      return {
+        ...plan,
+        entities: plan.entities.map((e) =>
+          e.id === entity.id ? { ...e, assets: e.assets.filter((a) => a.id !== nodeId) } : e,
+        ),
+        dataGaps: plan.dataGaps.filter((g) => g.nodeId !== nodeId),
+      };
+    }
+    if (entity.liabilities.some((l) => l.id === nodeId)) {
+      return {
+        ...plan,
+        entities: plan.entities.map((e) =>
+          e.id === entity.id ? { ...e, liabilities: e.liabilities.filter((l) => l.id !== nodeId) } : e,
+        ),
+        dataGaps: plan.dataGaps.filter((g) => g.nodeId !== nodeId),
+      };
+    }
+  }
+
+  // Estate planning items
+  if (plan.estatePlanning?.some((e) => e.id === nodeId)) {
+    return { ...plan, estatePlanning: plan.estatePlanning.filter((e) => e.id !== nodeId) };
+  }
+
+  // Family members (including grandchildren)
+  if (plan.familyMembers?.some((m) => m.id === nodeId)) {
+    return { ...plan, familyMembers: plan.familyMembers.filter((m) => m.id !== nodeId) };
+  }
+  for (const member of plan.familyMembers ?? []) {
+    if (member.children?.some((gc) => gc.id === nodeId)) {
+      return {
+        ...plan,
+        familyMembers: plan.familyMembers.map((m) =>
+          m.id === member.id ? { ...m, children: m.children.filter((gc) => gc.id !== nodeId) } : m,
+        ),
+      };
     }
   }
 

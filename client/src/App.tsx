@@ -18,7 +18,7 @@ export default function App() {
     hoveredNodeIds, hoverHighlight,
     userLinks, addLink, removeLink,
     insights, insightsLoading, dismissInsight,
-    uploadFile, reset, resolveGap, updateNodeField,
+    uploadFile, reset, resolveGap, updateNodeField, deleteNode,
   } = useFinancialData();
   const mapRef = useRef<HTMLDivElement>(null);
   const mindMapRef = useRef<MindMapHandle>(null);
@@ -126,6 +126,7 @@ export default function App() {
               insights={insights}
               insightsLoading={insightsLoading}
               onDismissInsight={dismissInsight}
+              onDeleteNode={deleteNode}
             />
           )}
         </main>

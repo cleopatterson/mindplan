@@ -77,6 +77,12 @@ const LINK_STYLE: React.CSSProperties = {
   strokeDasharray: '6 4',
 };
 
+const CROSS_LINK_STYLE: React.CSSProperties = {
+  stroke: 'rgba(96,165,250,0.35)',
+  strokeWidth: 1.5,
+  strokeDasharray: '4 3',
+};
+
 const DEFAULT_EDGE_STYLE: React.CSSProperties = {
   stroke: 'rgba(255,255,255,0.25)',
   strokeWidth: 2,
@@ -244,13 +250,15 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
 
       return prevEdges.map((edge) => {
         const isLink = !!edge.data?.isUserLink;
+        const isCrossLink = !!edge.data?.isCrossLink;
+        const isDashed = isLink || isCrossLink;
         const connected = (hasSummaryHighlight || hasHover)
           ? activeIds.has(edge.source) || activeIds.has(edge.target)
           : hasBranchHighlight
             ? activeIds.has(edge.source) && activeIds.has(edge.target)
             : false;
-        // When no highlight is active, restore original style (cross-links keep dashed purple)
-        const baseStyle = isLink ? LINK_STYLE : edgeStyle;
+        // When no highlight is active, restore original style
+        const baseStyle = isLink ? LINK_STYLE : isCrossLink ? CROSS_LINK_STYLE : edgeStyle;
         const dimmedStroke = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
         return {
           ...edge,
@@ -261,7 +269,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
                     ? (isPreview ? 'rgba(96,165,250,0.35)' : 'rgba(96,165,250,0.6)')
                     : dimmedStroke,
                   strokeWidth: connected ? 2.5 : 2,
-                  ...(isLink ? { strokeDasharray: '6 4' } : {}),
+                  ...(isDashed ? { strokeDasharray: isLink ? '6 4' : '4 3' } : {}),
                 }
               : baseStyle),
             transition: 'stroke 0.2s ease, stroke-width 0.2s ease, opacity 0.2s ease',
@@ -273,13 +281,23 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
   }, [highlightedNodeIds, hoveredNodeIds, selectedBranchIds, isDark, edgeStyle]);
 
   const onNodesChange: OnNodesChange = useCallback(
-    (changes) => setNodes((nds) => applyNodeChanges(changes, nds) as Node<NodeData>[]),
+    (changes) => {
+      // Filter out selection changes — we manage selection ourselves via onNodeClick
+      const filtered = changes.filter((c) => c.type !== 'select');
+      if (filtered.length > 0) {
+        setNodes((nds) => applyNodeChanges(filtered, nds) as Node<NodeData>[]);
+      }
+    },
     [],
   );
   const onEdgesChange: OnEdgesChange = useCallback(
     (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
     [],
   );
+
+  const onPaneClick = useCallback(() => {
+    onSelectNode(null, false);
+  }, [onSelectNode]);
 
   const onNodeClick: NodeMouseHandler = useCallback(
     (event, node) => {
@@ -336,6 +354,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
+        onPaneClick={onPaneClick}
         onConnect={onConnect}
         onEdgeDoubleClick={onEdgeDoubleClick}
         nodeTypes={nodeTypes}

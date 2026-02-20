@@ -626,7 +626,11 @@ function GrandchildDetail({ grandchild, parent, data, nodeId, onUpdate }: { gran
 // ── Helpers ──
 
 function findAssetOwner(assetId: string, data: FinancialPlan): string | null {
-  if (data.personalAssets.some((a) => a.id === assetId)) return 'Personal';
+  const personal = data.personalAssets.find((a) => a.id === assetId);
+  if (personal) {
+    const ownerNames = resolveOwnerNames(personal.ownerIds, data);
+    return ownerNames ?? 'Personal';
+  }
   for (const entity of data.entities) {
     if (entity.assets.some((a) => a.id === assetId)) return entity.name;
   }
@@ -634,11 +638,25 @@ function findAssetOwner(assetId: string, data: FinancialPlan): string | null {
 }
 
 function findLiabilityOwner(liabilityId: string, data: FinancialPlan): string | null {
-  if (data.personalLiabilities.some((l) => l.id === liabilityId)) return 'Personal';
+  const personal = data.personalLiabilities.find((l) => l.id === liabilityId);
+  if (personal) {
+    const ownerNames = resolveOwnerNames(personal.ownerIds, data);
+    return ownerNames ?? 'Personal';
+  }
   for (const entity of data.entities) {
     if (entity.liabilities.some((l) => l.id === liabilityId)) return entity.name;
   }
   return null;
+}
+
+function resolveOwnerNames(ownerIds: string[], data: FinancialPlan): string | null {
+  if (!ownerIds || ownerIds.length === 0) return null;
+  const names = ownerIds
+    .map((id) => data.clients.find((c) => c.id === id)?.name.split(' ')[0])
+    .filter(Boolean);
+  if (names.length === 0) return null;
+  if (names.length === 1) return names[0]!;
+  return names.join(' & ') + ' (Joint)';
 }
 
 /** Click-to-edit field */

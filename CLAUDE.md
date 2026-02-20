@@ -34,11 +34,13 @@ Environment variables (`.env` at root):
 ## Architecture Decisions
 
 ### Data Flow
-Upload → text extraction → Claude API (tool use + Zod schema) → gap enrichment → anonymization → JSON response → ReactFlow mind map
+Upload → text extraction → pre-API scrubbing → Claude API (tool use + Zod schema) → surname restoration → gap enrichment → anonymization → JSON response → ReactFlow mind map
 
 ### Key Server Files
 - `server/src/schema/financialPlan.ts` — Zod schema defining the `FinancialPlan` structure (used as Claude tool schema)
 - `server/src/prompts/parseFinancialPlan.ts` — System/user prompts sent to Claude for document parsing
+- `server/src/services/validator.ts` — `enrichGaps()` function that detects critical missing data
+- `server/src/routes/parse.ts` — Main parse route orchestrating the full pipeline
 
 ### Mind Map Layout
 - Dagre runs twice: RL for left side (clients/entities/assets), LR for right side (estate/family)
@@ -57,7 +59,7 @@ Upload → text extraction → Claude API (tool use + Zod schema) → gap enrich
 - Entity names, asset names, liability names are left untouched
 
 ### Gap System
-- Server-side `enrichGaps()` detects critical missing data only: client ages, asset values, liability amounts
+- Server-side `enrichGaps()` (in `validator.ts`) detects critical missing data only: client ages, asset values, liability amounts
 - Deduplication uses `nodeId::field` key (not description strings)
 - Client-side `resolveGap()` uses `nodeId` for precise field targeting across all node types
 

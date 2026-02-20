@@ -15,6 +15,8 @@ export interface NodeData extends Record<string, unknown> {
   estateItemType?: EstatePlanItem['type'];
   familyRelationship?: FamilyMember['relationship'] | Grandchild['relationship'];
   hasIssue?: boolean;
+  isJoint?: boolean;
+  ownerNames?: string[];
   trusteeName?: string | null;
   side: Side;
   raw?: Client | Entity | Asset | Liability | EstatePlanItem | FamilyMember | Grandchild;
@@ -67,16 +69,21 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
 
   // Personal assets — route to owner(s), cross-link for joint ownership
   const allClientIds = new Set(plan.clients.map((c) => c.id));
+  const clientNameById = new Map(plan.clients.map((c) => [c.id, c.name.split(' ')[0]]));
   const defaultOwnerId = plan.clients[0]?.id;
 
-  for (const asset of plan.personalAssets) {
-    const owners = (asset.ownerIds?.length > 0 ? asset.ownerIds : defaultOwnerId ? [defaultOwnerId] : [])
+  const resolveOwners = (ownerIds: string[]) =>
+    (ownerIds?.length > 0 ? ownerIds : defaultOwnerId ? [defaultOwnerId] : [])
       .filter((id) => allClientIds.has(id));
+
+  for (const asset of plan.personalAssets) {
+    const owners = resolveOwners(asset.ownerIds);
     const primaryOwner = owners[0];
     if (!primaryOwner) continue;
+    const ownerNames = owners.map((id) => clientNameById.get(id) ?? id);
 
-    addAssetNode(nodes, edges, asset, primaryOwner, 'left');
-    // Cross-link edges to additional owners (joint ownership — same style as structural edges)
+    addAssetNode(nodes, edges, asset, primaryOwner, 'left', owners.length > 1, ownerNames);
+    // Cross-link edges to additional owners (joint ownership)
     for (const ownerId of owners.slice(1)) {
       edges.push({
         id: `link-${ownerId}-${asset.id}`,
@@ -89,12 +96,12 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
   }
 
   for (const liability of plan.personalLiabilities) {
-    const owners = (liability.ownerIds?.length > 0 ? liability.ownerIds : defaultOwnerId ? [defaultOwnerId] : [])
-      .filter((id) => allClientIds.has(id));
+    const owners = resolveOwners(liability.ownerIds);
     const primaryOwner = owners[0];
     if (!primaryOwner) continue;
+    const ownerNames = owners.map((id) => clientNameById.get(id) ?? id);
 
-    addLiabilityNode(nodes, edges, liability, primaryOwner, 'left');
+    addLiabilityNode(nodes, edges, liability, primaryOwner, 'left', owners.length > 1, ownerNames);
     for (const ownerId of owners.slice(1)) {
       edges.push({
         id: `link-${ownerId}-${liability.id}`,
@@ -322,6 +329,8 @@ function addAssetNode(
   asset: Asset,
   parentId: string,
   side: Side,
+  isJoint = false,
+  ownerNames?: string[],
 ) {
   nodes.push({
     id: asset.id,
@@ -333,6 +342,8 @@ function addAssetNode(
       value: asset.value,
       nodeType: 'asset',
       assetType: asset.type,
+      isJoint,
+      ownerNames,
       side,
       raw: asset,
     },
@@ -350,6 +361,8 @@ function addLiabilityNode(
   liability: Liability,
   parentId: string,
   side: Side,
+  isJoint = false,
+  ownerNames?: string[],
 ) {
   nodes.push({
     id: liability.id,
@@ -361,6 +374,8 @@ function addLiabilityNode(
       value: liability.amount,
       nodeType: 'liability',
       liabilityType: liability.type,
+      isJoint,
+      ownerNames,
       side,
       raw: liability,
     },

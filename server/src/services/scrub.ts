@@ -30,25 +30,25 @@ export function scrubSensitiveData(text: string): ScrubResult {
   );
 
   // ── 3. Dates of birth ──
-  // Step A: Extract specific DOB dates from labeled lines BEFORE redacting.
-  // We then scrub ALL occurrences of those exact dates — catches unlabeled
-  // duplicates that PDF extraction artifacts produce.
-  const knownDobs: string[] = [];
+  // Extract DOB dates, calculate age, then replace with "[DOB redacted, age NN]"
+  // so Claude can set client.age without seeing the actual date.
+  const knownDobs: { raw: string; age: number | null }[] = [];
   const dobLabelRe = /\b(?:Date\s+of\s+birth|DOB|Born)[:\s]+(.+)/gi;
   let dobLabelMatch: RegExpExecArray | null;
   while ((dobLabelMatch = dobLabelRe.exec(scrubbed)) !== null) {
     const rest = dobLabelMatch[1];
     for (const m of rest.matchAll(/\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}/gi)) {
-      knownDobs.push(m[0]);
+      knownDobs.push({ raw: m[0], age: ageFromDob(m[0]) });
     }
     for (const m of rest.matchAll(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/g)) {
-      knownDobs.push(m[0]);
+      knownDobs.push({ raw: m[0], age: ageFromDob(m[0]) });
     }
   }
 
   // Step B: Replace ALL occurrences of known DOB dates throughout the text
   for (const dob of knownDobs) {
-    scrubbed = scrubbed.replaceAll(dob, '[DOB redacted]');
+    const replacement = dob.age !== null ? `[DOB redacted, age ${dob.age}]` : '[DOB redacted]';
+    scrubbed = scrubbed.replaceAll(dob.raw, replacement);
   }
 
   // Step C: Redact any remaining labeled DOB lines (edge cases)
@@ -57,10 +57,10 @@ export function scrubSensitiveData(text: string): ScrubResult {
     (_match, label: string, rest: string) => {
       const redacted = rest.replace(
         /\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}/gi,
-        '[DOB redacted]',
+        (m) => { const a = ageFromDob(m); return a !== null ? `[DOB redacted, age ${a}]` : '[DOB redacted]'; },
       ).replace(
         /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/g,
-        '[DOB redacted]',
+        (m) => { const a = ageFromDob(m); return a !== null ? `[DOB redacted, age ${a}]` : '[DOB redacted]'; },
       );
       return `${label}: ${redacted}`;
     },
@@ -68,8 +68,11 @@ export function scrubSensitiveData(text: string): ScrubResult {
 
   // Step D: Catch shorthand DOB labels
   scrubbed = scrubbed.replace(
-    /\b(d\.?o\.?b\.?)\s*[:\s]\s*\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/gi,
-    '$1: [DOB redacted]',
+    /\b(d\.?o\.?b\.?)\s*[:\s]\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/gi,
+    (_m, label: string, date: string) => {
+      const a = ageFromDob(date);
+      return a !== null ? `${label}: [DOB redacted, age ${a}]` : `${label}: [DOB redacted]`;
+    },
   );
 
   // ── Logging ──
@@ -189,4 +192,38 @@ function addSurname(fullName: string, surnames: string[]): void {
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Parse a date string and return age in years, or null if unparseable */
+function ageFromDob(dateStr: string): number | null {
+  const now = new Date();
+
+  // Try "DD Month YYYY" (e.g. "25 July 1969")
+  const longMatch = dateStr.match(/(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i);
+  if (longMatch) {
+    const dob = new Date(`${longMatch[2]} ${longMatch[1]}, ${longMatch[3]}`);
+    if (!isNaN(dob.getTime())) return yearsDiff(dob, now);
+  }
+
+  // Try "DD/MM/YYYY" or "DD-MM-YYYY"
+  const shortMatch = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if (shortMatch) {
+    const day = parseInt(shortMatch[1], 10);
+    const month = parseInt(shortMatch[2], 10) - 1;
+    let year = parseInt(shortMatch[3], 10);
+    if (year < 100) year += year > 50 ? 1900 : 2000;
+    const dob = new Date(year, month, day);
+    if (!isNaN(dob.getTime())) return yearsDiff(dob, now);
+  }
+
+  return null;
+}
+
+function yearsDiff(dob: Date, now: Date): number {
+  let age = now.getFullYear() - dob.getFullYear();
+  const monthDiff = now.getMonth() - dob.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) {
+    age--;
+  }
+  return age;
 }

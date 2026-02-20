@@ -39,16 +39,17 @@ Australian financial plans typically involve:
    - Corporate trustees are typically Pty Ltd companies
    - Set both to null if trustee is not mentioned
 7. For any values you cannot determine, use null rather than guessing.
-8. Note any missing information as dataGaps — things a financial planner would need to complete the picture.
-9. Extract financial objectives if mentioned.
-10. Extract estate planning documents for each client:
+8. Note any missing information as dataGaps — things a financial planner would need to complete the picture. Do NOT flag redacted dates of birth as data gaps — when you see "[DOB redacted, age NN]", use NN as the client's age.
+9. When you see "[DOB redacted, age NN]" in the text, set the client's age to NN. This is pre-calculated from the original date of birth.
+10. Extract financial objectives if mentioned.
+11. Extract estate planning documents for each client:
    - Wills: Look for executor, last reviewed date. Mark hasIssue if expired, outdated, or not established.
    - Power of Attorney (POA/EPA): Look for appointed attorney. Mark hasIssue if not established.
    - Guardianship (EPG): Look for appointed guardian. Mark hasIssue if not established.
    - Super nominations: Look for binding/non-binding nominations, beneficiary splits. Mark hasIssue if expired or not established.
    - Set type to 'will', 'poa', 'guardianship', or 'super_nomination'.
    - Set status to 'current', 'expired', or 'not_established' (null if unknown).
-11. Extract family members as a TWO-LEVEL hierarchy:
+12. Extract family members as a TWO-LEVEL hierarchy:
    - **Level 1 (familyMembers)**: Direct children of the clients — sons and daughters only.
      - Set relationship to 'son', 'daughter', or 'other'.
      - Include their partner/spouse name if mentioned.

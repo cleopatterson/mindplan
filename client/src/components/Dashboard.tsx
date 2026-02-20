@@ -8,7 +8,7 @@ import { SummaryDetailPanel } from './summary/SummaryDetailPanel';
 import { GapsChecklist } from './gaps/GapsChecklist';
 import { InsightsBadge } from './insights/InsightsBadge';
 import { InsightsPanel } from './insights/InsightsPanel';
-import { X, AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle, Trash2 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface DashboardProps {
@@ -30,6 +30,7 @@ interface DashboardProps {
   insights: Insight[] | null;
   insightsLoading: boolean;
   onDismissInsight: (index: number) => void;
+  onDeleteNode: (nodeId: string) => void;
 }
 
 export function Dashboard({
@@ -39,6 +40,7 @@ export function Dashboard({
   onResolveGap, onUpdateField,
   userLinks, onAddLink, onRemoveLink,
   insights, insightsLoading, onDismissInsight,
+  onDeleteNode,
 }: DashboardProps) {
   const theme = useTheme();
   const isDark = theme === 'dark';
@@ -46,6 +48,7 @@ export function Dashboard({
   const [showGaps, setShowGaps] = useState(false);
   const [showInsights, setShowInsights] = useState(false);
   const [activeCard, setActiveCard] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Enrich gaps with nodeIds (fallback for data parsed before nodeId was added)
   const enrichedGaps = useMemo(() =>
@@ -187,21 +190,35 @@ export function Dashboard({
             <h3 className={`panel-title font-semibold text-sm whitespace-nowrap ${isDark ? 'text-white/90' : 'text-gray-900'}`}>
               {panelTitle}
             </h3>
-            <button
-              onClick={closeRightPanel}
-              className={`panel-close cursor-pointer transition-colors ${isDark ? 'text-white/30 hover:text-white/60' : 'text-gray-400 hover:text-gray-600'}`}
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={closeRightPanel}
+                className={`panel-close cursor-pointer transition-colors ${isDark ? 'text-white/30 hover:text-white/60' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <div className="panel-content flex-1 overflow-y-auto p-5 space-y-4">
             {primaryNodeId && !showGaps && !activeCard && (
-              <DetailPanel
-                data={data}
-                nodeId={primaryNodeId}
-                onUpdateField={onUpdateField}
-              />
+              <>
+                <DetailPanel
+                  data={data}
+                  nodeId={primaryNodeId}
+                  onUpdateField={onUpdateField}
+                />
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={() => setConfirmDeleteId(primaryNodeId)}
+                    className={`cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors ${isDark ? 'text-white/20 hover:text-red-400 hover:bg-red-500/10' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'}`}
+                    title="Remove node"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Remove</span>
+                  </button>
+                </div>
+              </>
             )}
             {activeCard && !showGaps && (
               <SummaryDetailPanel
@@ -231,6 +248,40 @@ export function Dashboard({
           </div>
         </div>
       </div>
+
+      {/* Delete confirmation dialog */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className={`rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 ${isDark ? 'bg-[#1a1a2e] border border-white/10' : 'bg-white border border-gray-200'}`}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-500/10">
+                <Trash2 className="w-5 h-5 text-red-400" />
+              </div>
+              <h3 className={`font-semibold ${isDark ? 'text-white/90' : 'text-gray-900'}`}>Remove node?</h3>
+            </div>
+            <p className={`text-sm mb-5 ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
+              This will remove the node and update all calculations. You can re-upload the document to restore it.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className={`cursor-pointer px-4 py-2 text-sm rounded-lg transition-colors ${isDark ? 'text-white/50 hover:bg-white/5' : 'text-gray-500 hover:bg-gray-100'}`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onDeleteNode(confirmDeleteId);
+                  setConfirmDeleteId(null);
+                }}
+                className="cursor-pointer px-4 py-2 text-sm rounded-lg bg-red-500/90 text-white hover:bg-red-500 transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
