@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, FileDown, Loader2 } from 'lucide-react';
+import { X, FileDown, Loader2, Target, Handshake } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import type { FinancialPlan } from 'shared/types';
 import { netWorth, totalAssets, totalLiabilities, formatAUD } from '../../utils/calculations';
@@ -14,6 +14,8 @@ export interface ExportOptions {
   includeAllocation: boolean;
   includeEstate: boolean;
   includeFamily: boolean;
+  includeGoals: boolean;
+  includeRelationships: boolean;
 }
 
 interface ExportModalProps {
@@ -28,7 +30,7 @@ export function ExportModal({ data, mapElement, exporting, onExport, onClose }: 
   const clientNames = data.clients.map((c) => c.name).join(' & ');
   const hasGaps = data.dataGaps.length > 0;
 
-  const [title, setTitle] = useState('Financial Structure Map');
+  const [title, setTitle] = useState('Legacy Wealth Blueprint');
   const [preparedFor, setPreparedFor] = useState(clientNames);
   const [preparedBy, setPreparedBy] = useState('');
   const [includeMap, setIncludeMap] = useState(true);
@@ -37,6 +39,8 @@ export function ExportModal({ data, mapElement, exporting, onExport, onClose }: 
   const [includeAllocation, setIncludeAllocation] = useState(true);
   const [includeEstate, setIncludeEstate] = useState(data.estatePlanning.length > 0);
   const [includeFamily, setIncludeFamily] = useState(data.familyMembers.length > 0);
+  const [includeGoals, setIncludeGoals] = useState(data.goals.length > 0);
+  const [includeRelationships, setIncludeRelationships] = useState(data.relationships.length > 0);
   const [mapThumb, setMapThumb] = useState<string | null>(null);
 
   // Capture a thumbnail of the map on mount
@@ -48,7 +52,7 @@ export function ExportModal({ data, mapElement, exporting, onExport, onClose }: 
   }, [mapElement]);
 
   const handleExport = () => {
-    onExport({ title, preparedFor, preparedBy, includeMap, includeSummary, includeGaps, includeAllocation, includeEstate, includeFamily });
+    onExport({ title, preparedFor, preparedBy, includeMap, includeSummary, includeGaps, includeAllocation, includeEstate, includeFamily, includeGoals, includeRelationships });
   };
 
   const nw = netWorth(data);
@@ -57,15 +61,19 @@ export function ExportModal({ data, mapElement, exporting, onExport, onClose }: 
 
   const hasEstate = data.estatePlanning.length > 0;
   const hasFamily = data.familyMembers.length > 0;
+  const hasGoals = data.goals.length > 0;
+  const hasRelationships = data.relationships.length > 0;
 
   // Count pages
   const pageCount =
     (includeMap ? 1 : 0) +
     (includeSummary ? 1 : 0) +
-    (includeGaps && hasGaps ? 1 : 0) +
     (includeAllocation ? 1 : 0) +
     (includeEstate && hasEstate ? 1 : 0) +
-    (includeFamily && hasFamily ? 1 : 0);
+    (includeFamily && hasFamily ? 1 : 0) +
+    (includeGoals && hasGoals ? 1 : 0) +
+    (includeRelationships && hasRelationships ? 1 : 0) +
+    (includeGaps && hasGaps ? 1 : 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -136,6 +144,8 @@ export function ExportModal({ data, mapElement, exporting, onExport, onClose }: 
               <PageToggle label="Allocation" checked={includeAllocation} onChange={setIncludeAllocation} />
               <PageToggle label="Estate" checked={includeEstate && hasEstate} onChange={setIncludeEstate} disabled={!hasEstate} />
               <PageToggle label="Family" checked={includeFamily && hasFamily} onChange={setIncludeFamily} disabled={!hasFamily} />
+              <PageToggle label={hasGoals ? `Goals (${data.goals.length})` : 'Goals'} checked={includeGoals && hasGoals} onChange={setIncludeGoals} disabled={!hasGoals} />
+              <PageToggle label={hasRelationships ? `Advisers (${data.relationships.length})` : 'Advisers'} checked={includeRelationships && hasRelationships} onChange={setIncludeRelationships} disabled={!hasRelationships} />
               <PageToggle label={hasGaps ? `Gaps (${data.dataGaps.length})` : 'Gaps'} checked={includeGaps && hasGaps} onChange={setIncludeGaps} disabled={!hasGaps} />
             </div>
           </div>
@@ -236,6 +246,44 @@ export function ExportModal({ data, mapElement, exporting, onExport, onClose }: 
                         <div key={i} className="w-6 h-2.5 rounded bg-amber-100 border border-amber-300" />
                       ))}
                     </div>
+                  </div>
+                </PreviewThumb>
+              )}
+
+              {/* Goals */}
+              {hasGoals && (
+                <PreviewThumb label="Goals" on={includeGoals}>
+                  <div className="h-[2px] bg-gradient-to-r from-teal-500 to-purple-500" />
+                  <div className="px-2 pt-1.5">
+                    <div className="h-[3px] w-14 bg-gray-800 rounded-full mb-1.5" />
+                    <div className="flex justify-center mb-1.5">
+                      <Target className="w-5 h-5 text-teal-400" />
+                    </div>
+                    {[0, 1, 2].map((i) => (
+                      <div key={i} className={`flex items-center gap-1 mb-[2px] ${i % 2 === 0 ? 'bg-gray-50' : ''} rounded-sm px-0.5 py-[1px]`}>
+                        <div className="h-[1.5px] w-4 bg-teal-300 rounded-full" />
+                        <div className="h-[1.5px] flex-1 bg-gray-200 rounded-full" />
+                      </div>
+                    ))}
+                  </div>
+                </PreviewThumb>
+              )}
+
+              {/* Relationships */}
+              {hasRelationships && (
+                <PreviewThumb label="Advisers" on={includeRelationships}>
+                  <div className="h-[2px] bg-gradient-to-r from-rose-500 to-purple-500" />
+                  <div className="px-2 pt-1.5">
+                    <div className="h-[3px] w-14 bg-gray-800 rounded-full mb-1.5" />
+                    <div className="flex justify-center mb-1.5">
+                      <Handshake className="w-5 h-5 text-rose-400" />
+                    </div>
+                    {[0, 1, 2].map((i) => (
+                      <div key={i} className={`flex items-center gap-1 mb-[2px] ${i % 2 === 0 ? 'bg-gray-50' : ''} rounded-sm px-0.5 py-[1px]`}>
+                        <div className="h-[1.5px] w-4 bg-rose-300 rounded-full" />
+                        <div className="h-[1.5px] flex-1 bg-gray-200 rounded-full" />
+                      </div>
+                    ))}
                   </div>
                 </PreviewThumb>
               )}

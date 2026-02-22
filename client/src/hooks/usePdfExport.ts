@@ -15,6 +15,8 @@ const PURPLE = [168, 85, 247] as const; // #a855f7
 const EMERALD = [16, 185, 129] as const;
 const RED = [239, 68, 68] as const;
 const SLATE = [100, 116, 139] as const;
+const TEAL = [20, 184, 166] as const;   // #14b8a6
+const ROSE = [244, 63, 94] as const;    // #f43f5e
 
 export function usePdfExport() {
   const [exporting, setExporting] = useState(false);
@@ -133,6 +135,18 @@ export function usePdfExport() {
           drawFamilyPage(pdf, pw, ph, data);
         }
 
+        // ── Goals page ──
+        if (options.includeGoals && data.goals.length > 0) {
+          addPageIfNeeded();
+          drawGoalsPage(pdf, pw, ph, data);
+        }
+
+        // ── Relationships page ──
+        if (options.includeRelationships && data.relationships.length > 0) {
+          addPageIfNeeded();
+          drawRelationshipsPage(pdf, pw, ph, data);
+        }
+
         // ── Gaps page ──
         if (options.includeGaps && data.dataGaps.length > 0) {
           addPageIfNeeded();
@@ -191,7 +205,7 @@ function drawHeader(pdf: jsPDF, pw: number, options: ExportOptions): number {
   pdf.setFontSize(18);
   pdf.setTextColor(30);
   pdf.setFont('helvetica', 'bold');
-  pdf.text(options.title || 'Financial Structure Map', m, y);
+  pdf.text(options.title || 'Legacy Wealth Blueprint', m, y);
   y += 6;
 
   pdf.setFontSize(8.5);
@@ -750,10 +764,46 @@ function drawFamilyPage(pdf: jsPDF, pw: number, _ph: number, data: FinancialPlan
   pdf.text('Family', m, y);
   y += 12;
 
-  const boxW = 55;
-  const boxH = 20;
-  const gapX = 10;
-  const gapY = 18;
+  // Base dimensions (before scaling)
+  const BASE_BOX_W = 55;
+  const BASE_BOX_H = 20;
+  const BASE_GAP_X = 10;
+  const BASE_GAP_Y = 18;
+  const BASE_GC_BOX_W = 48;
+  const BASE_GC_BOX_H = 16;
+  const BASE_GC_GAP_X = 6;
+
+  // Pre-compute total width needed at full size to determine scale factor
+  const availW = pw - m * 2;
+  const childCount = data.familyMembers.length;
+
+  let scale = 1;
+  if (childCount > 0) {
+    const fullFootprints = data.familyMembers.map((member) => {
+      const gcCount = member.children.length;
+      if (gcCount === 0) return BASE_BOX_W;
+      const gcSpread = gcCount * BASE_GC_BOX_W + (gcCount - 1) * BASE_GC_GAP_X;
+      return Math.max(BASE_BOX_W, gcSpread);
+    });
+    const fullW = fullFootprints.reduce((s, f) => s + f, 0) + (childCount - 1) * BASE_GAP_X;
+    if (fullW > availW) {
+      scale = availW / fullW;
+    }
+  }
+
+  // Scaled dimensions
+  const boxW = BASE_BOX_W * scale;
+  const boxH = BASE_BOX_H * scale;
+  const gapX = BASE_GAP_X * scale;
+  const gapY = BASE_GAP_Y * scale;
+  const gcBoxW = BASE_GC_BOX_W * scale;
+  const gcBoxH = BASE_GC_BOX_H * scale;
+  const gcGapX = BASE_GC_GAP_X * scale;
+
+  // Scale font sizes (clamp to minimum readability)
+  const nameFontSize = Math.max(5.5, 8 * scale);
+  const subtitleFontSize = Math.max(4.5, 6.5 * scale);
+  const partnerFontSize = Math.max(4.5, 6.5 * scale);
 
   // ── Level 1: Clients ──
   const clientCount = data.clients.length;
@@ -762,7 +812,7 @@ function drawFamilyPage(pdf: jsPDF, pw: number, _ph: number, data: FinancialPlan
 
   data.clients.forEach((client, i) => {
     const x = clientsStartX + i * (boxW + gapX);
-    drawPersonBox(pdf, x, y, boxW, boxH, client.name, client.age, client.occupation, BLUE);
+    drawPersonBox(pdf, x, y, boxW, boxH, client.name, client.age, client.occupation, BLUE, nameFontSize, subtitleFontSize);
   });
 
   const clientCenterY = y + boxH;
@@ -771,9 +821,23 @@ function drawFamilyPage(pdf: jsPDF, pw: number, _ph: number, data: FinancialPlan
   // ── Level 2: Children ──
   if (data.familyMembers.length === 0) return;
 
-  const childCount = data.familyMembers.length;
-  const childTotalW = childCount * boxW + (childCount - 1) * gapX;
+  // Pre-compute each child's "footprint" — the wider of the child box or its grandchildren spread
+  const footprints = data.familyMembers.map((member) => {
+    const gcCount = member.children.length;
+    if (gcCount === 0) return boxW;
+    const gcSpread = gcCount * gcBoxW + (gcCount - 1) * gcGapX;
+    return Math.max(boxW, gcSpread);
+  });
+  const childTotalW = footprints.reduce((s, f) => s + f, 0) + (childCount - 1) * gapX;
   const childStartX = (pw - childTotalW) / 2;
+
+  // Cumulative offsets: each child's center X is at the middle of its footprint
+  const childCenters: number[] = [];
+  let cumX = childStartX;
+  footprints.forEach((fp) => {
+    childCenters.push(cumX + fp / 2);
+    cumX += fp + gapX;
+  });
 
   // Connecting line from clients center down to T-junction
   const parentCenterX = pw / 2;
@@ -784,14 +848,12 @@ function drawFamilyPage(pdf: jsPDF, pw: number, _ph: number, data: FinancialPlan
 
   // Horizontal line across children
   if (childCount > 1) {
-    const firstChildCx = childStartX + boxW / 2;
-    const lastChildCx = childStartX + (childCount - 1) * (boxW + gapX) + boxW / 2;
-    pdf.line(firstChildCx, junctionY, lastChildCx, junctionY);
+    pdf.line(childCenters[0], junctionY, childCenters[childCount - 1], junctionY);
   }
 
   data.familyMembers.forEach((member, i) => {
-    const x = childStartX + i * (boxW + gapX);
-    const cx = x + boxW / 2;
+    const cx = childCenters[i];
+    const x = cx - boxW / 2;
 
     // Vertical line down to child box
     pdf.setDrawColor(190);
@@ -801,26 +863,23 @@ function drawFamilyPage(pdf: jsPDF, pw: number, _ph: number, data: FinancialPlan
     const relationship = member.relationship === 'son' ? 'Son' : member.relationship === 'daughter' ? 'Daughter' : member.relationship;
     const subtitle = [member.age ? `Age ${member.age}` : null, relationship].filter(Boolean).join(' \u2022 ');
     const color = member.isDependant ? AMBER : EMERALD;
-    drawPersonBox(pdf, x, y, boxW, boxH, member.name, null, subtitle, color);
+    drawPersonBox(pdf, x, y, boxW, boxH, member.name, null, subtitle, color, nameFontSize, subtitleFontSize);
 
     // Partner name below box
     if (member.partner) {
-      pdf.setFontSize(6.5);
+      pdf.setFontSize(partnerFontSize);
       pdf.setTextColor(130);
       pdf.setFont('helvetica', 'italic');
-      pdf.text(`Partner: ${member.partner}`, x + 3, y + boxH + 4);
+      pdf.text(`Partner: ${member.partner}`, x + 3 * scale, y + boxH + 4 * scale);
     }
 
     // ── Level 3: Grandchildren ──
     if (member.children.length > 0) {
-      const gcY = y + boxH + (member.partner ? 10 : 6) + gapY;
+      const gcY = y + boxH + (member.partner ? 10 * scale : 6 * scale) + gapY;
       const gcCount = member.children.length;
-      const gcBoxW = 48;
-      const gcBoxH = 16;
-      const gcGapX = 6;
       const gcTotalW = gcCount * gcBoxW + (gcCount - 1) * gcGapX;
       const gcStartX = cx - gcTotalW / 2;
-      const gcJunctionY = gcY - 4;
+      const gcJunctionY = gcY - 4 * scale;
 
       // Line down from parent
       pdf.setDrawColor(190);
@@ -843,39 +902,253 @@ function drawFamilyPage(pdf: jsPDF, pw: number, _ph: number, data: FinancialPlan
 
         const gcRelation = gc.relationship === 'grandson' ? 'Grandson' : 'Granddaughter';
         const gcSub = [gc.age ? `Age ${gc.age}` : null, gcRelation].filter(Boolean).join(' \u2022 ');
-        drawPersonBox(pdf, gcX, gcY, gcBoxW, gcBoxH, gc.name, null, gcSub, SLATE);
+        drawPersonBox(pdf, gcX, gcY, gcBoxW, gcBoxH, gc.name, null, gcSub, SLATE, nameFontSize, subtitleFontSize);
       });
     }
   });
+}
+
+// ── Goals Page ──
+
+const GOAL_CATEGORY_LABELS: Record<string, string> = {
+  retirement: 'Retirement',
+  wealth: 'Wealth',
+  protection: 'Protection',
+  estate: 'Estate',
+  lifestyle: 'Lifestyle',
+  education: 'Education',
+  other: 'Other',
+};
+
+function drawGoalsPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan) {
+  const m = 15;
+  let y = 10;
+
+  // Accent bar
+  pdf.setFillColor(...TEAL);
+  pdf.rect(0, 0, pw * 0.6, 2, 'F');
+  pdf.setFillColor(...PURPLE);
+  pdf.rect(pw * 0.6, 0, pw * 0.4, 2, 'F');
+
+  y = 14;
+  pdf.setFontSize(15);
+  pdf.setTextColor(50);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Goals & Objectives', m, y);
+  y += 5;
+
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(130);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(`${data.goals.length} goals identified`, m, y);
+  y += 8;
+
+  // Table header
+  const tableW = pw - m * 2;
+  const colX = {
+    name: m + 4,
+    category: m + tableW * 0.40,
+    timeframe: m + tableW * 0.58,
+    value: m + tableW * 0.78,
+  };
+
+  pdf.setFillColor(241, 245, 249);
+  pdf.roundedRect(m, y - 3, tableW, 8, 1.5, 1.5, 'F');
+
+  pdf.setFontSize(7);
+  pdf.setTextColor(100);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('GOAL', colX.name, y + 2);
+  pdf.text('CATEGORY', colX.category, y + 2);
+  pdf.text('TIMEFRAME', colX.timeframe, y + 2);
+  pdf.text('TARGET VALUE', colX.value, y + 2);
+  y += 9;
+
+  data.goals.forEach((goal, i) => {
+    if (y > ph - 20) {
+      pdf.addPage();
+      y = 15;
+    }
+
+    if (i % 2 === 0) {
+      pdf.setFillColor(252, 252, 253);
+      pdf.rect(m, y - 3.5, tableW, 8, 'F');
+    }
+
+    // Name
+    pdf.setFontSize(8.5);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(40);
+    pdf.text(goal.name, colX.name, y + 1, { maxWidth: tableW * 0.34 });
+
+    // Category badge
+    const catLabel = GOAL_CATEGORY_LABELS[goal.category] ?? goal.category;
+    const catBg = lighten(TEAL, 0.85);
+    const catW = pdf.getTextWidth(catLabel) + 4;
+    pdf.setFillColor(...catBg);
+    pdf.roundedRect(colX.category, y - 2.5, catW, 6, 1, 1, 'F');
+    pdf.setFontSize(6.5);
+    pdf.setTextColor(...TEAL);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(catLabel, colX.category + 2, y + 1.5);
+
+    // Timeframe
+    pdf.setFontSize(8.5);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(100);
+    pdf.text(goal.timeframe ?? '\u2014', colX.timeframe, y + 1);
+
+    // Value
+    pdf.setTextColor(40);
+    pdf.text(goal.value ? formatAUD(goal.value) : '\u2014', colX.value, y + 1);
+
+    y += 8;
+  });
+
+  // Summary
+  y += 4;
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(100);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(`${data.goals.length} total goals`, m, y);
+}
+
+// ── Relationships Page ──
+
+const RELATIONSHIP_TYPE_LABELS: Record<string, string> = {
+  accountant: 'Accountant',
+  stockbroker: 'Stockbroker',
+  solicitor: 'Solicitor',
+  insurance_adviser: 'Insurance Adviser',
+  mortgage_broker: 'Mortgage Broker',
+  other: 'Other',
+};
+
+function drawRelationshipsPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan) {
+  const m = 15;
+  let y = 10;
+
+  // Accent bar
+  pdf.setFillColor(...ROSE);
+  pdf.rect(0, 0, pw * 0.6, 2, 'F');
+  pdf.setFillColor(...PURPLE);
+  pdf.rect(pw * 0.6, 0, pw * 0.4, 2, 'F');
+
+  y = 14;
+  pdf.setFontSize(15);
+  pdf.setTextColor(50);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Professional Advisers', m, y);
+  y += 5;
+
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(130);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(`${data.relationships.length} professional relationships`, m, y);
+  y += 8;
+
+  // Table header
+  const tableW = pw - m * 2;
+  const colX = {
+    firm: m + 4,
+    type: m + tableW * 0.35,
+    contact: m + tableW * 0.55,
+    notes: m + tableW * 0.75,
+  };
+
+  pdf.setFillColor(241, 245, 249);
+  pdf.roundedRect(m, y - 3, tableW, 8, 1.5, 1.5, 'F');
+
+  pdf.setFontSize(7);
+  pdf.setTextColor(100);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('FIRM', colX.firm, y + 2);
+  pdf.text('TYPE', colX.type, y + 2);
+  pdf.text('CONTACT', colX.contact, y + 2);
+  pdf.text('NOTES', colX.notes, y + 2);
+  y += 9;
+
+  data.relationships.forEach((rel, i) => {
+    if (y > ph - 20) {
+      pdf.addPage();
+      y = 15;
+    }
+
+    if (i % 2 === 0) {
+      pdf.setFillColor(252, 252, 253);
+      pdf.rect(m, y - 3.5, tableW, 8, 'F');
+    }
+
+    // Firm
+    pdf.setFontSize(8.5);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(40);
+    pdf.text(rel.firmName ?? '\u2014', colX.firm, y + 1, { maxWidth: tableW * 0.29 });
+
+    // Type badge
+    const typeLabel = RELATIONSHIP_TYPE_LABELS[rel.type] ?? rel.type;
+    const typeBg = lighten(ROSE, 0.85);
+    const typeW = pdf.getTextWidth(typeLabel) + 4;
+    pdf.setFillColor(...typeBg);
+    pdf.roundedRect(colX.type, y - 2.5, typeW, 6, 1, 1, 'F');
+    pdf.setFontSize(6.5);
+    pdf.setTextColor(...ROSE);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(typeLabel, colX.type + 2, y + 1.5);
+
+    // Contact
+    pdf.setFontSize(8.5);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(40);
+    pdf.text(rel.contactName ?? '\u2014', colX.contact, y + 1);
+
+    // Notes
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(100);
+    pdf.text(rel.notes ?? '\u2014', colX.notes, y + 1, { maxWidth: tableW * 0.22 });
+
+    y += 8;
+  });
+
+  // Summary
+  y += 4;
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(100);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(`${data.relationships.length} total advisers`, m, y);
 }
 
 function drawPersonBox(
   pdf: jsPDF, x: number, y: number, w: number, h: number,
   name: string, age: number | null, subtitle: string | null,
   color: readonly [number, number, number],
+  nameFs = 8, subtitleFs = 6.5,
 ) {
+  const pad = Math.max(2, w * 0.05);
+  const r = Math.min(2, w * 0.04);
+
   // Light tinted background (no opacity — much more reliable)
   const bg = lighten(color, 0.88);
   pdf.setFillColor(...bg);
-  pdf.roundedRect(x, y, w, h, 2, 2, 'F');
+  pdf.roundedRect(x, y, w, h, r, r, 'F');
 
   // Border in full colour
   pdf.setDrawColor(color[0], color[1], color[2]);
   pdf.setLineWidth(0.5);
-  pdf.roundedRect(x, y, w, h, 2, 2, 'S');
+  pdf.roundedRect(x, y, w, h, r, r, 'S');
 
   // Name
-  pdf.setFontSize(8);
+  pdf.setFontSize(nameFs);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(40);
   const nameStr = age ? `${name}, ${age}` : name;
-  pdf.text(nameStr, x + 3, y + 7, { maxWidth: w - 6 });
+  pdf.text(nameStr, x + pad, y + h * 0.35, { maxWidth: w - pad * 2 });
 
   // Subtitle
   if (subtitle) {
-    pdf.setFontSize(6.5);
+    pdf.setFontSize(subtitleFs);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(120);
-    pdf.text(subtitle, x + 3, y + 12, { maxWidth: w - 6 });
+    pdf.text(subtitle, x + pad, y + h * 0.6, { maxWidth: w - pad * 2 });
   }
 }

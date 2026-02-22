@@ -60,7 +60,7 @@ export default function App() {
             <LogoFull size="sm" dark={isDark} />
             <span className={`text-xs hidden sm:block transition-colors
               ${isDark ? 'text-white/25 group-hover:text-white/40' : 'text-gray-400 group-hover:text-gray-600'}`}
-            >Financial Structure Visualiser</span>
+            >Legacy Wealth Blueprint</span>
           </div>
 
           <div className="flex items-center gap-3">
