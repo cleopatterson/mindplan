@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@media print {
+  @page { size: landscape; }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
@@ -75,6 +79,32 @@
 [data-pdf-light] .react-flow__node-liabilityNode > div,
 [data-pdf-light] .react-flow__node-liabilityNode > div * {
   color: #991b1b !important;
+}
+
+/* Goal nodes — solid teal-tinted background */
+[data-pdf-light] .react-flow__node-goalNode > div {
+  background: #f0fdfa !important;
+  border-color: #99f6e4 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+}
+[data-pdf-light] .react-flow__node-goalNode > div,
+[data-pdf-light] .react-flow__node-goalNode > div * {
+  color: #134e4a !important;
+}
+
+/* Relationship nodes — solid rose-tinted background */
+[data-pdf-light] .react-flow__node-relationshipNode > div {
+  background: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+}
+[data-pdf-light] .react-flow__node-relationshipNode > div,
+[data-pdf-light] .react-flow__node-relationshipNode > div * {
+  color: #881337 !important;
 }
 
 /* ── Live Light Mode ── */
@@ -180,6 +210,42 @@
 [data-theme="light"] .react-flow__node-familyMemberNode > div,
 [data-theme="light"] .react-flow__node-familyMemberNode > div * {
   color: #78350f !important;
+}
+
+[data-theme="light"] .react-flow__node-goalsGroupNode > div {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
+}
+
+[data-theme="light"] .react-flow__node-goalNode > div {
+  background: white !important;
+  border-color: #14b8a6 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
+}
+[data-theme="light"] .react-flow__node-goalNode > div,
+[data-theme="light"] .react-flow__node-goalNode > div * {
+  color: #134e4a !important;
+}
+
+[data-theme="light"] .react-flow__node-relationshipsGroupNode > div {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
+}
+
+[data-theme="light"] .react-flow__node-relationshipNode > div {
+  background: white !important;
+  border-color: #f43f5e !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
+}
+[data-theme="light"] .react-flow__node-relationshipNode > div,
+[data-theme="light"] .react-flow__node-relationshipNode > div * {
+  color: #881337 !important;
 }
 
 /* ── Summary Bar light mode ── */
@@ -367,6 +433,12 @@
   color: #475569 !important;
 }
 
+/* Rose → darker rose */
+[data-theme="light"] .panel-content [class*="text-rose-3"],
+[data-theme="light"] .panel-content [class*="text-rose-4"] {
+  color: #e11d48 !important;
+}
+
 /* Insight pill backgrounds — lighten for white panel bg */
 [data-theme="light"] .panel-content [class*="bg-amber-500/1"] {
   background: #fef3c7 !important;
@@ -385,6 +457,12 @@
 }
 [data-theme="light"] .panel-content [class*="bg-purple-500/1"] {
   background: #ede9fe !important;
+}
+[data-theme="light"] .panel-content [class*="bg-teal-500/1"] {
+  background: #ccfbf1 !important;
+}
+[data-theme="light"] .panel-content [class*="bg-rose-500/1"] {
+  background: #ffe4e6 !important;
 }
 
 /* Pill borders — stronger in light mode */
@@ -405,6 +483,12 @@
 }
 [data-theme="light"] .panel-content [class*="border-purple-500/"] {
   border-color: #c4b5fd !important;
+}
+[data-theme="light"] .panel-content [class*="border-teal-500/"] {
+  border-color: #5eead4 !important;
+}
+[data-theme="light"] .panel-content [class*="border-rose-500/"] {
+  border-color: #fda4af !important;
 }
 
 /* HeroBanner gradient backgrounds — lighter for white panel */

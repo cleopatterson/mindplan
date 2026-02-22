@@ -57,4 +57,9 @@ export function anonymize(plan: FinancialPlan): void {
       entity.trusteeName = stripSurname(entity.trusteeName);
     }
   }
+
+  // Relationship contact names (firmName left intact — entity/business name policy)
+  for (const rel of plan.relationships ?? []) {
+    if (rel.contactName) rel.contactName = stripSurname(rel.contactName);
+  }
 }

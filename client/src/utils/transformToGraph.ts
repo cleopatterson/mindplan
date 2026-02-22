@@ -1,4 +1,4 @@
-import type { FinancialPlan, Entity, Asset, Liability, Client, EstatePlanItem, FamilyMember, Grandchild } from 'shared/types';
+import type { FinancialPlan, Entity, Asset, Liability, Client, EstatePlanItem, FamilyMember, Grandchild, Goal, Relationship } from 'shared/types';
 import type { Node, Edge } from '@xyflow/react';
 import { formatAUD } from './calculations';
 
@@ -8,7 +8,7 @@ export interface NodeData extends Record<string, unknown> {
   label: string;
   sublabel?: string;
   value?: number | null;
-  nodeType: 'family' | 'client' | 'entity' | 'asset' | 'liability' | 'estateGroup' | 'estateClient' | 'estateItem' | 'familyGroup' | 'familyMember';
+  nodeType: 'family' | 'client' | 'entity' | 'asset' | 'liability' | 'estateGroup' | 'estateClient' | 'estateItem' | 'familyGroup' | 'familyMember' | 'goalsGroup' | 'goal' | 'relationshipsGroup' | 'relationship';
   entityType?: Entity['type'];
   assetType?: Asset['type'];
   liabilityType?: Liability['type'];
@@ -19,7 +19,7 @@ export interface NodeData extends Record<string, unknown> {
   ownerNames?: string[];
   trusteeName?: string | null;
   side: Side;
-  raw?: Client | Entity | Asset | Liability | EstatePlanItem | FamilyMember | Grandchild;
+  raw?: Client | Entity | Asset | Liability | EstatePlanItem | FamilyMember | Grandchild | Goal | Relationship;
 }
 
 export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]; edges: Edge[] } {
@@ -279,6 +279,99 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
           target: grandchild.id,
         });
       }
+    }
+  }
+
+  // RIGHT SIDE — goals group + individual goals
+  if (plan.goals?.length > 0) {
+    const goalsGroupId = 'goals-group';
+    nodes.push({
+      id: goalsGroupId,
+      type: 'goalsGroupNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'Goals',
+        sublabel: `${plan.goals.length} ${plan.goals.length === 1 ? 'goal' : 'goals'}`,
+        nodeType: 'goalsGroup',
+        side: 'right',
+      },
+    });
+    edges.push({
+      id: `${familyId}-${goalsGroupId}`,
+      source: familyId,
+      target: goalsGroupId,
+      sourceHandle: 'right',
+    });
+
+    for (const goal of plan.goals) {
+      const parts: string[] = [];
+      if (goal.category) parts.push(goal.category);
+      if (goal.timeframe) parts.push(goal.timeframe);
+
+      nodes.push({
+        id: goal.id,
+        type: 'goalNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: goal.name,
+          sublabel: parts.join(' · ') || undefined,
+          value: goal.value,
+          nodeType: 'goal',
+          side: 'right',
+          raw: goal,
+        },
+      });
+      edges.push({
+        id: `${goalsGroupId}-${goal.id}`,
+        source: goalsGroupId,
+        target: goal.id,
+      });
+    }
+  }
+
+  // RIGHT SIDE — relationships group + individual advisers
+  if (plan.relationships?.length > 0) {
+    const relsGroupId = 'relationships-group';
+    nodes.push({
+      id: relsGroupId,
+      type: 'relationshipsGroupNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'Advisers',
+        sublabel: `${plan.relationships.length} ${plan.relationships.length === 1 ? 'adviser' : 'advisers'}`,
+        nodeType: 'relationshipsGroup',
+        side: 'right',
+      },
+    });
+    edges.push({
+      id: `${familyId}-${relsGroupId}`,
+      source: familyId,
+      target: relsGroupId,
+      sourceHandle: 'right',
+    });
+
+    for (const rel of plan.relationships) {
+      const typeLabel = rel.type.replace(/_/g, ' ');
+      const parts: string[] = [typeLabel];
+      if (rel.contactName) parts.push(rel.contactName);
+
+      nodes.push({
+        id: rel.id,
+        type: 'relationshipNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: rel.firmName ?? rel.contactName ?? typeLabel,
+          sublabel: rel.firmName ? parts.join(' · ') : (parts.length > 1 ? parts.slice(1).join(' · ') : undefined),
+          nodeType: 'relationship',
+          side: 'right',
+          raw: rel,
+        },
+      });
+      edges.push({
+        id: `${relsGroupId}-${rel.id}`,
+        source: relsGroupId,
+        target: rel.id,
+      });
     }
   }
 

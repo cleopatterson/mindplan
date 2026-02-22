@@ -58,5 +58,18 @@ Australian financial plans typically involve:
      - Set relationship to 'grandson' or 'granddaughter'.
      - Link each grandchild to the correct parent (e.g. if "Archie is son of Anthony", Archie goes in Anthony's children array).
    - Include age if mentioned at either level.
+13. Extract structured goals and objectives:
+   - name: Short description of the goal, e.g. "Retire at 65", "Fund children's education"
+   - category: retirement, wealth, protection, estate, lifestyle, education, or other
+   - detail: Any additional notes or context about the goal
+   - timeframe: When the goal should be achieved, e.g. "5 years", "by 2030", "ongoing"
+   - value: Target dollar value if mentioned (e.g. retirement income target), null otherwise
+   - These are in ADDITION to the simple objectives[] array — extract both.
+14. Extract professional adviser relationships:
+   - type: accountant, stockbroker, solicitor, insurance_adviser, mortgage_broker, or other
+   - firmName: The firm or company name
+   - contactName: The individual contact person name
+   - notes: Any additional details about the relationship
+   - clientIds: Which client IDs the adviser is linked to (empty array if linked to all/unclear)
 
 Be thorough but accurate. If something is ambiguous, flag it as a data gap rather than guessing.`;

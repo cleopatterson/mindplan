@@ -9,6 +9,8 @@ export interface FinancialPlan {
   estatePlanning: EstatePlanItem[];
   familyMembers: FamilyMember[];
   objectives: string[];
+  goals: Goal[];
+  relationships: Relationship[];
   dataGaps: DataGap[];
 }
 
@@ -97,6 +99,24 @@ export interface Grandchild {
   age: number | null;
   isDependant: boolean;
   details: string | null;
+}
+
+export interface Goal {
+  id: string;
+  name: string;
+  category: 'retirement' | 'wealth' | 'protection' | 'estate' | 'lifestyle' | 'education' | 'other';
+  detail: string | null;
+  timeframe: string | null;
+  value: number | null;
+}
+
+export interface Relationship {
+  id: string;
+  clientIds: string[];
+  type: 'accountant' | 'stockbroker' | 'solicitor' | 'insurance_adviser' | 'mortgage_broker' | 'other';
+  firmName: string | null;
+  contactName: string | null;
+  notes: string | null;
 }
 
 export interface DataGap {

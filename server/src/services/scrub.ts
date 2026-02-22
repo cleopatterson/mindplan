@@ -127,6 +127,17 @@ export function restoreSurnames(plan: FinancialPlan, surnames: string[]): void {
     for (const l of e.liabilities) l.name = restore(l.name);
   }
 
+  for (const goal of plan.goals ?? []) {
+    goal.name = restore(goal.name);
+    if (goal.detail) goal.detail = restore(goal.detail);
+  }
+
+  for (const rel of plan.relationships ?? []) {
+    if (rel.firmName) rel.firmName = restore(rel.firmName);
+    if (rel.contactName) rel.contactName = restore(rel.contactName);
+    if (rel.notes) rel.notes = restore(rel.notes);
+  }
+
   for (const g of plan.dataGaps) g.description = restore(g.description);
 }
 

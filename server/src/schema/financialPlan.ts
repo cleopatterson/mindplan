@@ -72,6 +72,24 @@ export const FamilyMemberSchema = z.object({
   children: z.array(GrandchildSchema).default([]).describe('Grandchildren — children of this family member'),
 });
 
+export const GoalSchema = z.object({
+  id: z.string().describe('Unique ID, e.g. "goal-1"'),
+  name: z.string().describe('Short goal name, e.g. "Retire at 65"'),
+  category: z.enum(['retirement', 'wealth', 'protection', 'estate', 'lifestyle', 'education', 'other']).describe('Goal category'),
+  detail: z.nullable(z.string()).describe('Additional detail or notes about the goal'),
+  timeframe: z.nullable(z.string()).describe('Timeframe, e.g. "5 years", "by 2030", "ongoing"'),
+  value: z.nullable(z.number()).describe('Target dollar value if applicable, null otherwise'),
+});
+
+export const RelationshipSchema = z.object({
+  id: z.string().describe('Unique ID, e.g. "rel-1"'),
+  clientIds: z.array(z.string()).default([]).describe('Client IDs this adviser is linked to'),
+  type: z.enum(['accountant', 'stockbroker', 'solicitor', 'insurance_adviser', 'mortgage_broker', 'other']).describe('Type of professional adviser'),
+  firmName: z.nullable(z.string()).describe('Firm/company name, e.g. "Smith & Partners"'),
+  contactName: z.nullable(z.string()).describe('Contact person name, e.g. "John Smith"'),
+  notes: z.nullable(z.string()).describe('Additional notes about the relationship'),
+});
+
 export const DataGapSchema = z.object({
   entityId: z.nullable(z.string()).describe('Related entity ID, or null for personal gaps'),
   field: z.string().describe('Field name that is missing'),
@@ -87,5 +105,7 @@ export const FinancialPlanSchema = z.object({
   estatePlanning: z.array(EstatePlanItemSchema).default([]).describe('Estate planning documents — wills, POA, guardianship, super nominations. Empty array if none mentioned.'),
   familyMembers: z.array(FamilyMemberSchema).default([]).describe('Direct children (sons/daughters) of the clients. Grandchildren are nested inside each child\'s "children" array. Empty array if none mentioned.'),
   objectives: z.array(z.string()).describe('Financial objectives mentioned in the document'),
+  goals: z.array(GoalSchema).default([]).describe('Structured goals and objectives with category, timeframe, and target value. Empty array if none mentioned.'),
+  relationships: z.array(RelationshipSchema).default([]).describe('Professional advisers and relationships — accountants, stockbrokers, solicitors, insurance advisers, mortgage brokers. Empty array if none mentioned.'),
   dataGaps: z.array(DataGapSchema).describe('Information that appears missing or unclear'),
 });

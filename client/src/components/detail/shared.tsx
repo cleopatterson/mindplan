@@ -13,6 +13,8 @@ export function InsightPill({ children, color = 'blue' }: { children: React.Reac
     red: 'bg-red-500/10 text-red-400/80 border-red-500/20',
     purple: 'bg-purple-500/10 text-purple-400/80 border-purple-500/20',
     orange: 'bg-orange-500/10 text-orange-400/80 border-orange-500/20',
+    teal: 'bg-teal-500/10 text-teal-400/80 border-teal-500/20',
+    rose: 'bg-rose-500/10 text-rose-400/80 border-rose-500/20',
     white: 'bg-white/5 text-white/50 border-white/10',
   };
   return (

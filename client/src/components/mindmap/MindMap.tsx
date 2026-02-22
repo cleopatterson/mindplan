@@ -32,6 +32,10 @@ import { EstateClientNode } from './nodes/EstateClientNode';
 import { EstateItemNode } from './nodes/EstateItemNode';
 import { FamilyGroupNode } from './nodes/FamilyGroupNode';
 import { FamilyMemberNode } from './nodes/FamilyMemberNode';
+import { GoalsGroupNode } from './nodes/GoalsGroupNode';
+import { GoalNode } from './nodes/GoalNode';
+import { RelationshipsGroupNode } from './nodes/RelationshipsGroupNode';
+import { RelationshipNode } from './nodes/RelationshipNode';
 
 const nodeTypes: NodeTypes = {
   familyNode: FamilyNode,
@@ -44,6 +48,10 @@ const nodeTypes: NodeTypes = {
   estateItemNode: EstateItemNode,
   familyGroupNode: FamilyGroupNode,
   familyMemberNode: FamilyMemberNode,
+  goalsGroupNode: GoalsGroupNode,
+  goalNode: GoalNode,
+  relationshipsGroupNode: RelationshipsGroupNode,
+  relationshipNode: RelationshipNode,
 };
 
 interface MindMapProps {
@@ -381,6 +389,8 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
             if (type === 'liability') return '#ef4444';
             if (type === 'estateGroup' || type === 'estateClient' || type === 'estateItem') return '#6366f1';
             if (type === 'familyGroup' || type === 'familyMember') return '#f59e0b';
+            if (type === 'goalsGroup' || type === 'goal') return '#14b8a6';
+            if (type === 'relationshipsGroup' || type === 'relationship') return '#f43f5e';
             return '#6b7280';
           }}
         />

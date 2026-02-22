@@ -418,5 +418,15 @@ function removeNode(plan: FinancialPlan, nodeId: string): FinancialPlan {
     }
   }
 
+  // Goals
+  if (plan.goals?.some((g) => g.id === nodeId)) {
+    return { ...plan, goals: plan.goals.filter((g) => g.id !== nodeId) };
+  }
+
+  // Relationships
+  if (plan.relationships?.some((r) => r.id === nodeId)) {
+    return { ...plan, relationships: plan.relationships.filter((r) => r.id !== nodeId) };
+  }
+
   return plan;
 }

@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import type { FinancialPlan, Client, Entity, Asset, Liability, EstatePlanItem, FamilyMember, Grandchild } from 'shared/types';
+import type { FinancialPlan, Client, Entity, Asset, Liability, EstatePlanItem, FamilyMember, Grandchild, Goal, Relationship } from 'shared/types';
 import { formatAUD, totalAssets, totalLiabilities, entityEquity } from '../../utils/calculations';
 import {
   Check, X, Pencil, User, Building2, Landmark, CreditCard,
-  Briefcase, ScrollText, Users, Baby,
+  Briefcase, ScrollText, Users, Baby, Target, Handshake,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { HeroBanner, InsightPill, assetTypeConfig } from './shared';
@@ -59,6 +59,20 @@ export function DetailPanel({ data, nodeId, onUpdateField }: DetailPanelProps) {
     const grandchild = member.children?.find((gc) => gc.id === nodeId);
     if (grandchild) return <GrandchildDetail grandchild={grandchild} parent={member} data={data} nodeId={nodeId} onUpdate={onUpdateField} />;
   }
+
+  // Goals group
+  if (nodeId === 'goals-group') return <GoalsGroupDetail data={data} />;
+
+  // Individual goals
+  const goal = data.goals?.find((g) => g.id === nodeId);
+  if (goal) return <GoalDetail goal={goal} />;
+
+  // Relationships group
+  if (nodeId === 'relationships-group') return <RelationshipsGroupDetail data={data} />;
+
+  // Individual relationships
+  const relationship = data.relationships?.find((r) => r.id === nodeId);
+  if (relationship) return <RelationshipDetail relationship={relationship} data={data} />;
 
   return null;
 }
@@ -619,6 +633,149 @@ function GrandchildDetail({ grandchild, parent, data, nodeId, onUpdate }: { gran
         <div className="border-t border-white/5 my-2" />
         <EditableField label="Details" value={grandchild.details ?? ''} placeholder="e.g. School fees being funded" onSave={(v) => onUpdate(nodeId, 'details', v)} />
       </div>
+    </div>
+  );
+}
+
+// ── Goals Group Detail ──
+
+function GoalsGroupDetail({ data }: { data: FinancialPlan }) {
+  const goals = data.goals ?? [];
+  const categories = [...new Set(goals.map((g) => g.category))];
+
+  return (
+    <div className="space-y-3">
+      <HeroBanner
+        icon={Target}
+        label="Goals"
+        sublabel={`${goals.length} ${goals.length === 1 ? 'goal' : 'goals'}`}
+        gradient="bg-gradient-to-br from-teal-500/20 via-teal-600/10 to-teal-900/20"
+        iconColor="text-teal-400"
+      />
+
+      <div className="flex flex-wrap gap-1.5">
+        <InsightPill color="teal">{goals.length} {goals.length === 1 ? 'goal' : 'goals'}</InsightPill>
+        {categories.length > 1 && <InsightPill color="white">{categories.length} categories</InsightPill>}
+      </div>
+
+      {goals.map((goal) => (
+        <div key={goal.id} className="rounded-lg bg-white/[0.02] border border-white/5 p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Target className="w-3 h-3 text-teal-400/50" />
+            <span className="text-xs text-white/80 font-medium">{goal.name}</span>
+          </div>
+          <div className="text-[10px] text-white/40 pl-5">
+            {goal.category}{goal.timeframe ? ` · ${goal.timeframe}` : ''}
+            {goal.value != null ? ` · ${formatAUD(goal.value)}` : ''}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Goal Detail ──
+
+function GoalDetail({ goal }: { goal: Goal }) {
+  return (
+    <div className="space-y-3">
+      <HeroBanner
+        icon={Target}
+        label={goal.name}
+        sublabel={goal.category}
+        gradient="bg-gradient-to-br from-teal-500/20 via-teal-600/10 to-teal-900/20"
+        iconColor="text-teal-400"
+      />
+
+      <div className="flex flex-wrap gap-1.5">
+        <InsightPill color="teal">{goal.category}</InsightPill>
+        {goal.timeframe && <InsightPill color="white">{goal.timeframe}</InsightPill>}
+        {goal.value != null && <InsightPill color="teal">{formatAUD(goal.value)}</InsightPill>}
+      </div>
+
+      {goal.detail && (
+        <div className="rounded-lg bg-white/[0.02] border border-white/5 p-3">
+          <div className="text-[10px] text-white/30 uppercase tracking-wide mb-1">Detail</div>
+          <div className="text-xs text-white/70">{goal.detail}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Relationships Group Detail ──
+
+const relTypeLabels: Record<string, string> = {
+  accountant: 'Accountant',
+  stockbroker: 'Stockbroker',
+  solicitor: 'Solicitor',
+  insurance_adviser: 'Insurance Adviser',
+  mortgage_broker: 'Mortgage Broker',
+  other: 'Other',
+};
+
+function RelationshipsGroupDetail({ data }: { data: FinancialPlan }) {
+  const rels = data.relationships ?? [];
+
+  return (
+    <div className="space-y-3">
+      <HeroBanner
+        icon={Handshake}
+        label="Advisers"
+        sublabel={`${rels.length} ${rels.length === 1 ? 'adviser' : 'advisers'}`}
+        gradient="bg-gradient-to-br from-rose-500/20 via-rose-600/10 to-rose-900/20"
+        iconColor="text-rose-400"
+      />
+
+      <div className="flex flex-wrap gap-1.5">
+        <InsightPill color="rose">{rels.length} {rels.length === 1 ? 'adviser' : 'advisers'}</InsightPill>
+      </div>
+
+      {rels.map((rel) => (
+        <div key={rel.id} className="rounded-lg bg-white/[0.02] border border-white/5 p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Handshake className="w-3 h-3 text-rose-400/50" />
+            <span className="text-xs text-white/80 font-medium">{rel.firmName ?? rel.contactName ?? relTypeLabels[rel.type]}</span>
+          </div>
+          <div className="text-[10px] text-white/40 pl-5">
+            {relTypeLabels[rel.type] ?? rel.type}
+            {rel.contactName && rel.firmName ? ` · ${rel.contactName}` : ''}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Relationship Detail ──
+
+function RelationshipDetail({ relationship, data }: { relationship: Relationship; data: FinancialPlan }) {
+  const linkedClients = data.clients.filter((c) => relationship.clientIds.includes(c.id));
+
+  return (
+    <div className="space-y-3">
+      <HeroBanner
+        icon={Handshake}
+        label={relationship.firmName ?? relationship.contactName ?? relTypeLabels[relationship.type]}
+        sublabel={relTypeLabels[relationship.type] ?? relationship.type}
+        gradient="bg-gradient-to-br from-rose-500/20 via-rose-600/10 to-rose-900/20"
+        iconColor="text-rose-400"
+      />
+
+      <div className="flex flex-wrap gap-1.5">
+        <InsightPill color="rose">{relTypeLabels[relationship.type]}</InsightPill>
+        {relationship.contactName && <InsightPill color="white">Contact: {relationship.contactName}</InsightPill>}
+        {linkedClients.length > 0 && (
+          <InsightPill color="white">{linkedClients.map((c) => c.name).join(' & ')}</InsightPill>
+        )}
+      </div>
+
+      {relationship.notes && (
+        <div className="rounded-lg bg-white/[0.02] border border-white/5 p-3">
+          <div className="text-[10px] text-white/30 uppercase tracking-wide mb-1">Notes</div>
+          <div className="text-xs text-white/70">{relationship.notes}</div>
+        </div>
+      )}
     </div>
   );
 }
