@@ -1,0 +1,114 @@
+FACT FIND
+Prepared for: Nick & Tanya Kosta
+Date: 6 August 2024
+Adviser: Martin Bell
+Lifespan Financial Planning
+
+═══════════════════════════════════════════════════
+CLIENT DETAILS
+═══════════════════════════════════════════════════
+
+Client 1: Nick Kosta
+  Date of Birth: [DOB redacted, age 39]
+  Occupation: Cafe Owner / Operator
+  Annual Salary (from company): $90,000
+  Superannuation: AustralianSuper — Balance: $62,000
+
+Client 2: Tanya Kosta
+  Date of Birth: [DOB redacted, age 37]
+  Occupation: Cafe Owner / Manager
+  Annual Salary (from company): $75,000
+  Superannuation: AustralianSuper — Balance: $48,000
+
+═══════════════════════════════════════════════════
+ENTITY STRUCTURE
+═══════════════════════════════════════════════════
+
+1. Kosta Cafe Pty Ltd (Company)
+   ACN: 333 444 555
+   Directors: Nick Kosta, Tanya Kosta
+   Shareholders: Nick Kosta (50%), Tanya Kosta (50%)
+
+   Assets:
+   - Business Bank Account (CBA): $28,000
+   - Cafe Fit-out & Equipment (WDV): $95,000
+   - Stock on hand: $8,000
+   - Goodwill: Not independently valued
+
+   Liabilities:
+   - CBA Business Loan
+     Outstanding: $65,000
+     Rate: 7.99%
+     Purpose: Cafe fit-out refinance
+
+   Revenue FY2024: $820,000
+   Net Profit (before director salaries): $240,000
+
+═══════════════════════════════════════════════════
+PERSONAL ASSETS & LIABILITIES
+═══════════════════════════════════════════════════
+
+Personal Assets:
+- Family Home: 12 Wilson Street, Newtown NSW 2042
+  Ownership: Joint Tenants
+  Estimated Value: $1,350,000
+
+- Motor Vehicle: 2019 Toyota Corolla — $14,000 (Tanya)
+- Motor Vehicle: 2017 Mazda BT-50 — $18,000 (Nick — used for cafe supplies)
+
+- Savings (CBA — joint): $22,000
+
+Personal Liabilities:
+- Home Loan (CBA)
+  Outstanding: $780,000
+  Rate: 6.19% (variable)
+  Repayment: $5,100/month (P&I)
+
+═══════════════════════════════════════════════════
+INSURANCE
+═══════════════════════════════════════════════════
+
+Nick Kosta:
+- Life: $200,000 (default via AustralianSuper)
+- TPD: $200,000 (default via AustralianSuper)
+- IP: Not held
+
+Tanya Kosta:
+- Life: $200,000 (default via AustralianSuper)
+- TPD: $200,000 (default via AustralianSuper)
+- IP: Not held
+
+Business Insurance: Zurich — Property $150,000, Public Liability $10M, Business Interruption 12 months
+
+═══════════════════════════════════════════════════
+ESTATE PLANNING
+═══════════════════════════════════════════════════
+
+Nick Kosta:
+- Will: Not established
+- POA: Not established
+- Super BDBN: None
+
+Tanya Kosta:
+- Will: Not established
+- POA: Not established
+- Super BDBN: None
+
+═══════════════════════════════════════════════════
+FAMILY
+═══════════════════════════════════════════════════
+
+Dependants:
+- Zara Kosta (Daughter, age 7) — Year 2, Newtown Public
+- Leo Kosta (Son, age 4) — attends childcare
+
+═══════════════════════════════════════════════════
+OBJECTIVES
+═══════════════════════════════════════════════════
+
+1. Pay off the business loan within 2 years
+2. Increase super contributions — both have very low balances for their age
+3. Get income protection insurance — critical given reliance on the cafe
+4. Establish wills and powers of attorney
+5. Consider restructuring the business through a trust for tax efficiency
+6. Save for a second cafe location ($150,000 fit-out)

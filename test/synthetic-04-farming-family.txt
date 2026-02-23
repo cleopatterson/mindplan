@@ -1,0 +1,171 @@
+STATEMENT OF ADVICE
+Prepared for: Bruce & Margaret Hadley
+Date: 12 June 2025
+Adviser: Steve Carruthers, CFP
+Elders Financial Planning — Tamworth
+
+═══════════════════════════════════════════════════
+CLIENT DETAILS
+═══════════════════════════════════════════════════
+
+Client 1: Bruce Hadley
+  Date of Birth: [DOB redacted, age 58]
+  Occupation: Primary Producer (Farmer)
+  Annual Farm Income (Bruce's share): $145,000
+  Superannuation: Australian Retirement Trust — Balance: $280,000
+
+Client 2: Margaret Hadley
+  Date of Birth: [DOB redacted, age 55]
+  Occupation: Farm Administration / Bookkeeper
+  Annual Income: $45,000 (paid from partnership)
+  Superannuation: Australian Retirement Trust — Balance: $165,000
+
+═══════════════════════════════════════════════════
+ENTITY STRUCTURE
+═══════════════════════════════════════════════════
+
+1. B & M Hadley Partnership (Partnership)
+   ABN: 33 444 555 666
+   Partners: Bruce Hadley (60%), Margaret Hadley (40%)
+
+   Assets:
+   - Livestock (cattle herd — 450 head Angus)
+     Estimated Value: $1,125,000
+
+   - Farm Machinery & Equipment
+     Estimated Value: $380,000
+
+   - Hay & Grain Stores
+     Estimated Value: $65,000
+
+   Liabilities:
+   - NAB Agribusiness Loan
+     Outstanding: $420,000
+     Interest Rate: 5.89% (variable)
+     Purpose: Livestock and equipment finance
+
+   - NAB Seasonal Overdraft Facility
+     Limit: $150,000
+     Current Drawn: $82,000
+     Interest Rate: 7.20%
+
+2. Hadley Family Trust (Discretionary Trust)
+   ABN: 22 111 888 333
+   Trustee: Hadley Pastoral Pty Ltd
+   Appointer: Bruce Hadley
+   Beneficiaries: Bruce, Margaret, Hadley children
+
+   Assets:
+   - Farmland: "Willowbrook" — 2,400 acres, Liverpool Plains NSW
+     Estimated Value: $4,800,000
+     (Land only — improvements included)
+
+   - Farmland: "North Block" — 800 acres adjacent
+     Estimated Value: $1,600,000
+     Purchased 2019
+
+   - Term Deposit (NAB)
+     Balance: $120,000
+     Rate: 4.75%
+
+   Liabilities:
+   - NAB Farm Mortgage — "North Block"
+     Outstanding: $680,000
+     Interest Rate: 5.99%
+     P&I over 15 years
+
+3. Hadley Pastoral Pty Ltd (Company)
+   ACN: 555 666 777
+   Directors: Bruce Hadley, Margaret Hadley
+   Shareholders: Hadley Family Trust (100%)
+   Purpose: Corporate trustee only — no trading activity
+
+   Assets: Nil
+   Liabilities: Nil
+
+═══════════════════════════════════════════════════
+PERSONAL ASSETS & LIABILITIES
+═══════════════════════════════════════════════════
+
+Personal Assets:
+- Homestead: "Willowbrook" homestead (separate title to farmland)
+  Estimated Value: $650,000
+  Ownership: Joint Tenants
+
+- Motor Vehicle: 2022 Toyota HiLux SR5
+  Estimated Value: $45,000
+
+- Motor Vehicle: 2018 Toyota Prado
+  Estimated Value: $32,000
+
+- Savings Account (NAB)
+  Balance: $28,000
+  Joint
+
+Personal Liabilities:
+- Credit Card (NAB Visa)
+  Limit: $8,000
+  Outstanding: $1,200
+
+═══════════════════════════════════════════════════
+INSURANCE
+═══════════════════════════════════════════════════
+
+Bruce Hadley:
+- Life Insurance: $500,000 (via Australian Retirement Trust)
+- TPD Insurance: $500,000 (via Australian Retirement Trust)
+- Income Protection: Not held
+
+Margaret Hadley:
+- Life Insurance: $250,000 (via Australian Retirement Trust)
+- TPD Insurance: $250,000 (via Australian Retirement Trust)
+- Income Protection: Not held
+
+Farm Insurance: QBE Rural — Buildings $1,200,000, Contents $200,000, Machinery $380,000
+Motor Vehicles: GIO — HiLux and Prado (comprehensive)
+Public Liability: $20,000,000 via QBE
+
+═══════════════════════════════════════════════════
+ESTATE PLANNING
+═══════════════════════════════════════════════════
+
+Bruce Hadley:
+- Will: In Place (last updated 2018)
+  Executor: Margaret Hadley
+  Alternate: Tom Hadley (son)
+- Enduring Power of Attorney: Margaret Hadley
+- Superannuation Death Benefit Nomination: Margaret Hadley 100% — Non-binding
+
+Margaret Hadley:
+- Will: In Place (last updated 2018)
+  Executor: Bruce Hadley
+  Alternate: Tom Hadley (son)
+- Enduring Power of Attorney: Bruce Hadley
+- Superannuation Death Benefit Nomination: Bruce Hadley 100% — Non-binding
+
+Notes:
+- Wills are 7 years old — need review given farm succession issues
+- No testamentary trust provisions
+- Trust deed needs review for succession planning — appointer powers
+
+═══════════════════════════════════════════════════
+FAMILY
+═══════════════════════════════════════════════════
+
+Non-Dependants:
+- Tom Hadley (Son, age 32) — Works on the farm, wants to take over operations
+  Partner: Amy Richards
+  Children: Charlie Hadley (age 4)
+- Sarah Hadley (Daughter, age 29) — Veterinarian in Sydney, no interest in farming
+  Partner: None
+
+═══════════════════════════════════════════════════
+OBJECTIVES
+═══════════════════════════════════════════════════
+
+1. Transition farm management to Tom within 5 years
+2. Ensure equitable inheritance between Tom and Sarah despite farm succession
+3. Build superannuation to provide retirement income of $70,000 p.a. combined
+4. Pay down farm debt before retirement
+5. Obtain income protection insurance for both Bruce and Margaret
+6. Review and update estate planning documents including trust deed

@@ -1,0 +1,188 @@
+PRIVATE CLIENT REVIEW
+Prepared for: Dr James & Victoria Ashworth
+Date: 15 August 2025
+Adviser: Philip Denton, CFP
+UBS Wealth Management Australia
+
+═══════════════════════════════════════════════════
+CLIENT DETAILS
+═══════════════════════════════════════════════════
+
+Client 1: Dr James Ashworth
+  Age: 56
+  Occupation: Orthopaedic Surgeon — Private Practice
+  Annual Income: $850,000 (practice drawings)
+  Superannuation: Held in SMSF
+
+Client 2: Victoria Ashworth
+  Age: 53
+  Occupation: Non-Executive Director (2 boards)
+  Annual Income: $140,000 (director fees)
+  Superannuation: Held in SMSF
+
+═══════════════════════════════════════════════════
+ENTITY STRUCTURE
+═══════════════════════════════════════════════════
+
+1. Ashworth Medical Pty Ltd (Company)
+   ACN: 222 333 444
+   Director: James Ashworth (sole)
+   Shareholder: Ashworth Medical Trust (100%)
+   Purpose: Operating entity for surgical practice
+
+   Assets:
+   - Business Bank Account: $220,000
+   - Medical Equipment (WDV): $180,000
+   - Accounts Receivable: $95,000
+
+   Liabilities:
+   - Equipment Lease: $65,000 remaining
+
+2. Ashworth Medical Trust (Discretionary Trust)
+   Trustee: JV Ashworth Pty Ltd
+   Appointer: James Ashworth
+   Beneficiaries: James, Victoria, Ashworth children
+
+   Assets:
+   - Practice goodwill and income distribution vehicle
+   - Westpac Term Deposit: $300,000 (4.50%)
+
+   Liabilities: Nil
+
+3. Ashworth Investment Trust (Discretionary Trust)
+   Trustee: JV Ashworth Pty Ltd
+   Appointer: James Ashworth
+   Beneficiaries: James, Victoria, Ashworth children
+
+   Assets:
+   - Investment Property: Penthouse, 1 Macquarie Street, Sydney NSW 2000
+     Value: $4,500,000
+     Rental Income: $156,000 p.a.
+
+   - Share Portfolio (UBS Managed):
+     Australian equities: $1,200,000
+     International equities: $800,000
+     Fixed income: $400,000
+     Alternatives (hedge funds): $350,000
+     Total: $2,750,000
+
+   - Cash (UBS): $180,000
+
+   Liabilities:
+   - NAB Margin Lending Facility
+     Drawn: $600,000
+     Rate: 6.80%
+     LVR: 21.8% (conservative)
+
+4. JV Ashworth Pty Ltd (Company)
+   Directors: James Ashworth, Victoria Ashworth
+   Shareholders: James Ashworth (50%), Victoria Ashworth (50%)
+   Purpose: Corporate trustee for both trusts and SMSF
+
+   Assets: Nil
+   Liabilities: Nil
+
+5. Ashworth Super Fund (SMSF)
+   Members: James Ashworth, Victoria Ashworth
+   Trustee: JV Ashworth Pty Ltd
+   Auditor: KPMG Sydney
+
+   Assets:
+   - Listed Property Trust (Dexus): $320,000
+   - Australian Shares (UBS managed): $680,000
+   - International Shares (UBS managed): $520,000
+   - Bonds (Vanguard): $280,000
+   - Cash: $200,000
+   Total: $2,000,000
+
+   Liabilities: Nil
+
+   Member Balances:
+   - James: $1,300,000
+   - Victoria: $700,000
+
+═══════════════════════════════════════════════════
+PERSONAL ASSETS & LIABILITIES
+═══════════════════════════════════════════════════
+
+Personal Assets:
+- Family Home: 12 Wolseley Road, Point Piper NSW 2027
+  Ownership: Joint Tenants
+  Estimated Value: $12,000,000
+
+- Holiday Home: 8 Cliff Drive, Lorne VIC 3232
+  Ownership: Joint Tenants
+  Estimated Value: $2,800,000
+
+- Motor Vehicle: 2024 Porsche Cayenne Turbo GT
+  Value: $285,000
+
+- Motor Vehicle: 2023 Range Rover Sport
+  Value: $160,000
+
+- Art Collection (insured value): $420,000
+- Wine Collection (insured value): $85,000
+
+- Savings/Offset (CBA): $320,000
+
+Personal Liabilities:
+- Nil (home fully owned)
+
+═══════════════════════════════════════════════════
+INSURANCE
+═══════════════════════════════════════════════════
+
+James Ashworth:
+- Life Insurance: $5,000,000 (Zurich — retail)
+- TPD Insurance: $3,000,000 (Zurich — retail)
+- Income Protection: $30,000/month, 90-day wait, to age 65 (Zurich)
+- Medical Indemnity: MIPS — $20,000,000
+
+Victoria Ashworth:
+- Life Insurance: $2,000,000 (via SMSF — AIA)
+- TPD Insurance: $1,000,000 (via SMSF — AIA)
+
+═══════════════════════════════════════════════════
+ESTATE PLANNING
+═══════════════════════════════════════════════════
+
+James Ashworth:
+- Will: In Place (last updated 2023)
+  Executor: Victoria Ashworth and Perpetual Trustees (co-executors)
+  Includes testamentary trust for each child
+- Enduring Power of Attorney: Victoria Ashworth
+  Alternate: Perpetual Trustees
+- Enduring Guardianship: Victoria Ashworth
+- SMSF BDBN: Victoria Ashworth 100% — Binding (renewed 2024)
+
+Victoria Ashworth:
+- Will: In Place (last updated 2023)
+  Executor: James Ashworth and Perpetual Trustees (co-executors)
+  Includes testamentary trust for each child
+- Enduring Power of Attorney: James Ashworth
+  Alternate: Perpetual Trustees
+- Enduring Guardianship: James Ashworth
+- SMSF BDBN: James Ashworth 100% — Binding (renewed 2024)
+
+═══════════════════════════════════════════════════
+FAMILY
+═══════════════════════════════════════════════════
+
+Dependants:
+- Alexander Ashworth (Son, age 17) — Year 12, Cranbrook School
+- Olivia Ashworth (Daughter, age 15) — Year 10, Ascham School
+
+Non-Dependants:
+- William Ashworth (Son, age 26) — Junior Doctor, Royal North Shore Hospital
+  Partner: Sophie Tran
+
+═══════════════════════════════════════════════════
+OBJECTIVES
+═══════════════════════════════════════════════════
+
+1. Reduce surgical workload from age 60 — transition to consulting and medico-legal work
+2. Target retirement income of $300,000 p.a. (today's dollars)
+3. Retain both properties (Point Piper and Lorne)
+4. Fund Alexander's and Olivia's university education
+5. Consider philanthropic giving structure (private ancillary fund)
+6. Succession plan for surgical practice — sell or transition to associate

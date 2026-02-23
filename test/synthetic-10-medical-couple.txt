@@ -1,0 +1,140 @@
+STATEMENT OF ADVICE
+Prepared for: Dr Mei Lin & Dr Tariq Hassan
+Date: 22 May 2025
+Adviser: Andrew Park, CFP
+Shaw and Partners
+
+═══════════════════════════════════════════════════
+CLIENT DETAILS
+═══════════════════════════════════════════════════
+
+Client 1: Dr Mei Lin
+  Age: 42
+  Occupation: Dermatologist — private practice
+  Annual Income: $480,000 (practice drawings via trust)
+  Superannuation: AMP — Balance: $310,000
+
+Client 2: Dr Tariq Hassan
+  Age: 44
+  Occupation: Emergency Physician — Royal Melbourne Hospital
+  Annual Salary: $320,000 (includes overtime/on-call)
+  Superannuation: UniSuper — Balance: $420,000
+
+═══════════════════════════════════════════════════
+ENTITY STRUCTURE
+═══════════════════════════════════════════════════
+
+1. Mei Lin Dermatology Pty Ltd (Company)
+   Director: Mei Lin (sole)
+   Shareholder: Lin-Hassan Family Trust (100%)
+
+   Assets:
+   - Business Bank Account: $95,000
+   - Dermatology Equipment (WDV): $120,000
+   - Fit-out (WDV): $85,000
+
+   Liabilities:
+   - Practice Fit-out Loan (ANZ): $55,000 remaining, 5.99%
+
+2. Lin-Hassan Family Trust (Discretionary Trust)
+   Trustee: Lin-Hassan Pty Ltd
+   Appointer: Mei Lin
+   Beneficiaries: Mei Lin, Tariq Hassan, their children
+
+   Assets:
+   - Investment Property: 45 Chapel Street, Windsor VIC 3181
+     Value: $1,450,000
+     Rental: $58,000 p.a.
+
+   - Managed Funds (Platinum International): $280,000
+   - Cash (Macquarie): $65,000
+
+   Liabilities:
+   - Westpac Investment Loan — 45 Chapel Street
+     Outstanding: $620,000
+     Rate: 6.29% (interest only)
+
+3. Lin-Hassan Pty Ltd (Company)
+   Directors: Mei Lin, Tariq Hassan
+   Shareholders: Mei Lin (50%), Tariq Hassan (50%)
+   Purpose: Corporate trustee only
+
+   Assets: Nil
+   Liabilities: Nil
+
+═══════════════════════════════════════════════════
+PERSONAL ASSETS & LIABILITIES
+═══════════════════════════════════════════════════
+
+Personal Assets:
+- Family Home: 28 Park Crescent, Brighton VIC 3186
+  Ownership: Joint Tenants
+  Estimated Value: $3,200,000
+
+- Motor Vehicle: 2024 Tesla Model Y Performance — $72,000
+- Motor Vehicle: 2022 Volvo XC60 — $48,000
+
+- Savings (CBA — joint): $120,000
+- Share Portfolio (Mei Lin — personal):
+  CSL: 300 shares — $90,000
+  ResMed: 500 shares — $17,500
+  Cochlear: 200 shares — $68,000
+  Total: ~$175,500
+
+Personal Liabilities:
+- Home Loan (CBA)
+  Outstanding: $1,200,000
+  Rate: 5.99% (fixed until March 2026)
+  Repayment: $7,800/month (P&I)
+
+═══════════════════════════════════════════════════
+INSURANCE
+═══════════════════════════════════════════════════
+
+Dr Mei Lin:
+- Life: $2,000,000 (TAL — retail)
+- TPD: $1,500,000 (TAL — retail)
+- Income Protection: $20,000/month, 90-day wait, to age 65 (TAL)
+- Medical Indemnity: MDA National
+
+Dr Tariq Hassan:
+- Life: $1,500,000 (via UniSuper)
+- TPD: $1,000,000 (via UniSuper)
+- Income Protection: 75% salary, 90-day wait, to age 65 (via UniSuper)
+
+═══════════════════════════════════════════════════
+ESTATE PLANNING
+═══════════════════════════════════════════════════
+
+Dr Mei Lin:
+- Will: In Place (2022)
+  Executor: Tariq Hassan
+  Alternate: Mei Lin's brother, Wei Lin
+- Power of Attorney: Tariq Hassan
+- BDBN: Tariq Hassan 100% — Non-binding
+
+Dr Tariq Hassan:
+- Will: In Place (2022)
+  Executor: Mei Lin
+  Alternate: Tariq's sister, Fatima Hassan
+- Power of Attorney: Mei Lin
+- BDBN: Mei Lin 100% — Non-binding
+
+═══════════════════════════════════════════════════
+FAMILY
+═══════════════════════════════════════════════════
+
+Dependants:
+- Aisha Hassan (Daughter, age 8) — Year 3, Melbourne Girls' Grammar
+- Noah Hassan (Son, age 5) — Prep, Brighton Grammar
+
+═══════════════════════════════════════════════════
+OBJECTIVES
+═══════════════════════════════════════════════════
+
+1. Pay off home loan within 8 years
+2. Build combined super to $3,000,000 by retirement at age 60
+3. Expand Mei Lin's practice — open second location (estimated cost $400,000)
+4. Max out super contributions for both
+5. Fund private school education for both children through to Year 12
+6. Convert BDBNs from non-binding to binding

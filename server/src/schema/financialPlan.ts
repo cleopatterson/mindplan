@@ -26,6 +26,7 @@ export const ClientSchema = z.object({
   occupation: z.nullable(z.string()),
   income: z.nullable(z.number()).describe('Annual income in AUD'),
   superBalance: z.nullable(z.number()).describe('Superannuation balance in AUD'),
+  riskProfile: z.nullable(z.enum(['conservative', 'moderately_conservative', 'balanced', 'growth', 'high_growth'])).default(null).describe('Investment risk profile assessment, null if not specified'),
 });
 
 export const EntitySchema = z.object({
@@ -84,7 +85,7 @@ export const GoalSchema = z.object({
 export const RelationshipSchema = z.object({
   id: z.string().describe('Unique ID, e.g. "rel-1"'),
   clientIds: z.array(z.string()).default([]).describe('Client IDs this adviser is linked to'),
-  type: z.enum(['accountant', 'stockbroker', 'solicitor', 'insurance_adviser', 'mortgage_broker', 'other']).describe('Type of professional adviser'),
+  type: z.enum(['accountant', 'stockbroker', 'solicitor', 'insurance_adviser', 'mortgage_broker', 'financial_adviser', 'other']).describe('Type of professional adviser'),
   firmName: z.nullable(z.string()).describe('Firm/company name, e.g. "Smith & Partners"'),
   contactName: z.nullable(z.string()).describe('Contact person name, e.g. "John Smith"'),
   notes: z.nullable(z.string()).describe('Additional notes about the relationship'),

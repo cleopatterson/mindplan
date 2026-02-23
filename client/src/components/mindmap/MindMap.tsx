@@ -17,6 +17,8 @@ import {
   type Node,
   type Edge,
 } from '@xyflow/react';
+import { getPickerOptions, type PickerOption, type ChildNodeType } from '../../utils/nodeChildTypes';
+import { NodeTypePicker } from './NodeTypePicker';
 import '@xyflow/react/dist/style.css';
 import type { FinancialPlan } from 'shared/types';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -63,6 +65,7 @@ interface MindMapProps {
   userLinks: Edge[];
   onAddLink: (edge: Edge) => void;
   onRemoveLink: (edgeId: string) => void;
+  onCreateChildNode: (parentNodeId: string, childType: ChildNodeType, overrides?: Record<string, unknown>) => string;
 }
 
 export interface MindMapHandle {
@@ -108,7 +111,7 @@ const DEFAULT_EDGE_OPTIONS = {
 };
 
 const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInner(
-  { data, selectedNodeIds, onSelectNode, highlightedNodeIds, hoveredNodeIds, userLinks, onAddLink, onRemoveLink },
+  { data, selectedNodeIds, onSelectNode, highlightedNodeIds, hoveredNodeIds, userLinks, onAddLink, onRemoveLink, onCreateChildNode },
   ref,
 ) {
   const theme = useTheme();
@@ -163,8 +166,27 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
     },
   }), [fitView, setCenter, getNodes]);
 
+  // --- Drag-to-create-child state ---
+  const connectSourceRef = useRef<string | null>(null);
+  const connectDidCompleteRef = useRef(false);
+  const pendingSelectRef = useRef<string | null>(null);
+  const [pickerState, setPickerState] = useState<{
+    x: number; y: number; parentId: string; options: PickerOption[];
+  } | null>(null);
+
   useEffect(() => { setNodes(layoutedNodes); }, [layoutedNodes]);
   useEffect(() => { setEdges(allEdges); }, [allEdges]);
+
+  // Auto-select a newly created node once it appears in the layout
+  useEffect(() => {
+    if (pendingSelectRef.current) {
+      const nodeId = pendingSelectRef.current;
+      if (layoutedNodes.some((n) => n.id === nodeId)) {
+        onSelectNode(nodeId, false);
+      }
+      pendingSelectRef.current = null;
+    }
+  }, [layoutedNodes, onSelectNode]);
 
   // Log once per data change when layout is first applied (marks the end of the pipeline)
   const didLogMount = useRef(false);
@@ -320,8 +342,17 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
     [onSelectNode, selectedNodeIds],
   );
 
+  const onConnectStart = useCallback(
+    (_event: MouseEvent | TouchEvent, params: { nodeId: string | null }) => {
+      connectSourceRef.current = params.nodeId;
+      connectDidCompleteRef.current = false;
+    },
+    [],
+  );
+
   const onConnect: OnConnect = useCallback(
     (params) => {
+      connectDidCompleteRef.current = true;
       if (!params.source || !params.target || params.source === params.target) return;
       // Don't duplicate existing edges (structural or user)
       const exists = edges.some(
@@ -344,6 +375,40 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
     [edges, onAddLink],
   );
 
+  const onConnectEnd = useCallback(
+    (event: MouseEvent | TouchEvent) => {
+      if (connectDidCompleteRef.current || !connectSourceRef.current) return;
+
+      // Don't create child if dropped on an existing node
+      const target = event.target as HTMLElement;
+      if (target.closest('.react-flow__node')) return;
+
+      const sourceId = connectSourceRef.current;
+      const sourceNode = getNodes().find((n) => n.id === sourceId);
+      if (!sourceNode?.data) return;
+
+      const nodeType = (sourceNode.data as NodeData).nodeType;
+      const options = getPickerOptions(nodeType);
+      if (!options) return;
+
+      const clientX = 'changedTouches' in event ? (event as TouchEvent).changedTouches[0].clientX : (event as MouseEvent).clientX;
+      const clientY = 'changedTouches' in event ? (event as TouchEvent).changedTouches[0].clientY : (event as MouseEvent).clientY;
+
+      setPickerState({ x: clientX, y: clientY, parentId: sourceId, options });
+    },
+    [getNodes],
+  );
+
+  const handlePickerSelect = useCallback(
+    (option: PickerOption) => {
+      if (!pickerState) return;
+      const newId = onCreateChildNode(pickerState.parentId, option.childType, option.overrides);
+      pendingSelectRef.current = newId;
+      setPickerState(null);
+    },
+    [pickerState, onCreateChildNode],
+  );
+
   // Double-click edge to remove user links
   const onEdgeDoubleClick = useCallback(
     (_event: React.MouseEvent, edge: Edge) => {
@@ -363,7 +428,9 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
+        onConnectStart={onConnectStart}
         onConnect={onConnect}
+        onConnectEnd={onConnectEnd}
         onEdgeDoubleClick={onEdgeDoubleClick}
         nodeTypes={nodeTypes}
         connectionMode={ConnectionMode.Loose}
@@ -395,6 +462,15 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
           }}
         />
       </ReactFlow>
+      {pickerState && (
+        <NodeTypePicker
+          x={pickerState.x}
+          y={pickerState.y}
+          options={pickerState.options}
+          onPick={handlePickerSelect}
+          onClose={() => setPickerState(null)}
+        />
+      )}
     </div>
   );
 });

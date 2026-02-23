@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { FinancialPlan, Client, Entity, Asset, Liability, EstatePlanItem, FamilyMember, Grandchild, Goal, Relationship } from 'shared/types';
 import { formatAUD, totalAssets, totalLiabilities, entityEquity } from '../../utils/calculations';
 import {
@@ -12,24 +12,41 @@ interface DetailPanelProps {
   data: FinancialPlan;
   nodeId: string;
   onUpdateField: (nodeId: string, field: string, value: string) => void;
+  autoFocusName?: boolean;
+  onAutoFocusConsumed?: () => void;
 }
 
-export function DetailPanel({ data, nodeId, onUpdateField }: DetailPanelProps) {
+export function DetailPanel({ data, nodeId, onUpdateField, autoFocusName, onAutoFocusConsumed }: DetailPanelProps) {
+  // Clear the auto-focus flag after it's been consumed
+  const autoFocusRef = useRef(autoFocusName);
+  autoFocusRef.current = autoFocusName;
+  useEffect(() => {
+    if (autoFocusName) {
+      // Clear after a tick so the child components have time to use it
+      const timer = setTimeout(() => onAutoFocusConsumed?.(), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [autoFocusName, onAutoFocusConsumed]);
+  // Centre family node — show clients with editable names
+  if (nodeId === 'family-root') return <FamilyRootDetail data={data} onUpdate={onUpdateField} />;
+
+  const af = autoFocusName;
+
   const client = data.clients.find((c) => c.id === nodeId);
-  if (client) return <ClientDetail client={client} data={data} nodeId={nodeId} onUpdate={onUpdateField} />;
+  if (client) return <ClientDetail client={client} data={data} nodeId={nodeId} onUpdate={onUpdateField} autoFocusName={af} />;
 
   const entity = data.entities.find((e) => e.id === nodeId);
-  if (entity) return <EntityDetail entity={entity} data={data} nodeId={nodeId} onUpdate={onUpdateField} />;
+  if (entity) return <EntityDetail entity={entity} data={data} nodeId={nodeId} onUpdate={onUpdateField} autoFocusName={af} />;
 
   // Only flatten if we didn't find a client or entity
   for (const source of [data.personalAssets, ...data.entities.map((e) => e.assets)]) {
     const asset = source.find((a) => a.id === nodeId);
-    if (asset) return <AssetDetail asset={asset} data={data} nodeId={nodeId} onUpdate={onUpdateField} />;
+    if (asset) return <AssetDetail asset={asset} data={data} nodeId={nodeId} onUpdate={onUpdateField} autoFocusName={af} />;
   }
 
   for (const source of [data.personalLiabilities, ...data.entities.map((e) => e.liabilities)]) {
     const liability = source.find((l) => l.id === nodeId);
-    if (liability) return <LiabilityDetail liability={liability} data={data} nodeId={nodeId} onUpdate={onUpdateField} />;
+    if (liability) return <LiabilityDetail liability={liability} data={data} nodeId={nodeId} onUpdate={onUpdateField} autoFocusName={af} />;
   }
 
   // Estate planning group
@@ -52,12 +69,12 @@ export function DetailPanel({ data, nodeId, onUpdateField }: DetailPanelProps) {
 
   // Family members (children)
   const familyMember = data.familyMembers?.find((m) => m.id === nodeId);
-  if (familyMember) return <FamilyMemberDetail member={familyMember} data={data} nodeId={nodeId} onUpdate={onUpdateField} />;
+  if (familyMember) return <FamilyMemberDetail member={familyMember} data={data} nodeId={nodeId} onUpdate={onUpdateField} autoFocusName={af} />;
 
   // Grandchildren (nested under family members)
   for (const member of data.familyMembers ?? []) {
     const grandchild = member.children?.find((gc) => gc.id === nodeId);
-    if (grandchild) return <GrandchildDetail grandchild={grandchild} parent={member} data={data} nodeId={nodeId} onUpdate={onUpdateField} />;
+    if (grandchild) return <GrandchildDetail grandchild={grandchild} parent={member} data={data} nodeId={nodeId} onUpdate={onUpdateField} autoFocusName={af} />;
   }
 
   // Goals group
@@ -65,14 +82,14 @@ export function DetailPanel({ data, nodeId, onUpdateField }: DetailPanelProps) {
 
   // Individual goals
   const goal = data.goals?.find((g) => g.id === nodeId);
-  if (goal) return <GoalDetail goal={goal} />;
+  if (goal) return <GoalDetail goal={goal} nodeId={nodeId} onUpdate={onUpdateField} autoFocusName={af} />;
 
   // Relationships group
   if (nodeId === 'relationships-group') return <RelationshipsGroupDetail data={data} />;
 
   // Individual relationships
   const relationship = data.relationships?.find((r) => r.id === nodeId);
-  if (relationship) return <RelationshipDetail relationship={relationship} data={data} />;
+  if (relationship) return <RelationshipDetail relationship={relationship} data={data} nodeId={nodeId} onUpdate={onUpdateField} autoFocusName={af} />;
 
   return null;
 }
@@ -89,7 +106,7 @@ const entityConfig: Record<string, { icon: LucideIcon; gradient: string; iconCol
 
 // ── Client Detail ──
 
-function ClientDetail({ client, data, nodeId, onUpdate }: { client: Client; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void }) {
+function ClientDetail({ client, data, nodeId, onUpdate, autoFocusName }: { client: Client; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void; autoFocusName?: boolean }) {
   // Compute insights
   const totalIncome = data.clients.reduce((sum, c) => sum + (c.income ?? 0), 0);
   const totalSuper = data.clients.reduce((sum, c) => sum + (c.superBalance ?? 0), 0);
@@ -115,6 +132,8 @@ function ClientDetail({ client, data, nodeId, onUpdate }: { client: Client; data
       </div>
 
       <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        <EditableField label="Name" value={client.name} placeholder="e.g. John Smith" onSave={(v) => onUpdate(nodeId, 'name', v)} initialEditing={autoFocusName} />
+        <div className="border-t border-white/5 my-2" />
         <EditableField label="Age" value={client.age?.toString() ?? ''} placeholder="e.g. 52" onSave={(v) => onUpdate(nodeId, 'age', v)} />
         <div className="border-t border-white/5 my-2" />
         <EditableField label="Occupation" value={client.occupation ?? ''} placeholder="e.g. Engineer" onSave={(v) => onUpdate(nodeId, 'occupation', v)} />
@@ -122,14 +141,25 @@ function ClientDetail({ client, data, nodeId, onUpdate }: { client: Client; data
         <EditableField label="Income" value={client.income != null ? client.income.toString() : ''} display={client.income != null ? formatAUD(client.income) : undefined} placeholder="e.g. 150000" onSave={(v) => onUpdate(nodeId, 'income', v)} />
         <div className="border-t border-white/5 my-2" />
         <EditableField label="Super Balance" value={client.superBalance != null ? client.superBalance.toString() : ''} display={client.superBalance != null ? formatAUD(client.superBalance) : undefined} placeholder="e.g. 500000" onSave={(v) => onUpdate(nodeId, 'superBalance', v)} />
+        <div className="border-t border-white/5 my-2" />
+        <SelectField label="Risk Profile" value={client.riskProfile ?? ''} options={riskProfileOptions} onSave={(v) => onUpdate(nodeId, 'riskProfile', v)} />
       </div>
     </div>
   );
 }
 
+const riskProfileOptions = [
+  { value: '', label: 'Not specified' },
+  { value: 'conservative', label: 'Conservative' },
+  { value: 'moderately_conservative', label: 'Moderately Conservative' },
+  { value: 'balanced', label: 'Balanced' },
+  { value: 'growth', label: 'Growth' },
+  { value: 'high_growth', label: 'High Growth' },
+];
+
 // ── Entity Detail ──
 
-function EntityDetail({ entity, data, nodeId, onUpdate }: { entity: Entity; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void }) {
+function EntityDetail({ entity, data, nodeId, onUpdate, autoFocusName }: { entity: Entity; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void; autoFocusName?: boolean }) {
   const linked = data.clients.filter((c) => entity.linkedClientIds.includes(c.id));
   const config = entityConfig[entity.type] ?? entityConfig.trust;
 
@@ -157,6 +187,8 @@ function EntityDetail({ entity, data, nodeId, onUpdate }: { entity: Entity; data
       </div>
 
       <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        <EditableField label="Name" value={entity.name} placeholder="e.g. Wall Family Trust" onSave={(v) => onUpdate(nodeId, 'name', v)} initialEditing={autoFocusName} />
+        <div className="border-t border-white/5 my-2" />
         {(entity.type === 'trust' || entity.type === 'smsf') && (
           <>
             <EditableField label="Trustee Name" value={entity.trusteeName ?? ''} placeholder="e.g. Tony Wall" onSave={(v) => onUpdate(nodeId, 'trusteeName', v)} />
@@ -187,7 +219,7 @@ function EntityDetail({ entity, data, nodeId, onUpdate }: { entity: Entity; data
 
 // ── Asset Detail ──
 
-function AssetDetail({ asset, data, nodeId, onUpdate }: { asset: Asset; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void }) {
+function AssetDetail({ asset, data, nodeId, onUpdate, autoFocusName }: { asset: Asset; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void; autoFocusName?: boolean }) {
   const config = assetTypeConfig[asset.type] ?? assetTypeConfig.other;
 
   // Compute insights
@@ -262,6 +294,10 @@ function AssetDetail({ asset, data, nodeId, onUpdate }: { asset: Asset; data: Fi
       </div>
 
       <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        <EditableField label="Name" value={asset.name} placeholder="e.g. Family Home" onSave={(v) => onUpdate(nodeId, 'name', v)} initialEditing={autoFocusName} />
+        <div className="border-t border-white/5 my-2" />
+        <SelectField label="Type" value={asset.type} options={assetTypeOptions} onSave={(v) => onUpdate(nodeId, 'type', v)} />
+        <div className="border-t border-white/5 my-2" />
         <EditableField label="Value" value={asset.value != null ? asset.value.toString() : ''} display={asset.value != null ? formatAUD(asset.value) : undefined} placeholder="e.g. 850000" onSave={(v) => onUpdate(nodeId, 'value', v)} />
         <div className="border-t border-white/5 my-2" />
         <EditableField label="Details" value={asset.details ?? ''} placeholder="Add details..." onSave={(v) => onUpdate(nodeId, 'details', v)} />
@@ -270,9 +306,20 @@ function AssetDetail({ asset, data, nodeId, onUpdate }: { asset: Asset; data: Fi
   );
 }
 
+const assetTypeOptions = [
+  { value: 'property', label: 'Property' },
+  { value: 'shares', label: 'Shares' },
+  { value: 'cash', label: 'Cash' },
+  { value: 'managed_fund', label: 'Managed Fund' },
+  { value: 'super', label: 'Super' },
+  { value: 'insurance', label: 'Insurance' },
+  { value: 'vehicle', label: 'Vehicle' },
+  { value: 'other', label: 'Other' },
+];
+
 // ── Liability Detail ──
 
-function LiabilityDetail({ liability, data, nodeId, onUpdate }: { liability: Liability; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void }) {
+function LiabilityDetail({ liability, data, nodeId, onUpdate, autoFocusName }: { liability: Liability; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void; autoFocusName?: boolean }) {
   // Compute insights
   const allLiabilitiesTotal = totalLiabilities(data);
   const allAssetsTotal = totalAssets(data);
@@ -337,6 +384,10 @@ function LiabilityDetail({ liability, data, nodeId, onUpdate }: { liability: Lia
       </div>
 
       <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        <EditableField label="Name" value={liability.name} placeholder="e.g. Home Loan" onSave={(v) => onUpdate(nodeId, 'name', v)} initialEditing={autoFocusName} />
+        <div className="border-t border-white/5 my-2" />
+        <SelectField label="Type" value={liability.type} options={liabilityTypeOptions} onSave={(v) => onUpdate(nodeId, 'type', v)} />
+        <div className="border-t border-white/5 my-2" />
         <EditableField label="Outstanding" value={liability.amount != null ? liability.amount.toString() : ''} display={liability.amount != null ? formatAUD(liability.amount) : undefined} placeholder="e.g. 350000" onSave={(v) => onUpdate(nodeId, 'amount', v)} />
         <div className="border-t border-white/5 my-2" />
         <EditableField label="Interest Rate" value={liability.interestRate != null ? liability.interestRate.toString() : ''} display={liability.interestRate != null ? `${liability.interestRate}%` : undefined} placeholder="e.g. 5.5" onSave={(v) => onUpdate(nodeId, 'interestRate', v)} />
@@ -346,6 +397,13 @@ function LiabilityDetail({ liability, data, nodeId, onUpdate }: { liability: Lia
     </div>
   );
 }
+
+const liabilityTypeOptions = [
+  { value: 'mortgage', label: 'Mortgage' },
+  { value: 'loan', label: 'Loan' },
+  { value: 'credit_card', label: 'Credit Card' },
+  { value: 'other', label: 'Other' },
+];
 
 // ── Estate Group Detail ──
 
@@ -560,7 +618,7 @@ function EstateItemDetail({ item, data, nodeId, onUpdate }: { item: EstatePlanIt
 
 // ── Family Member Detail ──
 
-function FamilyMemberDetail({ member, data, nodeId, onUpdate }: { member: FamilyMember; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void }) {
+function FamilyMemberDetail({ member, data, nodeId, onUpdate, autoFocusName }: { member: FamilyMember; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void; autoFocusName?: boolean }) {
   const grandchildCount = member.children?.length ?? 0;
   const relLabel = member.relationship.charAt(0).toUpperCase() + member.relationship.slice(1);
 
@@ -582,7 +640,11 @@ function FamilyMemberDetail({ member, data, nodeId, onUpdate }: { member: Family
       </div>
 
       <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        <EditableField label="Name" value={member.name} placeholder="e.g. Sarah" onSave={(v) => onUpdate(nodeId, 'name', v)} initialEditing={autoFocusName} />
+        <div className="border-t border-white/5 my-2" />
         <EditableField label="Age" value={member.age?.toString() ?? ''} placeholder="e.g. 45" onSave={(v) => onUpdate(nodeId, 'age', v)} />
+        <div className="border-t border-white/5 my-2" />
+        <ToggleField label="Dependant" value={member.isDependant} onSave={(v) => onUpdate(nodeId, 'isDependant', v.toString())} />
         <div className="border-t border-white/5 my-2" />
         <EditableField label="Partner" value={member.partner ?? ''} placeholder="e.g. Alex" onSave={(v) => onUpdate(nodeId, 'partner', v)} />
         <div className="border-t border-white/5 my-2" />
@@ -609,7 +671,7 @@ function FamilyMemberDetail({ member, data, nodeId, onUpdate }: { member: Family
 
 // ── Grandchild Detail ──
 
-function GrandchildDetail({ grandchild, parent, data, nodeId, onUpdate }: { grandchild: Grandchild; parent: FamilyMember; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void }) {
+function GrandchildDetail({ grandchild, parent, data, nodeId, onUpdate, autoFocusName }: { grandchild: Grandchild; parent: FamilyMember; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void; autoFocusName?: boolean }) {
   const relLabel = grandchild.relationship === 'grandson' ? 'Grandson' : 'Granddaughter';
 
   return (
@@ -629,7 +691,11 @@ function GrandchildDetail({ grandchild, parent, data, nodeId, onUpdate }: { gran
       </div>
 
       <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        <EditableField label="Name" value={grandchild.name} placeholder="e.g. Emily" onSave={(v) => onUpdate(nodeId, 'name', v)} initialEditing={autoFocusName} />
+        <div className="border-t border-white/5 my-2" />
         <EditableField label="Age" value={grandchild.age?.toString() ?? ''} placeholder="e.g. 8" onSave={(v) => onUpdate(nodeId, 'age', v)} />
+        <div className="border-t border-white/5 my-2" />
+        <ToggleField label="Dependant" value={grandchild.isDependant} onSave={(v) => onUpdate(nodeId, 'isDependant', v.toString())} />
         <div className="border-t border-white/5 my-2" />
         <EditableField label="Details" value={grandchild.details ?? ''} placeholder="e.g. School fees being funded" onSave={(v) => onUpdate(nodeId, 'details', v)} />
       </div>
@@ -676,7 +742,7 @@ function GoalsGroupDetail({ data }: { data: FinancialPlan }) {
 
 // ── Goal Detail ──
 
-function GoalDetail({ goal }: { goal: Goal }) {
+function GoalDetail({ goal, nodeId, onUpdate, autoFocusName }: { goal: Goal; nodeId: string; onUpdate: (id: string, field: string, value: string) => void; autoFocusName?: boolean }) {
   return (
     <div className="space-y-3">
       <HeroBanner
@@ -693,15 +759,26 @@ function GoalDetail({ goal }: { goal: Goal }) {
         {goal.value != null && <InsightPill color="teal">{formatAUD(goal.value)}</InsightPill>}
       </div>
 
-      {goal.detail && (
-        <div className="rounded-lg bg-white/[0.02] border border-white/5 p-3">
-          <div className="text-[10px] text-white/30 uppercase tracking-wide mb-1">Detail</div>
-          <div className="text-xs text-white/70">{goal.detail}</div>
-        </div>
-      )}
+      <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        <EditableField label="Name" value={goal.name} placeholder="e.g. Retire at 60" onSave={(v) => onUpdate(nodeId, 'name', v)} initialEditing={autoFocusName} />
+        <div className="border-t border-white/5 my-2" />
+        <SelectField label="Category" value={goal.category} options={goalCategoryOptions} onSave={(v) => onUpdate(nodeId, 'category', v)} />
+        <div className="border-t border-white/5 my-2" />
+        <EditableField label="Detail" value={goal.detail ?? ''} placeholder="Add details..." onSave={(v) => onUpdate(nodeId, 'detail', v)} />
+      </div>
     </div>
   );
 }
+
+const goalCategoryOptions = [
+  { value: 'retirement', label: 'Retirement' },
+  { value: 'wealth', label: 'Wealth' },
+  { value: 'protection', label: 'Protection' },
+  { value: 'estate', label: 'Estate' },
+  { value: 'lifestyle', label: 'Lifestyle' },
+  { value: 'education', label: 'Education' },
+  { value: 'other', label: 'Other' },
+];
 
 // ── Relationships Group Detail ──
 
@@ -749,7 +826,7 @@ function RelationshipsGroupDetail({ data }: { data: FinancialPlan }) {
 
 // ── Relationship Detail ──
 
-function RelationshipDetail({ relationship, data }: { relationship: Relationship; data: FinancialPlan }) {
+function RelationshipDetail({ relationship, data, nodeId, onUpdate, autoFocusName }: { relationship: Relationship; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void; autoFocusName?: boolean }) {
   const linkedClients = data.clients.filter((c) => relationship.clientIds.includes(c.id));
 
   return (
@@ -764,18 +841,76 @@ function RelationshipDetail({ relationship, data }: { relationship: Relationship
 
       <div className="flex flex-wrap gap-1.5">
         <InsightPill color="rose">{relTypeLabels[relationship.type]}</InsightPill>
-        {relationship.contactName && <InsightPill color="white">Contact: {relationship.contactName}</InsightPill>}
         {linkedClients.length > 0 && (
           <InsightPill color="white">{linkedClients.map((c) => c.name).join(' & ')}</InsightPill>
         )}
       </div>
 
-      {relationship.notes && (
-        <div className="rounded-lg bg-white/[0.02] border border-white/5 p-3">
-          <div className="text-[10px] text-white/30 uppercase tracking-wide mb-1">Notes</div>
-          <div className="text-xs text-white/70">{relationship.notes}</div>
+      <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        <EditableField label="Firm Name" value={relationship.firmName ?? ''} placeholder="e.g. Smith & Co" onSave={(v) => onUpdate(nodeId, 'firmName', v)} initialEditing={autoFocusName} />
+        <div className="border-t border-white/5 my-2" />
+        <SelectField label="Type" value={relationship.type} options={relTypeOptions} onSave={(v) => onUpdate(nodeId, 'type', v)} />
+        <div className="border-t border-white/5 my-2" />
+        <EditableField label="Contact" value={relationship.contactName ?? ''} placeholder="e.g. John Smith" onSave={(v) => onUpdate(nodeId, 'contactName', v)} />
+        <div className="border-t border-white/5 my-2" />
+        <EditableField label="Notes" value={relationship.notes ?? ''} placeholder="Add notes..." onSave={(v) => onUpdate(nodeId, 'notes', v)} />
+      </div>
+    </div>
+  );
+}
+
+const relTypeOptions = [
+  { value: 'accountant', label: 'Accountant' },
+  { value: 'financial_adviser', label: 'Financial Adviser' },
+  { value: 'stockbroker', label: 'Stockbroker' },
+  { value: 'solicitor', label: 'Solicitor' },
+  { value: 'insurance_adviser', label: 'Insurance Adviser' },
+  { value: 'mortgage_broker', label: 'Mortgage Broker' },
+  { value: 'other', label: 'Other' },
+];
+
+// ── Family Root Detail (centre tile) ──
+
+function FamilyRootDetail({ data, onUpdate }: { data: FinancialPlan; onUpdate: (id: string, field: string, value: string) => void }) {
+  // Derive the default label (same logic as transformToGraph)
+  let derivedLabel: string;
+  const surnames = data.clients.map((c) => c.name.split(' ').pop()).filter(Boolean);
+  const uniqueSurnames = [...new Set(surnames)];
+  const isSingleWordNames = data.clients.every((c) => !c.name.includes(' '));
+  if (isSingleWordNames) {
+    derivedLabel = data.clients.map((c) => c.name).join(' & ');
+  } else if (uniqueSurnames.length === 1) {
+    derivedLabel = `${uniqueSurnames[0]} Family`;
+  } else {
+    derivedLabel = data.clients.map((c) => c.name.split(' ')[0]).join(' & ');
+  }
+
+  const displayLabel = data.familyLabel || derivedLabel;
+
+  return (
+    <div className="space-y-3">
+      <HeroBanner
+        icon={Users}
+        label={displayLabel}
+        sublabel={`${data.clients.length} ${data.clients.length === 1 ? 'client' : 'clients'}`}
+        gradient="bg-gradient-to-br from-blue-500/20 via-purple-600/10 to-indigo-900/20"
+        iconColor="text-blue-400"
+      />
+
+      <div className="flex flex-wrap gap-1.5">
+        <InsightPill color="blue">{data.clients.length} {data.clients.length === 1 ? 'client' : 'clients'}</InsightPill>
+        {data.entities.length > 0 && <InsightPill color="purple">{data.entities.length} {data.entities.length === 1 ? 'entity' : 'entities'}</InsightPill>}
+      </div>
+
+      <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        <EditableField label="Family Name" value={data.familyLabel ?? ''} display={displayLabel} placeholder={derivedLabel} onSave={(v) => onUpdate('family-root', 'familyLabel', v)} />
+      </div>
+
+      {data.clients.map((client, idx) => (
+        <div key={client.id} className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+          <EditableField label={`Client ${idx + 1} Name`} value={client.name} placeholder="e.g. John Smith" onSave={(v) => onUpdate(client.id, 'name', v)} />
         </div>
-      )}
+      ))}
     </div>
   );
 }
@@ -823,15 +958,25 @@ function EditableField({
   display,
   placeholder,
   onSave,
+  initialEditing = false,
 }: {
   label: string;
   value: string;
   display?: string;
   placeholder?: string;
   onSave: (value: string) => void;
+  initialEditing?: boolean;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(initialEditing);
   const [draft, setDraft] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Select all text when auto-opening for a new node
+  useEffect(() => {
+    if (initialEditing && inputRef.current) {
+      inputRef.current.select();
+    }
+  }, [initialEditing]);
 
   const startEdit = () => {
     setDraft(value);
@@ -854,6 +999,7 @@ function EditableField({
         <div className="text-[10px] text-white/30 uppercase tracking-wide mb-1">{label}</div>
         <div className="flex gap-1.5">
           <input
+            ref={inputRef}
             type="text"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -877,7 +1023,7 @@ function EditableField({
     );
   }
 
-  const hasValue = value !== '';
+  const hasValue = value !== '' || (display != null && display !== '');
 
   return (
     <div className="group cursor-pointer py-1 -mx-1 px-1 rounded hover:bg-white/[0.03] transition-colors" onClick={startEdit}>
@@ -887,6 +1033,65 @@ function EditableField({
           {hasValue ? (display || value) : 'Not provided'}
         </div>
         <Pencil className="w-3 h-3 text-white/15 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+      </div>
+    </div>
+  );
+}
+
+/** Dropdown select field */
+function SelectField({
+  label,
+  value,
+  options,
+  onSave,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onSave: (value: string) => void;
+}) {
+  return (
+    <div className="py-1">
+      <div className="text-[10px] text-white/30 uppercase tracking-wide mb-1">{label}</div>
+      <select
+        value={value}
+        onChange={(e) => onSave(e.target.value)}
+        className="w-full text-sm px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white/70
+          focus:outline-none focus:border-blue-400 appearance-none cursor-pointer"
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value} className="bg-[#1e1e2e] text-white/80">
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+/** Toggle field for boolean values */
+function ToggleField({
+  label,
+  value,
+  onSave,
+}: {
+  label: string;
+  value: boolean;
+  onSave: (value: boolean) => void;
+}) {
+  return (
+    <div className="group cursor-pointer py-1 -mx-1 px-1 rounded hover:bg-white/[0.03] transition-colors"
+      onClick={() => onSave(!value)}
+    >
+      <div className="flex items-center justify-between">
+        <div className="text-[10px] text-white/30 uppercase tracking-wide">{label}</div>
+        <div className={`w-8 h-4.5 rounded-full relative transition-colors cursor-pointer
+          ${value ? 'bg-amber-500/40' : 'bg-white/10'}`}
+        >
+          <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all
+            ${value ? 'left-[calc(100%-16px)] bg-amber-400' : 'left-0.5 bg-white/30'}`}
+          />
+        </div>
       </div>
     </div>
   );

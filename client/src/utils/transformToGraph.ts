@@ -26,15 +26,18 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
   const nodes: Node<NodeData>[] = [];
   const edges: Edge[] = [];
 
-  // Derive a family label from clients
-  const surnames = plan.clients.map((c) => c.name.split(' ').pop()).filter(Boolean);
-  const uniqueSurnames = [...new Set(surnames)];
-  const isSingleWordNames = plan.clients.every((c) => !c.name.includes(' '));
-  const familyLabel = isSingleWordNames
-    ? plan.clients.map((c) => c.name).join(' & ')
-    : uniqueSurnames.length === 1
-      ? `${uniqueSurnames[0]} Family`
-      : plan.clients.map((c) => c.name.split(' ')[0]).join(' & ');
+  // Use override label if set, otherwise derive from client names
+  let familyLabel = plan.familyLabel;
+  if (!familyLabel) {
+    const surnames = plan.clients.map((c) => c.name.split(' ').pop()).filter(Boolean);
+    const uniqueSurnames = [...new Set(surnames)];
+    const isSingleWordNames = plan.clients.every((c) => !c.name.includes(' '));
+    familyLabel = isSingleWordNames
+      ? plan.clients.map((c) => c.name).join(' & ')
+      : uniqueSurnames.length === 1
+        ? `${uniqueSurnames[0]} Family`
+        : plan.clients.map((c) => c.name.split(' ')[0]).join(' & ');
+  }
 
   // Central family node
   const familyId = 'family-root';
@@ -352,16 +355,14 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
 
     for (const rel of plan.relationships) {
       const typeLabel = rel.type.replace(/_/g, ' ');
-      const parts: string[] = [typeLabel];
-      if (rel.contactName) parts.push(rel.contactName);
 
       nodes.push({
         id: rel.id,
         type: 'relationshipNode',
         position: { x: 0, y: 0 },
         data: {
-          label: rel.firmName ?? rel.contactName ?? typeLabel,
-          sublabel: rel.firmName ? parts.join(' · ') : (parts.length > 1 ? parts.slice(1).join(' · ') : undefined),
+          label: rel.contactName ?? rel.firmName ?? typeLabel,
+          sublabel: typeLabel,
           nodeType: 'relationship',
           side: 'right',
           raw: rel,

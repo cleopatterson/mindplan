@@ -1,0 +1,141 @@
+STRATEGY DOCUMENT
+Prepared for: Graham & Wendy Patterson
+Date: 28 January 2025
+Adviser: Rachel Nguyen, CFP
+Insignia Financial
+
+═══════════════════════════════════════════════════
+CLIENT DETAILS
+═══════════════════════════════════════════════════
+
+Client 1: Graham Patterson
+  Age: 62
+  Occupation: Senior Project Manager — Leighton Holdings
+  Annual Salary: $210,000
+  Superannuation: AustralianSuper — Balance: $820,000
+
+Client 2: Wendy Patterson
+  Age: 59
+  Occupation: Practice Manager — dental surgery
+  Annual Salary: $88,000
+  Superannuation: HESTA — Balance: $340,000
+
+═══════════════════════════════════════════════════
+ENTITY STRUCTURE
+═══════════════════════════════════════════════════
+
+1. Patterson Family Trust (Discretionary Trust)
+   Trustee: Patterson Investments Pty Ltd
+   Appointer: Graham Patterson
+   Beneficiaries: Graham, Wendy, Patterson children and grandchildren
+
+   Assets:
+   - Managed Fund Portfolio (MLC Wrap)
+     Australian Shares: $180,000
+     International Shares: $120,000
+     Fixed Income: $85,000
+     Total: $385,000
+
+   - Cash at Bank (Macquarie)
+     Balance: $45,000
+
+   Liabilities: Nil
+
+2. Patterson Investments Pty Ltd (Company)
+   Directors: Graham Patterson, Wendy Patterson
+   Shareholders: Patterson Family Trust (100%)
+   Purpose: Corporate trustee — no trading
+
+   Assets: Nil
+   Liabilities: Nil
+
+═══════════════════════════════════════════════════
+PERSONAL ASSETS & LIABILITIES
+═══════════════════════════════════════════════════
+
+Personal Assets:
+- Family Home: 15 The Esplanade, Balmoral NSW 2088
+  Ownership: Joint Tenants
+  Estimated Value: $3,800,000
+
+- Holiday House: 22 Seaside Drive, Mollymook NSW 2539
+  Ownership: Joint Tenants
+  Estimated Value: $1,200,000
+
+- Motor Vehicle: 2023 BMW X5 xDrive40i
+  Estimated Value: $85,000
+
+- Motor Vehicle: 2021 Mercedes-Benz GLC 200
+  Estimated Value: $52,000
+
+- Savings Account (CBA)
+  Balance: $95,000 (Joint)
+
+- Share Portfolio (personal — CommSec)
+  Telstra: 10,000 shares — $41,000
+  Macquarie Group: 500 shares — $110,000
+  CSL: 200 shares — $60,000
+  Total: ~$211,000
+  Ownership: Graham (sole)
+
+Personal Liabilities:
+- Nil — family home fully paid off in 2022
+
+═══════════════════════════════════════════════════
+INSURANCE
+═══════════════════════════════════════════════════
+
+Graham Patterson:
+- Life Insurance: $1,000,000 (MLC — retail policy)
+- TPD Insurance: $500,000 (via AustralianSuper)
+- Income Protection: 75% salary, 90-day wait, to age 65 (MLC retail)
+
+Wendy Patterson:
+- Life Insurance: $500,000 (via HESTA)
+- TPD Insurance: $300,000 (via HESTA)
+- Income Protection: Not held
+
+═══════════════════════════════════════════════════
+ESTATE PLANNING
+═══════════════════════════════════════════════════
+
+Graham Patterson:
+- Will: In Place (last updated 2019)
+  Executor: Wendy Patterson
+  Alternate: National Australia Trustees
+- Enduring Power of Attorney: Wendy Patterson
+  Alternate: Christopher Patterson (son)
+- Enduring Guardianship: Wendy Patterson
+- Super BDBN: Wendy Patterson 100% — Binding (expires March 2026)
+
+Wendy Patterson:
+- Will: In Place (last updated 2019)
+  Executor: Graham Patterson
+  Alternate: National Australia Trustees
+- Enduring Power of Attorney: Graham Patterson
+  Alternate: Emma Whitfield (daughter)
+- Enduring Guardianship: Graham Patterson
+- Super BDBN: Graham Patterson 100% — Non-binding
+
+═══════════════════════════════════════════════════
+FAMILY
+═══════════════════════════════════════════════════
+
+Non-Dependants:
+- Christopher Patterson (Son, age 36) — Architect, married to Laura Chen
+  Children: James Patterson (age 7), Ava Patterson (age 4)
+- Emma Whitfield (Daughter, age 33) — née Patterson, Marketing Director
+  Married to: Michael Whitfield
+  Children: Sophie Whitfield (age 2)
+
+═══════════════════════════════════════════════════
+OBJECTIVES
+═══════════════════════════════════════════════════
+
+1. Graham to retire at 65 (3 years), Wendy at 62 (3 years)
+2. Target combined retirement income of $150,000 p.a. (today's dollars)
+3. Retain the Mollymook holiday house for family use
+4. Cancel Graham's retail life insurance (no longer needed once retired)
+5. Maximise super contributions in remaining working years
+6. Consider Transition to Retirement pension for Wendy
+7. Review wills to include testamentary trust provisions for grandchildren

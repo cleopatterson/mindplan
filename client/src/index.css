@@ -107,6 +107,73 @@
   color: #881337 !important;
 }
 
+/* Estate group node */
+[data-pdf-light] .react-flow__node-estateGroupNode > div {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
+}
+
+/* Estate client node — solid bg with dark text */
+[data-pdf-light] .react-flow__node-estateClientNode > div {
+  background: white !important;
+  border-color: #818cf8 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+}
+[data-pdf-light] .react-flow__node-estateClientNode > div,
+[data-pdf-light] .react-flow__node-estateClientNode > div * {
+  color: #312e81 !important;
+}
+
+/* Estate item nodes — solid bg with dark text */
+[data-pdf-light] .react-flow__node-estateItemNode > div {
+  background: white !important;
+  border-color: #818cf8 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+}
+[data-pdf-light] .react-flow__node-estateItemNode > div,
+[data-pdf-light] .react-flow__node-estateItemNode > div * {
+  color: #312e81 !important;
+}
+
+/* Family group node */
+[data-pdf-light] .react-flow__node-familyGroupNode > div {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
+}
+
+/* Family member nodes — solid bg with dark amber text */
+[data-pdf-light] .react-flow__node-familyMemberNode > div {
+  background: white !important;
+  border-color: #f59e0b !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+}
+[data-pdf-light] .react-flow__node-familyMemberNode > div,
+[data-pdf-light] .react-flow__node-familyMemberNode > div * {
+  color: #78350f !important;
+}
+
+/* Goals group node */
+[data-pdf-light] .react-flow__node-goalsGroupNode > div {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
+}
+
+/* Relationships group node */
+[data-pdf-light] .react-flow__node-relationshipsGroupNode > div {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
+}
+
 /* ── Live Light Mode ── */
 
 /* Shared node overrides for both PDF and live light mode */

@@ -1,0 +1,143 @@
+STATEMENT OF ADVICE
+Prepared for: Robert Chen
+Date: 8 March 2025
+Adviser: David Tran, AFP
+Macquarie Private Wealth
+
+═══════════════════════════════════════════════════
+CLIENT DETAILS
+═══════════════════════════════════════════════════
+
+Client 1: Robert Chen
+  Age: 67
+  Occupation: Retired (Former General Practitioner)
+  Previous Employer: Northern Rivers Medical Centre
+  Annual Income: Nil (living on pension drawdowns)
+  Superannuation: Held in SMSF (see below)
+
+Marital Status: Widowed (wife Linda passed away October 2023)
+
+═══════════════════════════════════════════════════
+ENTITY STRUCTURE
+═══════════════════════════════════════════════════
+
+1. Chen Family Trust (Discretionary Trust)
+   ABN: 44 123 876 543
+   Trustee: Robert Chen (individual trustee)
+   Appointer: Robert Chen
+   Beneficiaries: Robert Chen, Chen children
+
+   Assets:
+   - Investment Property: 12 Ocean Street, Coffs Harbour NSW 2450
+     Current Value: $720,000
+     Rental Income: $28,600 p.a.
+
+   - Investment Property: Unit 4/88 Grafton Street, Coffs Harbour NSW 2450
+     Current Value: $485,000
+     Rental Income: $22,100 p.a.
+
+   - Term Deposit (Bendigo Bank, 4.60%)
+     Current Value: $150,000
+
+   Liabilities:
+   - Mortgage (Bendigo Bank) — 12 Ocean Street
+     Outstanding: $185,000
+     Interest Rate: 6.15% (P&I)
+     Monthly Repayment: $1,850
+
+2. Chen Superannuation Fund (SMSF)
+   ABN: 77 888 999 111
+   Member: Robert Chen
+   Trustee: Robert Chen (individual trustee)
+   Auditor: Grant Thornton Coffs Harbour
+   Phase: Account-based pension (commenced July 2023)
+
+   Assets:
+   - Australian Shares (direct)
+     ANZ: 5,000 shares — estimated $142,500
+     Woolworths: 3,000 shares — estimated $96,000
+     Telstra: 15,000 shares — estimated $61,500
+     Woodside: 2,500 shares — estimated $67,500
+
+   - Vanguard Diversified Growth (VDGR)
+     6,500 units — estimated $419,250
+
+   - Cash Account (Macquarie CMA)
+     Balance: $88,000
+
+   - Pension Reserve: $874,750 (minimum drawdown 5%)
+
+   Liabilities: Nil
+
+═══════════════════════════════════════════════════
+PERSONAL ASSETS & LIABILITIES
+═══════════════════════════════════════════════════
+
+Personal Assets:
+- Family Home: 34 Sawtell Road, Toormina NSW 2452
+  Estimated Value: $850,000
+
+- Motor Vehicle: 2021 Toyota LandCruiser Prado
+  Estimated Value: $52,000
+
+- Savings Account (Westpac)
+  Balance: $38,000
+
+- Offset Account (Westpac)
+  Balance: $22,000
+
+Personal Liabilities: Nil
+
+═══════════════════════════════════════════════════
+INSURANCE
+═══════════════════════════════════════════════════
+
+Robert Chen:
+- No life, TPD or income protection insurance in place
+  (all policies cancelled upon retirement in 2023)
+
+Home & Contents: AAMI — Sum insured $750,000 + contents $80,000
+Landlord Insurance (12 Ocean St): Allianz — Sum insured $600,000
+Landlord Insurance (Unit 4/88 Grafton St): Allianz — Sum insured $420,000
+Motor Vehicle: NRMA — LandCruiser Prado (agreed value $52,000)
+
+═══════════════════════════════════════════════════
+ESTATE PLANNING
+═══════════════════════════════════════════════════
+
+Robert Chen:
+- Will: In Place (last updated February 2024 — updated after Linda's passing)
+  Executor: Michelle Chen (daughter)
+  Alternate Executor: David Chen (son)
+- Enduring Power of Attorney: Michelle Chen
+  Alternates: David Chen
+- Enduring Guardianship (Medical): Michelle Chen
+  Alternates: David Chen
+- Superannuation Binding Death Benefit Nomination:
+  Estate — 100% — Non-binding (lapsed, needs renewal)
+
+Notes:
+- Will updated post-Linda's death but SMSF BDBN was allowed to lapse
+- Trust succession plan needed — Robert is sole individual trustee with no backup
+- Consider appointing corporate trustee or adding children as co-trustees
+
+═══════════════════════════════════════════════════
+FAMILY / RELATIONSHIPS
+═══════════════════════════════════════════════════
+
+Non-Dependants:
+- Michelle Chen (Daughter, age 38) — Pharmacist, married to James Wong
+  Children: Lily Wong (age 8), Max Wong (age 5)
+- David Chen (Son, age 35) — Software Engineer, partner: Sarah Blake
+  Children: None
+
+═══════════════════════════════════════════════════
+OBJECTIVES
+═══════════════════════════════════════════════════
+
+1. Maintain a comfortable retirement income of $80,000 p.a. (today's dollars)
+2. Ensure SMSF pension lasts beyond age 90
+3. Consider downsizing the family home within 2-3 years
+4. Maximise inheritance to children in a tax-effective manner
+5. Resolve trust succession planning — appoint backup trustee
+6. Review and renew SMSF death benefit nomination

@@ -1,0 +1,514 @@
+{
+    "success": true,
+    "data": {
+        "clients": [
+            {
+                "id": "client-1",
+                "name": "Marcus",
+                "age": null,
+                "occupation": "Director / Consultant",
+                "income": 308600,
+                "superBalance": 684000
+            },
+            {
+                "id": "client-2",
+                "name": "Elena",
+                "age": null,
+                "occupation": "Senior Nurse (NSW Health)",
+                "income": 165000,
+                "superBalance": 455000
+            }
+        ],
+        "entities": [
+            {
+                "id": "entity-1",
+                "name": "Stavros Consulting Pty Ltd",
+                "type": "company",
+                "linkedClientIds": [
+                    "client-1"
+                ],
+                "role": "Director",
+                "trusteeName": null,
+                "trusteeType": null,
+                "assets": [
+                    {
+                        "id": "asset-1",
+                        "name": "Business Bank Account (Westpac)",
+                        "type": "cash",
+                        "value": 62400,
+                        "ownerIds": [],
+                        "details": "Company operating account"
+                    },
+                    {
+                        "id": "asset-2",
+                        "name": "Accounts Receivable",
+                        "type": "other",
+                        "value": 41000,
+                        "ownerIds": [],
+                        "details": "Trade debtors"
+                    },
+                    {
+                        "id": "asset-3",
+                        "name": "Office Equipment",
+                        "type": "other",
+                        "value": 18500,
+                        "ownerIds": [],
+                        "details": "Written down value"
+                    },
+                    {
+                        "id": "asset-4",
+                        "name": "Motor Vehicle - Tesla Model 3",
+                        "type": "vehicle",
+                        "value": 38000,
+                        "ownerIds": [],
+                        "details": "Written down value. Agreed insurance value $48,000. NRMA insurance."
+                    }
+                ],
+                "liabilities": [
+                    {
+                        "id": "liability-1",
+                        "name": "Accounts Payable",
+                        "type": "other",
+                        "amount": 12500,
+                        "interestRate": null,
+                        "ownerIds": [],
+                        "details": "Trade creditors"
+                    },
+                    {
+                        "id": "liability-2",
+                        "name": "GST Payable",
+                        "type": "other",
+                        "amount": 8200,
+                        "interestRate": null,
+                        "ownerIds": [],
+                        "details": "GST liability to ATO"
+                    },
+                    {
+                        "id": "liability-3",
+                        "name": "Provision for Tax",
+                        "type": "other",
+                        "amount": 5000,
+                        "interestRate": null,
+                        "ownerIds": [],
+                        "details": "Company tax provision FY2025"
+                    },
+                    {
+                        "id": "liability-4",
+                        "name": "Chattel Mortgage - Tesla (NAB)",
+                        "type": "loan",
+                        "amount": 28400,
+                        "interestRate": 5.99,
+                        "ownerIds": [],
+                        "details": "Tesla Model 3 finance"
+                    }
+                ]
+            },
+            {
+                "id": "entity-2",
+                "name": "Stavros Family Trust",
+                "type": "trust",
+                "linkedClientIds": [
+                    "client-1",
+                    "client-2"
+                ],
+                "role": "Beneficiaries (Marcus, Elena, and their children)",
+                "trusteeName": "Stavros Consulting Pty Ltd",
+                "trusteeType": "corporate",
+                "assets": [
+                    {
+                        "id": "asset-5",
+                        "name": "Westpac Term Deposit",
+                        "type": "cash",
+                        "value": 200000,
+                        "ownerIds": [],
+                        "details": "12 months, 4.85% interest"
+                    },
+                    {
+                        "id": "asset-6",
+                        "name": "Vanguard Diversified Growth (VDGR)",
+                        "type": "managed_fund",
+                        "value": 135450,
+                        "ownerIds": [],
+                        "details": "2,100 units"
+                    },
+                    {
+                        "id": "asset-7",
+                        "name": "3/44 Blues Point Rd, McMahons Point NSW",
+                        "type": "property",
+                        "value": 1100000,
+                        "ownerIds": [],
+                        "details": "Investment property. Rental Income: $48,000 p.a."
+                    }
+                ],
+                "liabilities": [
+                    {
+                        "id": "liability-5",
+                        "name": "ANZ Mortgage - Blues Point Rd",
+                        "type": "mortgage",
+                        "amount": 340000,
+                        "interestRate": 6.29,
+                        "ownerIds": [],
+                        "details": "Variable rate mortgage on McMahons Point investment property"
+                    }
+                ]
+            },
+            {
+                "id": "entity-3",
+                "name": "Stavros Super Fund",
+                "type": "smsf",
+                "linkedClientIds": [
+                    "client-1",
+                    "client-2"
+                ],
+                "role": "Members & Trustees",
+                "trusteeName": "Stavros Consulting Pty Ltd",
+                "trusteeType": "corporate",
+                "assets": [
+                    {
+                        "id": "asset-8",
+                        "name": "Cash at Bank (Macquarie)",
+                        "type": "cash",
+                        "value": 95000,
+                        "ownerIds": [],
+                        "details": "SMSF transaction account"
+                    },
+                    {
+                        "id": "asset-9",
+                        "name": "Vanguard Aust Shares Index (VAS)",
+                        "type": "shares",
+                        "value": 378000,
+                        "ownerIds": [],
+                        "details": "4,200 units"
+                    },
+                    {
+                        "id": "asset-10",
+                        "name": "BetaShares NASDAQ 100 (NDQ)",
+                        "type": "shares",
+                        "value": 126000,
+                        "ownerIds": [],
+                        "details": "3,000 units"
+                    },
+                    {
+                        "id": "asset-11",
+                        "name": "Suite 401, 100 Walker St, North Sydney NSW",
+                        "type": "property",
+                        "value": 850000,
+                        "ownerIds": [],
+                        "details": "Commercial property leased to Stavros Consulting Pty Ltd. Annual Rent: $36,000 (related party at market rate)"
+                    }
+                ],
+                "liabilities": [
+                    {
+                        "id": "liability-6",
+                        "name": "Limited Recourse Borrowing - Walker St property (AMP Bank)",
+                        "type": "mortgage",
+                        "amount": 310000,
+                        "interestRate": 6.89,
+                        "ownerIds": [],
+                        "details": "LRBA for Walker St commercial property"
+                    }
+                ]
+            }
+        ],
+        "personalAssets": [
+            {
+                "id": "asset-12",
+                "name": "Macquarie Wrap Account (7823-4451)",
+                "type": "managed_fund",
+                "value": 3492600,
+                "ownerIds": [
+                    "client-1",
+                    "client-2"
+                ],
+                "details": "Joint portfolio including: Australian Equities ($1,866,100), International Equities ($1,209,200), Fixed Income ($275,000), Cash Management ($142,300). Holdings: BHP 12,500 units ($547,500), CBA 3,200 units ($409,600), CSL 1,800 units ($531,000), WES 4,000 units ($296,000), TLS 20,000 units ($82,000), VGS 8,400 units ($924,000), MGE 6,200 units ($285,200), VGB 5,000 units ($275,000)"
+            },
+            {
+                "id": "asset-13",
+                "name": "AustralianSuper - Member 9912-7788",
+                "type": "super",
+                "value": 892400,
+                "ownerIds": [
+                    "client-1"
+                ],
+                "details": "Marcus Stavros. Balanced - Growth option. Insurance: Death & TPD $750,000, IP 75% salary to age 65. Binding death benefit nomination to Elena (expires March 2026). FY2025 contributions: SG $26,450, Salary Sacrifice $10,000, Spouse contribution $3,000"
+            },
+            {
+                "id": "asset-14",
+                "name": "HESTA - Member 5544-3322",
+                "type": "super",
+                "value": 347200,
+                "ownerIds": [
+                    "client-2"
+                ],
+                "details": "Elena Stavros. Conservative Balanced option. Insurance: Death & TPD $500,000. No death benefit nomination on file. FY2025 contributions: SG $13,800, Personal deductible $5,000"
+            },
+            {
+                "id": "asset-15",
+                "name": "Westpac Everyday (Joint)",
+                "type": "cash",
+                "value": 18450,
+                "ownerIds": [
+                    "client-1",
+                    "client-2"
+                ],
+                "details": "Joint everyday transaction account"
+            },
+            {
+                "id": "asset-16",
+                "name": "Westpac Savings Maximiser (Joint)",
+                "type": "cash",
+                "value": 85200,
+                "ownerIds": [
+                    "client-1",
+                    "client-2"
+                ],
+                "details": "Joint savings account"
+            },
+            {
+                "id": "asset-17",
+                "name": "ING Savings (Elena - sole)",
+                "type": "cash",
+                "value": 32100,
+                "ownerIds": [
+                    "client-2"
+                ],
+                "details": "Elena's personal savings account"
+            },
+            {
+                "id": "asset-18",
+                "name": "42 Harbour View Drive, Mosman NSW 2088",
+                "type": "property",
+                "value": 3200000,
+                "ownerIds": [
+                    "client-1",
+                    "client-2"
+                ],
+                "details": "Principal residence. Joint Tenants. Purchase Price (2012): $1,450,000. Home & Contents insurance (Allianz): sum insured $1,200,000 + contents $150,000"
+            },
+            {
+                "id": "asset-19",
+                "name": "Unit 7/18 Pacific Highway, St Leonards NSW 2065",
+                "type": "property",
+                "value": 780000,
+                "ownerIds": [
+                    "client-1"
+                ],
+                "details": "Investment property - Marcus sole ownership. Purchase Price (2018): $680,000. Rental Income: $2,800/month ($33,600 p.a.). Currently tenanted, lease expires Feb 2026. Landlord insurance (QBE): sum insured $780,000"
+            }
+        ],
+        "personalLiabilities": [
+            {
+                "id": "liability-7",
+                "name": "Westpac Mortgage - Harbour View Drive",
+                "type": "mortgage",
+                "amount": 487000,
+                "interestRate": 6.19,
+                "ownerIds": [
+                    "client-1",
+                    "client-2"
+                ],
+                "details": "Variable rate. Principal residence. Monthly repayment: $4,250"
+            },
+            {
+                "id": "liability-8",
+                "name": "CBA Mortgage - St Leonards",
+                "type": "mortgage",
+                "amount": 412000,
+                "interestRate": 5.49,
+                "ownerIds": [
+                    "client-1"
+                ],
+                "details": "Fixed rate until Dec 2025. Investment property. Monthly repayment: $3,100"
+            },
+            {
+                "id": "liability-9",
+                "name": "Westpac Altitude Black Visa (Joint)",
+                "type": "credit_card",
+                "amount": 8200,
+                "interestRate": 20.49,
+                "ownerIds": [
+                    "client-1",
+                    "client-2"
+                ],
+                "details": "Credit limit: $25,000"
+            }
+        ],
+        "estatePlanning": [
+            {
+                "id": "estate-1",
+                "clientId": "client-1",
+                "type": "will",
+                "status": "not_established",
+                "lastReviewed": null,
+                "primaryPerson": null,
+                "alternatePeople": null,
+                "details": "No estate planning documents have been sighted - recommend urgent review",
+                "hasIssue": true
+            },
+            {
+                "id": "estate-2",
+                "clientId": "client-1",
+                "type": "poa",
+                "status": "not_established",
+                "lastReviewed": null,
+                "primaryPerson": null,
+                "alternatePeople": null,
+                "details": "No estate planning documents have been sighted - recommend urgent review",
+                "hasIssue": true
+            },
+            {
+                "id": "estate-3",
+                "clientId": "client-1",
+                "type": "super_nomination",
+                "status": "current",
+                "lastReviewed": 2023,
+                "primaryPerson": "Elena",
+                "alternatePeople": null,
+                "details": "AustralianSuper - Binding Death Benefit Nomination: Elena Stavros 100%. Signed: 14 March 2023 (expires March 2026)",
+                "hasIssue": true
+            },
+            {
+                "id": "estate-4",
+                "clientId": "client-2",
+                "type": "will",
+                "status": "not_established",
+                "lastReviewed": null,
+                "primaryPerson": null,
+                "alternatePeople": null,
+                "details": "No estate planning documents have been sighted - recommend urgent review",
+                "hasIssue": true
+            },
+            {
+                "id": "estate-5",
+                "clientId": "client-2",
+                "type": "poa",
+                "status": "not_established",
+                "lastReviewed": null,
+                "primaryPerson": null,
+                "alternatePeople": null,
+                "details": "No estate planning documents have been sighted - recommend urgent review",
+                "hasIssue": true
+            },
+            {
+                "id": "estate-6",
+                "clientId": "client-2",
+                "type": "super_nomination",
+                "status": "not_established",
+                "lastReviewed": null,
+                "primaryPerson": null,
+                "alternatePeople": null,
+                "details": "HESTA - No death benefit nomination on file",
+                "hasIssue": true
+            }
+        ],
+        "familyMembers": [
+            {
+                "id": "family-1",
+                "name": "Nikolai",
+                "relationship": "son",
+                "partner": null,
+                "age": 28,
+                "isDependant": false,
+                "details": "Works in finance, lives independently. Received $10,000 trust distribution FY2025",
+                "children": []
+            },
+            {
+                "id": "family-2",
+                "name": "Sophia",
+                "relationship": "daughter",
+                "partner": null,
+                "age": 24,
+                "isDependant": true,
+                "details": "Completing PhD, partially supported by parents",
+                "children": []
+            }
+        ],
+        "objectives": [
+            "Wind down consulting business in 3-5 years (Marcus)",
+            "Reduce to part-time work (3 days/week) from January 2026 (Elena)",
+            "Consider rebalancing SMSF away from single commercial property exposure",
+            "Provide partial financial support for Sophia (daughter completing PhD)"
+        ],
+        "dataGaps": [
+            {
+                "entityId": "client-1",
+                "field": "age",
+                "description": "Marcus Stavros's age not specified in the document",
+                "nodeId": "client-1"
+            },
+            {
+                "entityId": "client-2",
+                "field": "age",
+                "description": "Elena Stavros's age not specified in the document",
+                "nodeId": "client-2"
+            },
+            {
+                "entityId": "client-1",
+                "field": "will",
+                "description": "Marcus - Will not established or not sighted. Urgent review recommended.",
+                "nodeId": "estate-will-marcus"
+            },
+            {
+                "entityId": "client-1",
+                "field": "power_of_attorney",
+                "description": "Marcus - Power of Attorney not established or not sighted. Urgent review recommended.",
+                "nodeId": "estate-poa-marcus"
+            },
+            {
+                "entityId": "client-1",
+                "field": "guardianship",
+                "description": "Marcus - Enduring Power of Guardianship not mentioned. Should be considered.",
+                "nodeId": "estate-guardianship-marcus"
+            },
+            {
+                "entityId": "client-1",
+                "field": "super_nomination",
+                "description": "Marcus - Binding death benefit nomination expires March 2026. Needs renewal to avoid lapsing.",
+                "nodeId": "estate-super-nom-marcus"
+            },
+            {
+                "entityId": "client-2",
+                "field": "will",
+                "description": "Elena - Will not established or not sighted. Urgent review recommended.",
+                "nodeId": "estate-will-elena"
+            },
+            {
+                "entityId": "client-2",
+                "field": "power_of_attorney",
+                "description": "Elena - Power of Attorney not established or not sighted. Urgent review recommended.",
+                "nodeId": "estate-poa-elena"
+            },
+            {
+                "entityId": "client-2",
+                "field": "guardianship",
+                "description": "Elena - Enduring Power of Guardianship not mentioned. Should be considered.",
+                "nodeId": "estate-guardianship-elena"
+            },
+            {
+                "entityId": "client-2",
+                "field": "super_nomination",
+                "description": "Elena - No death benefit nomination on file with HESTA. Should be established.",
+                "nodeId": "estate-super-nom-elena"
+            },
+            {
+                "entityId": "client-2",
+                "field": "income_protection",
+                "description": "Elena has no income protection cover. Consider whether appropriate given nursing career and income.",
+                "nodeId": "insurance-elena-ip"
+            },
+            {
+                "entityId": "entity-3",
+                "field": "death_benefit_nominations",
+                "description": "Stavros Super Fund (SMSF) - No death benefit nominations mentioned for either member. Should be established.",
+                "nodeId": "smsf-death-nominations"
+            },
+            {
+                "entityId": "entity-2",
+                "field": "appointer",
+                "description": "Stavros Family Trust - Marcus is listed as appointer, but should confirm if Elena or others are also appointed or successor appointers documented",
+                "nodeId": "entity-2-appointer"
+            }
+        ]
+    },
+    "extractedTextLength": 9643
+}

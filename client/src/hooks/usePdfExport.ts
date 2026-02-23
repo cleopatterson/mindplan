@@ -18,6 +18,14 @@ const SLATE = [100, 116, 139] as const;
 const TEAL = [20, 184, 166] as const;   // #14b8a6
 const ROSE = [244, 63, 94] as const;    // #f43f5e
 
+const RISK_PROFILE_LABELS: Record<string, string> = {
+  conservative: 'Conservative',
+  moderately_conservative: 'Moderately Conservative',
+  balanced: 'Balanced',
+  growth: 'Growth',
+  high_growth: 'High Growth',
+};
+
 export function usePdfExport() {
   const [exporting, setExporting] = useState(false);
 
@@ -123,34 +131,69 @@ export function usePdfExport() {
           drawAllocationPage(pdf, pw, ph, data);
         }
 
-        // ── Estate Planning page ──
-        if (options.includeEstate && data.estatePlanning.length > 0) {
-          addPageIfNeeded();
-          drawEstatePage(pdf, pw, ph, data);
-        }
+        // ── Flowable sections: Estate + Family, Goals, Relationships, Gaps ──
+        // These share pages and flow continuously with auto page breaks.
+        {
+          let flowY = 0; // 0 means "need a new page"
+          const startFlowSection = () => {
+            if (flowY === 0) {
+              addPageIfNeeded();
+              drawAccentBar(pdf, pw);
+              flowY = 14;
+            } else {
+              // Divider between sections on same page
+              flowY += 8;
+              pdf.setDrawColor(210);
+              pdf.setLineWidth(0.2);
+              pdf.line(15, flowY, pw - 15, flowY);
+              flowY += 10;
+            }
+          };
+          const newFlowPage = () => {
+            pdf.addPage();
+            firstPage = false;
+            drawAccentBar(pdf, pw);
+            flowY = 14;
+          };
+          const ensureRoom = (needed: number) => {
+            if (flowY + needed > ph - 15) newFlowPage();
+          };
 
-        // ── Family Tree page ──
-        if (options.includeFamily && data.familyMembers.length > 0) {
-          addPageIfNeeded();
-          drawFamilyPage(pdf, pw, ph, data);
-        }
+          // Estate + Family grouped together
+          if (options.includeEstate && data.estatePlanning.length > 0) {
+            const estH = estimateEstateHeight(data);
+            startFlowSection();
+            ensureRoom(estH);
+            flowY = drawEstateSection(pdf, pw, ph, data, flowY);
+          }
 
-        // ── Goals page ──
-        if (options.includeGoals && data.goals.length > 0) {
-          addPageIfNeeded();
-          drawGoalsPage(pdf, pw, ph, data);
-        }
+          if (options.includeFamily && data.familyMembers.length > 0) {
+            const famH = estimateFamilyHeight(data);
+            startFlowSection();
+            ensureRoom(famH);
+            flowY = drawFamilySection(pdf, pw, ph, data, flowY);
+          }
 
-        // ── Relationships page ──
-        if (options.includeRelationships && data.relationships.length > 0) {
-          addPageIfNeeded();
-          drawRelationshipsPage(pdf, pw, ph, data);
-        }
+          if (options.includeGoals && data.goals.length > 0) {
+            const goalsH = 25 + data.goals.length * 8;
+            startFlowSection();
+            ensureRoom(goalsH);
+            flowY = drawGoalsSection(pdf, pw, ph, data, flowY);
+          }
 
-        // ── Gaps page ──
-        if (options.includeGaps && data.dataGaps.length > 0) {
-          addPageIfNeeded();
-          drawGapsPage(pdf, pw, ph, data);
+          if (options.includeRelationships && data.relationships.length > 0) {
+            const relsH = 25 + data.relationships.length * 8;
+            startFlowSection();
+            ensureRoom(relsH);
+            flowY = drawRelationshipsSection(pdf, pw, ph, data, flowY);
+          }
+
+          if (options.includeGaps && data.dataGaps.length > 0) {
+            const gapsH = 22 + data.dataGaps.length * 9;
+            startFlowSection();
+            ensureRoom(gapsH);
+            flowY = drawGapsSection(pdf, pw, ph, data, flowY);
+          }
         }
 
         // ── Footers ──
@@ -326,11 +369,12 @@ function drawSummaryPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan
       if (client.occupation) info.push(client.occupation);
       if (client.income) info.push(`Income ${formatAUD(client.income)}`);
       if (client.superBalance) info.push(`Super ${formatAUD(client.superBalance)}`);
+      if (client.riskProfile) info.push(RISK_PROFILE_LABELS[client.riskProfile] ?? client.riskProfile);
       pdf.text(info.join('  \u2022  '), m + Math.min(60, pw * 0.2), y + 6.5);
       y += 12;
     });
 
-    y += 4;
+    y += 8;
   }
 
   // ── Entity Breakdown Table ──
@@ -394,7 +438,7 @@ function drawSummaryPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan
       pdf.setFontSize(8.5);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(40);
-      pdf.text(row.name, colX.name, y + 1);
+      pdf.text(row.name, colX.name, y + 1, { maxWidth: tableW * 0.27 });
 
       pdf.setTextColor(120);
       pdf.setFontSize(7.5);
@@ -445,42 +489,34 @@ function drawSummaryPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan
 
 // ── Gaps Page ──
 
-function drawGapsPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan) {
+function drawGapsSection(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan, startY: number): number {
   const m = 15;
-  let y = 10;
+  let y = startY;
 
-  // Accent bar
-  pdf.setFillColor(...BLUE);
-  pdf.rect(0, 0, pw * 0.6, 2, 'F');
-  pdf.setFillColor(...PURPLE);
-  pdf.rect(pw * 0.6, 0, pw * 0.4, 2, 'F');
-
-  y = 14;
-  pdf.setFontSize(15);
+  pdf.setFontSize(13);
   pdf.setTextColor(50);
   pdf.setFont('helvetica', 'bold');
   pdf.text('Information Needed', m, y);
-  y += 5;
+  y += 4;
 
-  pdf.setFontSize(8.5);
+  pdf.setFontSize(8);
   pdf.setTextColor(130);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(`${data.dataGaps.length} items require attention to complete the financial picture`, m, y);
-  y += 8;
+  pdf.text(`${data.dataGaps.length} items require attention`, m, y);
+  y += 6;
 
   data.dataGaps.forEach((gap, i) => {
     if (y > ph - 20) {
       pdf.addPage();
-      y = 15;
+      drawAccentBar(pdf, pw);
+      y = 14;
     }
 
-    // Alternating row background
     if (i % 2 === 0) {
       pdf.setFillColor(248, 250, 252);
       pdf.roundedRect(m, y - 3, pw - m * 2, 8, 1, 1, 'F');
     }
 
-    // Number badge
     pdf.setFillColor(...BLUE);
     pdf.circle(m + 3, y + 1, 2.5, 'F');
     pdf.setFontSize(6);
@@ -488,14 +524,15 @@ function drawGapsPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan) {
     pdf.setFont('helvetica', 'bold');
     pdf.text(String(i + 1), m + 3, y + 2, { align: 'center' });
 
-    // Description
     pdf.setFontSize(8.5);
     pdf.setTextColor(50);
     pdf.setFont('helvetica', 'normal');
-    pdf.text(gap.description, m + 10, y + 1.5);
+    pdf.text(gap.description, m + 10, y + 1.5, { maxWidth: pw - m * 2 - 14 });
 
     y += 9;
   });
+
+  return y + 2;
 }
 
 // ── Asset Allocation Page ──
@@ -619,7 +656,16 @@ function drawAllocationPage(pdf: jsPDF, pw: number, _ph: number, data: Financial
   pdf.text(`Total assets: ${formatAUD(total)}`, m, y);
 }
 
-// ── Estate Planning Page ──
+// ── Accent bar helper for flowing pages ──
+
+function drawAccentBar(pdf: jsPDF, pw: number) {
+  pdf.setFillColor(...BLUE);
+  pdf.rect(0, 0, pw * 0.6, 2, 'F');
+  pdf.setFillColor(...PURPLE);
+  pdf.rect(pw * 0.6, 0, pw * 0.4, 2, 'F');
+}
+
+// ── Estate Planning Section ──
 
 const ESTATE_TYPE_LABELS: Record<string, string> = {
   will: 'Will',
@@ -634,22 +680,19 @@ const STATUS_COLORS: Record<string, readonly [number, number, number]> = {
   not_established: [100, 116, 139], // slate
 };
 
-function drawEstatePage(pdf: jsPDF, pw: number, _ph: number, data: FinancialPlan) {
+function estimateEstateHeight(data: FinancialPlan): number {
+  return 22 + data.clients.length * 20 + 8;
+}
+
+function drawEstateSection(pdf: jsPDF, pw: number, _ph: number, data: FinancialPlan, startY: number): number {
   const m = 15;
-  let y = 10;
+  let y = startY;
 
-  // Accent bar
-  pdf.setFillColor(...BLUE);
-  pdf.rect(0, 0, pw * 0.6, 2, 'F');
-  pdf.setFillColor(...PURPLE);
-  pdf.rect(pw * 0.6, 0, pw * 0.4, 2, 'F');
-
-  y = 14;
-  pdf.setFontSize(15);
+  pdf.setFontSize(13);
   pdf.setTextColor(50);
   pdf.setFont('helvetica', 'bold');
   pdf.text('Estate Planning', m, y);
-  y += 10;
+  y += 8;
 
   const types = ['will', 'poa', 'guardianship', 'super_nomination'] as const;
   const colW = (pw - m * 2 - 50) / types.length;
@@ -669,10 +712,10 @@ function drawEstatePage(pdf: jsPDF, pw: number, _ph: number, data: FinancialPlan
   y += 9;
 
   // One row per client
+  const rowH = 18;
   data.clients.forEach((client) => {
-    // Row background
     pdf.setFillColor(252, 252, 253);
-    pdf.roundedRect(m, y - 4, pw - m * 2, 14, 1, 1, 'F');
+    pdf.roundedRect(m, y - 4, pw - m * 2, rowH, 1, 1, 'F');
 
     pdf.setFontSize(8.5);
     pdf.setFont('helvetica', 'bold');
@@ -680,39 +723,50 @@ function drawEstatePage(pdf: jsPDF, pw: number, _ph: number, data: FinancialPlan
     pdf.text(client.name, m + 4, y + 2);
 
     types.forEach((type, i) => {
-      const item = data.estatePlanning.find(
+      // For super nominations there may be multiple — collect all
+      const items = data.estatePlanning.filter(
         (e) => e.clientId === client.id && e.type === type,
       );
+      const item = items[0];
       const cellX = m + nameColW + i * colW;
       const cellW = colW - 2;
 
       if (item) {
         const status = item.status ?? 'not_established';
         const color = STATUS_COLORS[status] ?? SLATE;
-
-        // Cell background (light tint, no opacity)
         const cellBg = lighten(color, 0.85);
         pdf.setFillColor(...cellBg);
-        pdf.roundedRect(cellX, y - 3, cellW, 12, 1, 1, 'F');
+        pdf.roundedRect(cellX, y - 3, cellW, rowH - 2, 1, 1, 'F');
 
-        // Status text
         pdf.setFontSize(7);
         pdf.setFont('helvetica', 'bold');
         pdf.setTextColor(...color);
         const statusLabel = status.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase());
         pdf.text(statusLabel, cellX + 2, y + 1);
 
-        // Primary person
-        if (item.primaryPerson) {
-          pdf.setFontSize(6);
-          pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(120);
-          pdf.text(item.primaryPerson, cellX + 2, y + 5.5);
+        // Build detail text from people or details
+        pdf.setFontSize(5.5);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(120);
+
+        if (type === 'super_nomination' && items.length > 0) {
+          // Show count + binding type
+          if (items.length > 1) pdf.text(`${items.length} nominations`, cellX + 2, y + 5, { maxWidth: cellW - 4 });
+          const isBinding = items.some((it) => it.details?.toLowerCase().includes('binding'));
+          const nomType = isBinding ? 'Binding' : 'Non-binding';
+          pdf.text(nomType, cellX + 2, y + (items.length > 1 ? 8.5 : 5), { maxWidth: cellW - 4 });
+        } else {
+          // Show all people (primaryPerson + alternatePeople)
+          const people: string[] = [];
+          if (item.primaryPerson) people.push(item.primaryPerson);
+          if (item.alternatePeople) people.push(...item.alternatePeople);
+          if (people.length > 0) {
+            pdf.text(people.join(', '), cellX + 2, y + 5, { maxWidth: cellW - 4 });
+          }
         }
       } else {
-        // Not found — gray
         pdf.setFillColor(248, 250, 252);
-        pdf.roundedRect(cellX, y - 3, cellW, 12, 1, 1, 'F');
+        pdf.roundedRect(cellX, y - 3, cellW, rowH - 2, 1, 1, 'F');
         pdf.setFontSize(7);
         pdf.setTextColor(180);
         pdf.setFont('helvetica', 'normal');
@@ -720,18 +774,19 @@ function drawEstatePage(pdf: jsPDF, pw: number, _ph: number, data: FinancialPlan
       }
     });
 
-    y += 16;
+    y += rowH + 2;
   });
 
-  // Summary count
-  y += 4;
+  y += 2;
   const issues = data.estatePlanning.filter((e) => e.hasIssue).length;
   const current = data.estatePlanning.filter((e) => e.status === 'current').length;
 
-  pdf.setFontSize(8.5);
-  pdf.setTextColor(100);
+  pdf.setFontSize(8);
+  pdf.setTextColor(130);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(`${current} current  •  ${issues} requiring attention  •  ${data.estatePlanning.length} total documents`, m, y);
+  pdf.text(`${current} current  \u2022  ${issues} requiring attention  \u2022  ${data.estatePlanning.length} total documents`, m, y);
+
+  return y + 4;
 }
 
 // ── Family Tree Page ──
@@ -747,22 +802,21 @@ function lighten(c: readonly [number, number, number], mix: number): [number, nu
 
 const AMBER = [245, 158, 11] as const;
 
-function drawFamilyPage(pdf: jsPDF, pw: number, _ph: number, data: FinancialPlan) {
+function estimateFamilyHeight(data: FinancialPlan): number {
+  const hasGrandchildren = data.familyMembers.some((m) => m.children.length > 0);
+  const levels = 1 + (data.familyMembers.length > 0 ? 1 : 0) + (hasGrandchildren ? 1 : 0);
+  return 12 + levels * 38; // title + levels * (box + gap + connecting lines)
+}
+
+function drawFamilySection(pdf: jsPDF, pw: number, _ph: number, data: FinancialPlan, startY: number): number {
   const m = 15;
-  let y = 10;
+  let y = startY;
 
-  // Accent bar
-  pdf.setFillColor(...BLUE);
-  pdf.rect(0, 0, pw * 0.6, 2, 'F');
-  pdf.setFillColor(...PURPLE);
-  pdf.rect(pw * 0.6, 0, pw * 0.4, 2, 'F');
-
-  y = 14;
-  pdf.setFontSize(15);
+  pdf.setFontSize(13);
   pdf.setTextColor(50);
   pdf.setFont('helvetica', 'bold');
   pdf.text('Family', m, y);
-  y += 12;
+  y += 10;
 
   // Base dimensions (before scaling)
   const BASE_BOX_W = 55;
@@ -819,7 +873,7 @@ function drawFamilyPage(pdf: jsPDF, pw: number, _ph: number, data: FinancialPlan
   y += boxH + gapY;
 
   // ── Level 2: Children ──
-  if (data.familyMembers.length === 0) return;
+  if (data.familyMembers.length === 0) return y;
 
   // Pre-compute each child's "footprint" — the wider of the child box or its grandchildren spread
   const footprints = data.familyMembers.map((member) => {
@@ -851,9 +905,12 @@ function drawFamilyPage(pdf: jsPDF, pw: number, _ph: number, data: FinancialPlan
     pdf.line(childCenters[0], junctionY, childCenters[childCount - 1], junctionY);
   }
 
+  let maxY = y + boxH; // Track bottom-most element for return value
+
   data.familyMembers.forEach((member, i) => {
     const cx = childCenters[i];
     const x = cx - boxW / 2;
+    maxY = Math.max(maxY, y + boxH);
 
     // Vertical line down to child box
     pdf.setDrawColor(190);
@@ -903,12 +960,15 @@ function drawFamilyPage(pdf: jsPDF, pw: number, _ph: number, data: FinancialPlan
         const gcRelation = gc.relationship === 'grandson' ? 'Grandson' : 'Granddaughter';
         const gcSub = [gc.age ? `Age ${gc.age}` : null, gcRelation].filter(Boolean).join(' \u2022 ');
         drawPersonBox(pdf, gcX, gcY, gcBoxW, gcBoxH, gc.name, null, gcSub, SLATE, nameFontSize, subtitleFontSize);
+        maxY = Math.max(maxY, gcY + gcBoxH);
       });
     }
   });
+
+  return maxY + 4;
 }
 
-// ── Goals Page ──
+// ── Goals Section ──
 
 const GOAL_CATEGORY_LABELS: Record<string, string> = {
   retirement: 'Retirement',
@@ -920,30 +980,22 @@ const GOAL_CATEGORY_LABELS: Record<string, string> = {
   other: 'Other',
 };
 
-function drawGoalsPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan) {
+function drawGoalsSection(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan, startY: number): number {
   const m = 15;
-  let y = 10;
+  let y = startY;
 
-  // Accent bar
-  pdf.setFillColor(...TEAL);
-  pdf.rect(0, 0, pw * 0.6, 2, 'F');
-  pdf.setFillColor(...PURPLE);
-  pdf.rect(pw * 0.6, 0, pw * 0.4, 2, 'F');
-
-  y = 14;
-  pdf.setFontSize(15);
+  pdf.setFontSize(13);
   pdf.setTextColor(50);
   pdf.setFont('helvetica', 'bold');
   pdf.text('Goals & Objectives', m, y);
-  y += 5;
+  y += 4;
 
-  pdf.setFontSize(8.5);
+  pdf.setFontSize(8);
   pdf.setTextColor(130);
   pdf.setFont('helvetica', 'normal');
   pdf.text(`${data.goals.length} goals identified`, m, y);
-  y += 8;
+  y += 6;
 
-  // Table header
   const tableW = pw - m * 2;
   const colX = {
     name: m + 4,
@@ -967,7 +1019,8 @@ function drawGoalsPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan) 
   data.goals.forEach((goal, i) => {
     if (y > ph - 20) {
       pdf.addPage();
-      y = 15;
+      drawAccentBar(pdf, pw);
+      y = 14;
     }
 
     if (i % 2 === 0) {
@@ -975,13 +1028,11 @@ function drawGoalsPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan) 
       pdf.rect(m, y - 3.5, tableW, 8, 'F');
     }
 
-    // Name
     pdf.setFontSize(8.5);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(40);
     pdf.text(goal.name, colX.name, y + 1, { maxWidth: tableW * 0.34 });
 
-    // Category badge
     const catLabel = GOAL_CATEGORY_LABELS[goal.category] ?? goal.category;
     const catBg = lighten(TEAL, 0.85);
     const catW = pdf.getTextWidth(catLabel) + 4;
@@ -992,31 +1043,25 @@ function drawGoalsPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan) 
     pdf.setFont('helvetica', 'bold');
     pdf.text(catLabel, colX.category + 2, y + 1.5);
 
-    // Timeframe
     pdf.setFontSize(8.5);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(100);
     pdf.text(goal.timeframe ?? '\u2014', colX.timeframe, y + 1);
 
-    // Value
     pdf.setTextColor(40);
     pdf.text(goal.value ? formatAUD(goal.value) : '\u2014', colX.value, y + 1);
 
     y += 8;
   });
 
-  // Summary
-  y += 4;
-  pdf.setFontSize(8.5);
-  pdf.setTextColor(100);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(`${data.goals.length} total goals`, m, y);
+  return y + 2;
 }
 
-// ── Relationships Page ──
+// ── Relationships Section ──
 
 const RELATIONSHIP_TYPE_LABELS: Record<string, string> = {
   accountant: 'Accountant',
+  financial_adviser: 'Financial Adviser',
   stockbroker: 'Stockbroker',
   solicitor: 'Solicitor',
   insurance_adviser: 'Insurance Adviser',
@@ -1024,35 +1069,27 @@ const RELATIONSHIP_TYPE_LABELS: Record<string, string> = {
   other: 'Other',
 };
 
-function drawRelationshipsPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan) {
+function drawRelationshipsSection(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan, startY: number): number {
   const m = 15;
-  let y = 10;
+  let y = startY;
 
-  // Accent bar
-  pdf.setFillColor(...ROSE);
-  pdf.rect(0, 0, pw * 0.6, 2, 'F');
-  pdf.setFillColor(...PURPLE);
-  pdf.rect(pw * 0.6, 0, pw * 0.4, 2, 'F');
-
-  y = 14;
-  pdf.setFontSize(15);
+  pdf.setFontSize(13);
   pdf.setTextColor(50);
   pdf.setFont('helvetica', 'bold');
   pdf.text('Professional Advisers', m, y);
-  y += 5;
+  y += 4;
 
-  pdf.setFontSize(8.5);
+  pdf.setFontSize(8);
   pdf.setTextColor(130);
   pdf.setFont('helvetica', 'normal');
   pdf.text(`${data.relationships.length} professional relationships`, m, y);
-  y += 8;
+  y += 6;
 
-  // Table header
   const tableW = pw - m * 2;
   const colX = {
-    firm: m + 4,
-    type: m + tableW * 0.35,
-    contact: m + tableW * 0.55,
+    type: m + 4,
+    contact: m + tableW * 0.25,
+    firm: m + tableW * 0.50,
     notes: m + tableW * 0.75,
   };
 
@@ -1062,16 +1099,17 @@ function drawRelationshipsPage(pdf: jsPDF, pw: number, ph: number, data: Financi
   pdf.setFontSize(7);
   pdf.setTextColor(100);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('FIRM', colX.firm, y + 2);
   pdf.text('TYPE', colX.type, y + 2);
   pdf.text('CONTACT', colX.contact, y + 2);
+  pdf.text('FIRM', colX.firm, y + 2);
   pdf.text('NOTES', colX.notes, y + 2);
   y += 9;
 
   data.relationships.forEach((rel, i) => {
     if (y > ph - 20) {
       pdf.addPage();
-      y = 15;
+      drawAccentBar(pdf, pw);
+      y = 14;
     }
 
     if (i % 2 === 0) {
@@ -1079,13 +1117,6 @@ function drawRelationshipsPage(pdf: jsPDF, pw: number, ph: number, data: Financi
       pdf.rect(m, y - 3.5, tableW, 8, 'F');
     }
 
-    // Firm
-    pdf.setFontSize(8.5);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(40);
-    pdf.text(rel.firmName ?? '\u2014', colX.firm, y + 1, { maxWidth: tableW * 0.29 });
-
-    // Type badge
     const typeLabel = RELATIONSHIP_TYPE_LABELS[rel.type] ?? rel.type;
     const typeBg = lighten(ROSE, 0.85);
     const typeW = pdf.getTextWidth(typeLabel) + 4;
@@ -1096,26 +1127,25 @@ function drawRelationshipsPage(pdf: jsPDF, pw: number, ph: number, data: Financi
     pdf.setFont('helvetica', 'bold');
     pdf.text(typeLabel, colX.type + 2, y + 1.5);
 
-    // Contact
     pdf.setFontSize(8.5);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(40);
     pdf.text(rel.contactName ?? '\u2014', colX.contact, y + 1);
 
-    // Notes
+    pdf.setFontSize(8.5);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(40);
+    pdf.text(rel.firmName ?? '\u2014', colX.firm, y + 1, { maxWidth: tableW * 0.22 });
+
     pdf.setFontSize(7.5);
+    pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(100);
     pdf.text(rel.notes ?? '\u2014', colX.notes, y + 1, { maxWidth: tableW * 0.22 });
 
     y += 8;
   });
 
-  // Summary
-  y += 4;
-  pdf.setFontSize(8.5);
-  pdf.setTextColor(100);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(`${data.relationships.length} total advisers`, m, y);
+  return y + 2;
 }
 
 function drawPersonBox(

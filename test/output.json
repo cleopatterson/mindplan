@@ -26,20 +26,24 @@
         "client-1",
         "client-2"
       ],
-      "role": "Appointer: John Mitchell; Beneficiaries: John Mitchell, Sarah Mitchell, Mitchell children; Trustee: Mitchell Holdings Pty Ltd",
+      "role": "Appointer: John Mitchell; Beneficiaries: John Mitchell, Sarah Mitchell, Mitchell children",
+      "trusteeName": "Mitchell Holdings Pty Ltd",
+      "trusteeType": "corporate",
       "assets": [
         {
           "id": "asset-1",
           "name": "42 Ocean Parade, Dee Why NSW 2099",
           "type": "property",
           "value": 1850000,
-          "details": "Investment Property - Rental Income: $52,000 p.a."
+          "ownerIds": [],
+          "details": "Investment Property; Rental Income: $52,000 p.a."
         },
         {
           "id": "asset-2",
           "name": "Share Portfolio (managed by Macquarie)",
           "type": "managed_fund",
           "value": 320000,
+          "ownerIds": [],
           "details": "Dividend Income: $12,800 p.a. (fully franked)"
         },
         {
@@ -47,6 +51,7 @@
           "name": "Term Deposit (NAB)",
           "type": "cash",
           "value": 85000,
+          "ownerIds": [],
           "details": "Interest Rate: 4.35%"
         }
       ],
@@ -57,7 +62,8 @@
           "type": "mortgage",
           "amount": 580000,
           "interestRate": 6.24,
-          "details": "Interest only. Security: 42 Ocean Parade"
+          "ownerIds": [],
+          "details": "Interest only; Security: 42 Ocean Parade"
         }
       ]
     },
@@ -69,13 +75,16 @@
         "client-1",
         "client-2"
       ],
-      "role": "Directors: John Mitchell, Sarah Mitchell; Shareholders: Mitchell Family Trust (100%); Trustee of Mitchell Family Trust and Mitchell Super Fund",
+      "role": "Directors: John Mitchell, Sarah Mitchell; Shareholders: Mitchell Family Trust (100%)",
+      "trusteeName": null,
+      "trusteeType": null,
       "assets": [
         {
           "id": "asset-4",
           "name": "Business Equipment",
           "type": "other",
           "value": 45000,
+          "ownerIds": [],
           "details": null
         },
         {
@@ -83,6 +92,7 @@
           "name": "Company Cash Account",
           "type": "cash",
           "value": 32000,
+          "ownerIds": [],
           "details": null
         }
       ],
@@ -96,41 +106,48 @@
         "client-1",
         "client-2"
       ],
-      "role": "Members: John Mitchell, Sarah Mitchell; Trustee: Mitchell Holdings Pty Ltd",
+      "role": "Members: John Mitchell, Sarah Mitchell",
+      "trusteeName": "Mitchell Holdings Pty Ltd",
+      "trusteeType": "corporate",
       "assets": [
         {
           "id": "asset-6",
           "name": "Unit 3/15 Military Road, Neutral Bay NSW 2089",
           "type": "property",
           "value": 920000,
+          "ownerIds": [],
           "details": "Rental Income: $38,000 p.a."
         },
         {
           "id": "asset-7",
-          "name": "Australian Shares - BHP (2,000 shares)",
+          "name": "Australian Shares (direct) - BHP 2,000 shares",
           "type": "shares",
           "value": null,
-          "details": "Part of total direct shares portfolio estimated at $285,000"
+          "ownerIds": [],
+          "details": "Part of direct share portfolio estimated at $285,000 total (BHP, CBA, CSL)"
         },
         {
           "id": "asset-8",
-          "name": "Australian Shares - CBA (1,500 shares)",
+          "name": "Australian Shares (direct) - CBA 1,500 shares",
           "type": "shares",
           "value": null,
-          "details": "Part of total direct shares portfolio estimated at $285,000"
+          "ownerIds": [],
+          "details": "Part of direct share portfolio estimated at $285,000 total (BHP, CBA, CSL)"
         },
         {
           "id": "asset-9",
-          "name": "Australian Shares - CSL (400 shares)",
+          "name": "Australian Shares (direct) - CSL 400 shares",
           "type": "shares",
           "value": null,
-          "details": "Part of total direct shares portfolio estimated at $285,000"
+          "ownerIds": [],
+          "details": "Part of direct share portfolio estimated at $285,000 total (BHP, CBA, CSL)"
         },
         {
           "id": "asset-10",
           "name": "Cash Account (Macquarie)",
           "type": "cash",
           "value": 65000,
+          "ownerIds": [],
           "details": null
         }
       ],
@@ -138,10 +155,11 @@
         {
           "id": "liability-2",
           "name": "Limited Recourse Borrowing Arrangement - Unit 3/15 Military Road",
-          "type": "mortgage",
+          "type": "loan",
           "amount": 340000,
           "interestRate": 6.89,
-          "details": "Security: Unit 3/15 Military Road, Neutral Bay"
+          "ownerIds": [],
+          "details": "Security: Unit 3/15 Military Road"
         }
       ]
     }
@@ -152,6 +170,10 @@
       "name": "28 Balgowlah Road, Balgowlah Heights NSW 2093",
       "type": "property",
       "value": 2400000,
+      "ownerIds": [
+        "client-1",
+        "client-2"
+      ],
       "details": "Family Home"
     },
     {
@@ -159,6 +181,10 @@
       "name": "2022 Toyota RAV4 Hybrid",
       "type": "vehicle",
       "value": 38000,
+      "ownerIds": [
+        "client-1",
+        "client-2"
+      ],
       "details": null
     },
     {
@@ -166,6 +192,10 @@
       "name": "2020 Mazda CX-5",
       "type": "vehicle",
       "value": 28000,
+      "ownerIds": [
+        "client-1",
+        "client-2"
+      ],
       "details": null
     },
     {
@@ -173,42 +203,61 @@
       "name": "Savings Account (Westpac)",
       "type": "cash",
       "value": 42000,
+      "ownerIds": [
+        "client-1",
+        "client-2"
+      ],
       "details": null
     },
     {
       "id": "asset-15",
-      "name": "Life Insurance - John Mitchell (AustralianSuper)",
+      "name": "Life Insurance - AustralianSuper",
       "type": "insurance",
       "value": 1500000,
-      "details": "Life Insurance cover"
+      "ownerIds": [
+        "client-1"
+      ],
+      "details": "John Mitchell"
     },
     {
       "id": "asset-16",
-      "name": "TPD Insurance - John Mitchell (AustralianSuper)",
+      "name": "TPD Insurance - AustralianSuper",
       "type": "insurance",
       "value": 750000,
-      "details": "Total and Permanent Disability cover"
+      "ownerIds": [
+        "client-1"
+      ],
+      "details": "John Mitchell"
     },
     {
       "id": "asset-17",
-      "name": "Income Protection - John Mitchell",
+      "name": "Income Protection - AustralianSuper",
       "type": "insurance",
       "value": null,
-      "details": "75% of salary, 90-day wait period, cover to age 65"
+      "ownerIds": [
+        "client-1"
+      ],
+      "details": "John Mitchell - 75% of salary, 90-day wait, to age 65"
     },
     {
       "id": "asset-18",
-      "name": "Life Insurance - Sarah Mitchell (REST Super)",
+      "name": "Life Insurance - REST Super",
       "type": "insurance",
       "value": 800000,
-      "details": "Life Insurance cover"
+      "ownerIds": [
+        "client-2"
+      ],
+      "details": "Sarah Mitchell"
     },
     {
       "id": "asset-19",
-      "name": "TPD Insurance - Sarah Mitchell (REST Super)",
+      "name": "TPD Insurance - REST Super",
       "type": "insurance",
       "value": 500000,
-      "details": "Total and Permanent Disability cover"
+      "ownerIds": [
+        "client-2"
+      ],
+      "details": "Sarah Mitchell"
     }
   ],
   "personalLiabilities": [
@@ -218,7 +267,11 @@
       "type": "mortgage",
       "amount": 650000,
       "interestRate": 5.99,
-      "details": "Principal & Interest repayment: $4,200/month"
+      "ownerIds": [
+        "client-1",
+        "client-2"
+      ],
+      "details": "Repayment: $4,200/month (P&I)"
     },
     {
       "id": "liability-4",
@@ -226,7 +279,146 @@
       "type": "credit_card",
       "amount": 3200,
       "interestRate": null,
-      "details": "Credit limit: $15,000"
+      "ownerIds": [
+        "client-1",
+        "client-2"
+      ],
+      "details": "Limit: $15,000"
+    }
+  ],
+  "estatePlanning": [
+    {
+      "id": "estate-1",
+      "clientId": "client-1",
+      "type": "will",
+      "status": "current",
+      "lastReviewed": 2022,
+      "primaryPerson": "Sarah Mitchell",
+      "alternatePeople": [
+        "Andrew Mitchell"
+      ],
+      "details": "Last updated March 2022. Note: No testamentary trust provisions - recommend review given trust assets",
+      "hasIssue": true
+    },
+    {
+      "id": "estate-2",
+      "clientId": "client-1",
+      "type": "poa",
+      "status": "current",
+      "lastReviewed": null,
+      "primaryPerson": "Sarah Mitchell",
+      "alternatePeople": [
+        "Andrew Mitchell",
+        "Rebecca Mitchell"
+      ],
+      "details": "Enduring Power of Attorney",
+      "hasIssue": false
+    },
+    {
+      "id": "estate-3",
+      "clientId": "client-1",
+      "type": "guardianship",
+      "status": "current",
+      "lastReviewed": null,
+      "primaryPerson": "Sarah Mitchell",
+      "alternatePeople": [
+        "Andrew Mitchell"
+      ],
+      "details": "Enduring Guardianship (Medical)",
+      "hasIssue": false
+    },
+    {
+      "id": "estate-4",
+      "clientId": "client-1",
+      "type": "super_nomination",
+      "status": "current",
+      "lastReviewed": null,
+      "primaryPerson": "Sarah Mitchell",
+      "alternatePeople": null,
+      "details": "Sarah Mitchell 100% - Binding (expires December 2025)",
+      "hasIssue": true
+    },
+    {
+      "id": "estate-5",
+      "clientId": "client-2",
+      "type": "will",
+      "status": "current",
+      "lastReviewed": 2022,
+      "primaryPerson": "John Mitchell",
+      "alternatePeople": [
+        "Karen Thompson"
+      ],
+      "details": "Last updated March 2022. Note: No testamentary trust provisions - recommend review given trust assets",
+      "hasIssue": true
+    },
+    {
+      "id": "estate-6",
+      "clientId": "client-2",
+      "type": "poa",
+      "status": "current",
+      "lastReviewed": null,
+      "primaryPerson": "John Mitchell",
+      "alternatePeople": [
+        "Karen Thompson"
+      ],
+      "details": "Enduring Power of Attorney",
+      "hasIssue": false
+    },
+    {
+      "id": "estate-7",
+      "clientId": "client-2",
+      "type": "guardianship",
+      "status": "current",
+      "lastReviewed": null,
+      "primaryPerson": "John Mitchell",
+      "alternatePeople": [
+        "Karen Thompson"
+      ],
+      "details": "Enduring Guardianship (Medical)",
+      "hasIssue": false
+    },
+    {
+      "id": "estate-8",
+      "clientId": "client-2",
+      "type": "super_nomination",
+      "status": "current",
+      "lastReviewed": null,
+      "primaryPerson": "John Mitchell",
+      "alternatePeople": null,
+      "details": "John Mitchell 100% - Non-binding",
+      "hasIssue": false
+    }
+  ],
+  "familyMembers": [
+    {
+      "id": "family-1",
+      "name": "Oliver Mitchell",
+      "relationship": "son",
+      "partner": null,
+      "age": 14,
+      "isDependant": true,
+      "details": "Year 9, Shore School",
+      "children": []
+    },
+    {
+      "id": "family-2",
+      "name": "Charlotte Mitchell",
+      "relationship": "daughter",
+      "partner": null,
+      "age": 11,
+      "isDependant": true,
+      "details": "Year 6, Wenona",
+      "children": []
+    },
+    {
+      "id": "family-3",
+      "name": "Emily Mitchell",
+      "relationship": "daughter",
+      "partner": null,
+      "age": 24,
+      "isDependant": false,
+      "details": "Graduate Accountant, lives independently",
+      "children": []
     }
   ],
   "objectives": [
@@ -237,81 +429,132 @@
     "Minimise tax through the trust structure",
     "Fund children's education (private school fees ~$35,000 p.a. per child)"
   ],
+  "goals": [
+    {
+      "id": "goal-1",
+      "name": "Retire at 60/57 with $120k income",
+      "category": "retirement",
+      "detail": "John retire at age 60, Sarah at age 57, with combined income of $120,000 p.a. in today's dollars",
+      "timeframe": "8 years (John), 8 years (Sarah)",
+      "value": 120000
+    },
+    {
+      "id": "goal-2",
+      "name": "Pay off family home mortgage",
+      "category": "wealth",
+      "detail": "Pay off the family home mortgage",
+      "timeframe": "5 years",
+      "value": 650000
+    },
+    {
+      "id": "goal-3",
+      "name": "Build SMSF to $2M",
+      "category": "retirement",
+      "detail": "Build the SMSF to $2,000,000 by retirement",
+      "timeframe": "by retirement",
+      "value": 2000000
+    },
+    {
+      "id": "goal-4",
+      "name": "Ensure adequate insurance protection",
+      "category": "protection",
+      "detail": "Ensure adequate insurance protection for the family",
+      "timeframe": "ongoing",
+      "value": null
+    },
+    {
+      "id": "goal-5",
+      "name": "Minimise tax through trust structure",
+      "category": "wealth",
+      "detail": "Minimise tax through the trust structure",
+      "timeframe": "ongoing",
+      "value": null
+    },
+    {
+      "id": "goal-6",
+      "name": "Fund children's education",
+      "category": "education",
+      "detail": "Fund children's education - private school fees approximately $35,000 p.a. per child",
+      "timeframe": "ongoing",
+      "value": 35000
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel-1",
+      "clientIds": [],
+      "type": "stockbroker",
+      "firmName": "Macquarie",
+      "contactName": null,
+      "notes": "Manages share portfolio for Mitchell Family Trust"
+    }
+  ],
   "dataGaps": [
     {
+      "entityId": "entity-1",
+      "field": "trust_succession_plan",
+      "description": "Trust succession plan not yet documented - who takes over as appointer if John is incapacitated?",
+      "nodeId": "estate-planning-gap-1"
+    },
+    {
+      "entityId": "client-1",
+      "field": "testamentary_trust_provisions",
+      "description": "No testamentary trust provisions in current wills - recommend review given trust assets",
+      "nodeId": "estate-planning-gap-2"
+    },
+    {
+      "entityId": "client-2",
+      "field": "testamentary_trust_provisions",
+      "description": "No testamentary trust provisions in current wills - recommend review given trust assets",
+      "nodeId": "estate-planning-gap-3"
+    },
+    {
+      "entityId": "client-1",
+      "field": "super_nomination_expiry",
+      "description": "John's binding death benefit nomination expires December 2025 - needs renewal",
+      "nodeId": "super-nomination-gap-1"
+    },
+    {
       "entityId": "asset-7",
-      "field": "value",
-      "description": "Individual share value for BHP (2,000 shares) not specified. Total portfolio value is $285,000 but breakdown by stock is needed."
-    },
-    {
-      "entityId": "asset-8",
-      "field": "value",
-      "description": "Individual share value for CBA (1,500 shares) not specified. Total portfolio value is $285,000 but breakdown by stock is needed."
-    },
-    {
-      "entityId": "asset-9",
-      "field": "value",
-      "description": "Individual share value for CSL (400 shares) not specified. Total portfolio value is $285,000 but breakdown by stock is needed."
+      "field": "individual_share_values",
+      "description": "Individual values for BHP, CBA, and CSL shares not specified - only total portfolio value of $285,000 given",
+      "nodeId": "asset-gap-1"
     },
     {
       "entityId": "liability-4",
-      "field": "interestRate",
-      "description": "Interest rate for AMEX Credit Card not specified"
+      "field": "credit_card_interest_rate",
+      "description": "AMEX credit card interest rate not specified",
+      "nodeId": "liability-gap-1"
     },
     {
-      "entityId": "asset-17",
-      "field": "value",
-      "description": "Annual premium or benefit amount for John's Income Protection insurance not specified"
-    },
-    {
-      "entityId": null,
-      "field": "children_details",
-      "description": "Number of Mitchell children and their ages not specified (referenced as beneficiaries and for education funding objective)"
-    },
-    {
-      "entityId": null,
-      "field": "children_education_years",
-      "description": "Number of years remaining for private school fees (~$35,000 p.a. per child) not specified"
-    },
-    {
-      "entityId": "entity-1",
-      "field": "abn_verification",
-      "description": "Mitchell Family Trust ABN 12 345 678 901 should be verified"
-    },
-    {
-      "entityId": "entity-2",
-      "field": "acn_verification",
-      "description": "Mitchell Holdings Pty Ltd ACN 123 456 789 should be verified"
-    },
-    {
-      "entityId": "entity-3",
-      "field": "abn_verification",
-      "description": "Mitchell Super Fund ABN 98 765 432 109 should be verified"
-    },
-    {
-      "entityId": null,
-      "field": "income_protection_sarah",
-      "description": "No Income Protection insurance mentioned for Sarah Mitchell - should confirm if this is intentional or if cover exists"
-    },
-    {
-      "entityId": "entity-3",
-      "field": "value",
-      "description": "Value missing for \"Australian Shares - BHP (2,000 shares)\" in Mitchell Super Fund"
-    },
-    {
-      "entityId": "entity-3",
-      "field": "value",
-      "description": "Value missing for \"Australian Shares - CBA (1,500 shares)\" in Mitchell Super Fund"
-    },
-    {
-      "entityId": "entity-3",
-      "field": "value",
-      "description": "Value missing for \"Australian Shares - CSL (400 shares)\" in Mitchell Super Fund"
+      "entityId": "client-2",
+      "field": "income_protection",
+      "description": "No income protection insurance noted for Sarah Mitchell",
+      "nodeId": "income-protection-gap-1"
     },
     {
       "entityId": null,
       "field": "value",
-      "description": "Value missing for personal asset \"Income Protection - John Mitchell\""
+      "description": "Value missing for \"Income Protection - AustralianSuper\"",
+      "nodeId": "asset-17"
+    },
+    {
+      "entityId": "entity-3",
+      "field": "value",
+      "description": "Value missing for \"Australian Shares (direct) - BHP 2,000 shares\" in Mitchell Super Fund",
+      "nodeId": "asset-7"
+    },
+    {
+      "entityId": "entity-3",
+      "field": "value",
+      "description": "Value missing for \"Australian Shares (direct) - CBA 1,500 shares\" in Mitchell Super Fund",
+      "nodeId": "asset-8"
+    },
+    {
+      "entityId": "entity-3",
+      "field": "value",
+      "description": "Value missing for \"Australian Shares (direct) - CSL 400 shares\" in Mitchell Super Fund",
+      "nodeId": "asset-9"
     }
   ]
 }

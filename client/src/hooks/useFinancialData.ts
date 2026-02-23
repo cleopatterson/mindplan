@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { Edge } from '@xyflow/react';
-import type { FinancialPlan, ParseResponse, Insight, InsightsResponse } from 'shared/types';
+import type { FinancialPlan, ParseResponse, Insight, InsightsResponse, Asset, Liability, FamilyMember, Grandchild, Goal, Relationship, EstatePlanItem } from 'shared/types';
+import type { ChildNodeType } from '../utils/nodeChildTypes';
 
 export type AppState = 'upload' | 'parsing' | 'dashboard';
 
@@ -14,6 +15,8 @@ export function useFinancialData() {
   const [userLinks, setUserLinks] = useState<Edge[]>([]);
   const [insights, setInsights] = useState<Insight[] | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [newNodeId, setNewNodeId] = useState<string | null>(null);
+  const insightsAbortRef = useRef<AbortController | null>(null);
 
   const uploadFile = useCallback(async (file: File) => {
     setAppState('parsing');
@@ -46,6 +49,10 @@ export function useFinancialData() {
   }, []);
 
   const fetchInsights = useCallback(async (plan: FinancialPlan) => {
+    insightsAbortRef.current?.abort();
+    const controller = new AbortController();
+    insightsAbortRef.current = controller;
+
     setInsightsLoading(true);
     try {
       console.time('⏱ [client] Fetch /api/insights');
@@ -53,6 +60,7 @@ export function useFinancialData() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ data: plan }),
+        signal: controller.signal,
       });
       const json: InsightsResponse = await res.json();
       console.timeEnd('⏱ [client] Fetch /api/insights');
@@ -60,9 +68,13 @@ export function useFinancialData() {
         setInsights(json.insights);
       }
     } catch (err) {
-      console.error('[insights] Failed to fetch insights:', err);
+      if ((err as Error).name !== 'AbortError') {
+        console.error('[insights] Failed to fetch insights:', err);
+      }
     } finally {
-      setInsightsLoading(false);
+      if (!controller.signal.aborted) {
+        setInsightsLoading(false);
+      }
     }
   }, []);
 
@@ -71,6 +83,7 @@ export function useFinancialData() {
   }, []);
 
   const reset = useCallback(() => {
+    insightsAbortRef.current?.abort();
     setData(null);
     setError(null);
     setSelectedNodeIds(new Set());
@@ -161,6 +174,11 @@ export function useFinancialData() {
     setData((prev) => {
       if (!prev) return prev;
 
+      // Family root label override
+      if (nodeId === 'family-root' && field === 'familyLabel') {
+        return { ...prev, familyLabel: value || undefined };
+      }
+
       // Helper to apply a field update to a client
       const updateClient = (c: typeof prev.clients[0]) => {
         if (field === 'name') return { ...c, name: value };
@@ -168,6 +186,7 @@ export function useFinancialData() {
         if (field === 'occupation') return { ...c, occupation: value || null };
         if (field === 'income') return { ...c, income: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
         if (field === 'superBalance') return { ...c, superBalance: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
+        if (field === 'riskProfile') return { ...c, riskProfile: (value || null) as typeof c.riskProfile };
         return c;
       };
 
@@ -183,6 +202,7 @@ export function useFinancialData() {
       // Helper to apply a field update to an asset
       const updateAsset = (a: typeof prev.personalAssets[0]) => {
         if (field === 'name') return { ...a, name: value };
+        if (field === 'type') return { ...a, type: value as Asset['type'] };
         if (field === 'value') return { ...a, value: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
         if (field === 'details') return { ...a, details: value || null };
         return a;
@@ -191,6 +211,7 @@ export function useFinancialData() {
       // Helper to apply a field update to a liability
       const updateLiability = (l: typeof prev.personalLiabilities[0]) => {
         if (field === 'name') return { ...l, name: value };
+        if (field === 'type') return { ...l, type: value as Liability['type'] };
         if (field === 'amount') return { ...l, amount: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
         if (field === 'interestRate') return { ...l, interestRate: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
         if (field === 'details') return { ...l, details: value || null };
@@ -247,8 +268,184 @@ export function useFinancialData() {
         }
       }
 
+      // Try family members
+      const memberIdx = (prev.familyMembers ?? []).findIndex((m) => m.id === nodeId);
+      if (memberIdx !== -1) {
+        const familyMembers = prev.familyMembers.map((m, i) => {
+          if (i !== memberIdx) return m;
+          if (field === 'name') return { ...m, name: value };
+          if (field === 'age') return { ...m, age: value ? parseInt(value.replace(/[,$]/g, '')) : null };
+          if (field === 'relationship') return { ...m, relationship: value as FamilyMember['relationship'] };
+          if (field === 'isDependant') return { ...m, isDependant: value === 'true' };
+          if (field === 'partner') return { ...m, partner: value || null };
+          if (field === 'details') return { ...m, details: value || null };
+          return m;
+        });
+        return { ...prev, familyMembers };
+      }
+
+      // Try grandchildren (nested under family members)
+      for (let mi = 0; mi < (prev.familyMembers ?? []).length; mi++) {
+        const gcIdx = (prev.familyMembers[mi].children ?? []).findIndex((gc) => gc.id === nodeId);
+        if (gcIdx !== -1) {
+          const familyMembers = prev.familyMembers.map((m, i) => {
+            if (i !== mi) return m;
+            const children = m.children.map((gc, j) => {
+              if (j !== gcIdx) return gc;
+              if (field === 'name') return { ...gc, name: value };
+              if (field === 'age') return { ...gc, age: value ? parseInt(value.replace(/[,$]/g, '')) : null };
+              if (field === 'isDependant') return { ...gc, isDependant: value === 'true' };
+              if (field === 'details') return { ...gc, details: value || null };
+              return gc;
+            });
+            return { ...m, children };
+          });
+          return { ...prev, familyMembers };
+        }
+      }
+
+      // Try estate planning items
+      const estateIdx = (prev.estatePlanning ?? []).findIndex((e) => e.id === nodeId);
+      if (estateIdx !== -1) {
+        const estatePlanning = prev.estatePlanning.map((e, i) => {
+          if (i !== estateIdx) return e;
+          if (field === 'status') return { ...e, status: value as typeof e.status };
+          if (field === 'primaryPerson') return { ...e, primaryPerson: value || null };
+          if (field === 'alternatePeople') return { ...e, alternatePeople: value ? value.split(',').map((s) => s.trim()) : [] };
+          if (field === 'details') return { ...e, details: value || null };
+          return e;
+        });
+        return { ...prev, estatePlanning };
+      }
+
+      // Try goals
+      const goalIdx = (prev.goals ?? []).findIndex((g) => g.id === nodeId);
+      if (goalIdx !== -1) {
+        const goals = prev.goals!.map((g, i) => {
+          if (i !== goalIdx) return g;
+          if (field === 'name') return { ...g, name: value };
+          if (field === 'category') return { ...g, category: value as Goal['category'] };
+          if (field === 'detail') return { ...g, detail: value || null };
+          if (field === 'timeframe') return { ...g, timeframe: value || null };
+          if (field === 'value') return { ...g, value: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
+          return g;
+        });
+        return { ...prev, goals };
+      }
+
+      // Try relationships
+      const relIdx = (prev.relationships ?? []).findIndex((r) => r.id === nodeId);
+      if (relIdx !== -1) {
+        const relationships = prev.relationships!.map((r, i) => {
+          if (i !== relIdx) return r;
+          if (field === 'type') return { ...r, type: value as Relationship['type'] };
+          if (field === 'firmName') return { ...r, firmName: value || null };
+          if (field === 'contactName') return { ...r, contactName: value || null };
+          if (field === 'notes') return { ...r, notes: value || null };
+          return r;
+        });
+        return { ...prev, relationships };
+      }
+
       return prev;
     });
+  }, []);
+
+  /** Add a new blank child node under the given parent */
+  const addNode = useCallback((parentNodeId: string, childType: ChildNodeType, overrides?: Record<string, unknown>): string => {
+    const newId = `${childType}-new-${Date.now()}`;
+
+    setData((prev) => {
+      if (!prev) return prev;
+
+      switch (childType) {
+        case 'asset': {
+          const asset: Asset = {
+            id: newId, name: 'New Asset', type: 'other', value: null,
+            ownerIds: prev.entities.some((e) => e.id === parentNodeId) ? [] : [parentNodeId],
+            details: null,
+            ...(overrides as Partial<Asset>),
+          };
+          const entityIdx = prev.entities.findIndex((e) => e.id === parentNodeId);
+          if (entityIdx !== -1) {
+            return { ...prev, entities: prev.entities.map((e, i) => i === entityIdx ? { ...e, assets: [...e.assets, asset] } : e) };
+          }
+          return { ...prev, personalAssets: [...prev.personalAssets, asset] };
+        }
+
+        case 'liability': {
+          const liability: Liability = {
+            id: newId, name: 'New Liability', type: 'other', amount: null, interestRate: null,
+            ownerIds: prev.entities.some((e) => e.id === parentNodeId) ? [] : [parentNodeId],
+            details: null,
+            ...(overrides as Partial<Liability>),
+          };
+          const entityIdx = prev.entities.findIndex((e) => e.id === parentNodeId);
+          if (entityIdx !== -1) {
+            return { ...prev, entities: prev.entities.map((e, i) => i === entityIdx ? { ...e, liabilities: [...e.liabilities, liability] } : e) };
+          }
+          return { ...prev, personalLiabilities: [...prev.personalLiabilities, liability] };
+        }
+
+        case 'familyMember': {
+          const member: FamilyMember = {
+            id: newId, name: '', relationship: 'son',
+            partner: null, age: null, isDependant: false, details: null, children: [],
+            ...(overrides as Partial<FamilyMember>),
+          };
+          return { ...prev, familyMembers: [...(prev.familyMembers ?? []), member] };
+        }
+
+        case 'grandchild': {
+          const grandchild: Grandchild = {
+            id: newId, name: '', relationship: 'grandson',
+            age: null, isDependant: false, details: null,
+            ...(overrides as Partial<Grandchild>),
+          };
+          return {
+            ...prev,
+            familyMembers: (prev.familyMembers ?? []).map((m) =>
+              m.id === parentNodeId ? { ...m, children: [...(m.children ?? []), grandchild] } : m,
+            ),
+          };
+        }
+
+        case 'goal': {
+          const goal: Goal = {
+            id: newId, name: '', category: 'other',
+            detail: null, timeframe: null, value: null,
+            ...(overrides as Partial<Goal>),
+          };
+          return { ...prev, goals: [...(prev.goals ?? []), goal] };
+        }
+
+        case 'relationship': {
+          const relationship: Relationship = {
+            id: newId, clientIds: prev.clients.map((c) => c.id), type: 'other',
+            firmName: null, contactName: null, notes: null,
+            ...(overrides as Partial<Relationship>),
+          };
+          return { ...prev, relationships: [...(prev.relationships ?? []), relationship] };
+        }
+
+        case 'estateItem': {
+          const clientId = parentNodeId.replace('estate-client-', '');
+          const item: EstatePlanItem = {
+            id: newId, clientId, type: 'will', status: null,
+            lastReviewed: null, primaryPerson: null, alternatePeople: null,
+            details: null, hasIssue: false,
+            ...(overrides as Partial<EstatePlanItem>),
+          };
+          return { ...prev, estatePlanning: [...(prev.estatePlanning ?? []), item] };
+        }
+
+        default:
+          return prev;
+      }
+    });
+
+    setNewNodeId(newId);
+    return newId;
   }, []);
 
   /** Delete a node by ID — removes from plan data and deselects */
@@ -274,7 +471,8 @@ export function useFinancialData() {
     hoveredNodeIds, hoverHighlight,
     userLinks, addLink, removeLink,
     insights, insightsLoading, dismissInsight,
-    uploadFile, reset, resolveGap, updateNodeField, deleteNode,
+    uploadFile, reset, resolveGap, updateNodeField, addNode, deleteNode,
+    newNodeId, clearNewNodeId: () => setNewNodeId(null),
   };
 }
 

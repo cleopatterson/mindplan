@@ -68,6 +68,15 @@ parseRouter.post('/parse', upload.single('file'), async (req, res) => {
     enrichGaps(plan);
     console.log(`⏱ [parse] Step 5 — Gap enrichment: ${(performance.now() - t5).toFixed(0)}ms (${plan.dataGaps.length} gaps)`);
 
+    // Step 5b: Derive family label from real surnames before anonymization strips them
+    if (!plan.familyLabel) {
+      const surnameList = plan.clients.map((c) => c.name.trim().split(/\s+/).pop()).filter(Boolean) as string[];
+      const unique = [...new Set(surnameList)];
+      plan.familyLabel = unique.length === 1
+        ? `${unique[0]} Family`
+        : plan.clients.map((c) => c.name.split(' ')[0]).join(' & ');
+    }
+
     // Step 6: Anonymize — strip surnames from person-name fields
     anonymize(plan);
 

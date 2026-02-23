@@ -12,6 +12,7 @@ export interface FinancialPlan {
   goals: Goal[];
   relationships: Relationship[];
   dataGaps: DataGap[];
+  familyLabel?: string;  // optional override for the centre tile name
 }
 
 export interface Client {
@@ -21,7 +22,10 @@ export interface Client {
   occupation: string | null;
   income: number | null;
   superBalance: number | null;
+  riskProfile: RiskProfile | null;
 }
+
+export type RiskProfile = 'conservative' | 'moderately_conservative' | 'balanced' | 'growth' | 'high_growth';
 
 export interface Entity {
   id: string;
@@ -113,7 +117,7 @@ export interface Goal {
 export interface Relationship {
   id: string;
   clientIds: string[];
-  type: 'accountant' | 'stockbroker' | 'solicitor' | 'insurance_adviser' | 'mortgage_broker' | 'other';
+  type: 'accountant' | 'stockbroker' | 'solicitor' | 'insurance_adviser' | 'mortgage_broker' | 'financial_adviser' | 'other';
   firmName: string | null;
   contactName: string | null;
   notes: string | null;

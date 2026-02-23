@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, type RefObject } from 'react';
 import type { Edge } from '@xyflow/react';
 import type { FinancialPlan, DataGap, Insight } from 'shared/types';
+import type { ChildNodeType } from '../utils/nodeChildTypes';
 import { MindMap, type MindMapHandle } from './mindmap/MindMap';
 import { DetailPanel } from './detail/DetailPanel';
 import { SummaryBar } from './summary/SummaryBar';
@@ -31,6 +32,9 @@ interface DashboardProps {
   insightsLoading: boolean;
   onDismissInsight: (index: number) => void;
   onDeleteNode: (nodeId: string) => void;
+  onCreateChildNode: (parentNodeId: string, childType: ChildNodeType, overrides?: Record<string, unknown>) => string;
+  newNodeId: string | null;
+  onClearNewNodeId: () => void;
 }
 
 export function Dashboard({
@@ -41,6 +45,9 @@ export function Dashboard({
   userLinks, onAddLink, onRemoveLink,
   insights, insightsLoading, onDismissInsight,
   onDeleteNode,
+  onCreateChildNode,
+  newNodeId,
+  onClearNewNodeId,
 }: DashboardProps) {
   const theme = useTheme();
   const isDark = theme === 'dark';
@@ -50,11 +57,16 @@ export function Dashboard({
   const [activeCard, setActiveCard] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  // Enrich gaps with nodeIds (fallback for data parsed before nodeId was added)
-  const enrichedGaps = useMemo(() =>
-    data.dataGaps.map((gap) => gap.nodeId ? gap : { ...gap, nodeId: resolveGapNodeId(gap, data) }),
-    [data],
-  );
+  // Enrich gaps with nodeIds — validate that any existing nodeId actually references
+  // a real node (Claude sometimes returns placeholder IDs like "gap-1")
+  const enrichedGaps = useMemo(() => {
+    const validIds = collectAllNodeIds(data);
+    return data.dataGaps.map((gap) =>
+      gap.nodeId && validIds.has(gap.nodeId)
+        ? gap
+        : { ...gap, nodeId: resolveGapNodeId(gap, data) },
+    );
+  }, [data]);
   const hasGaps = enrichedGaps.length > 0;
 
   // The most recently selected node drives the detail panel
@@ -139,6 +151,7 @@ export function Dashboard({
               userLinks={userLinks}
               onAddLink={onAddLink}
               onRemoveLink={onRemoveLink}
+              onCreateChildNode={onCreateChildNode}
             />
           </div>
 
@@ -207,6 +220,8 @@ export function Dashboard({
                   data={data}
                   nodeId={primaryNodeId}
                   onUpdateField={onUpdateField}
+                  autoFocusName={primaryNodeId === newNodeId}
+                  onAutoFocusConsumed={onClearNewNodeId}
                 />
                 <div className="flex justify-end pt-2">
                   <button
@@ -341,4 +356,25 @@ function resolveGapNodeId(gap: DataGap, plan: FinancialPlan): string | undefined
   }
 
   return undefined;
+}
+
+/** Build a set of every node ID that exists in the financial plan data. */
+function collectAllNodeIds(plan: FinancialPlan): Set<string> {
+  const ids = new Set<string>();
+  for (const c of plan.clients) ids.add(c.id);
+  for (const e of plan.entities) {
+    ids.add(e.id);
+    for (const a of e.assets) ids.add(a.id);
+    for (const l of e.liabilities) ids.add(l.id);
+  }
+  for (const a of plan.personalAssets) ids.add(a.id);
+  for (const l of plan.personalLiabilities) ids.add(l.id);
+  for (const ep of plan.estatePlanning ?? []) ids.add(ep.id);
+  for (const m of plan.familyMembers ?? []) {
+    ids.add(m.id);
+    for (const gc of m.children ?? []) ids.add(gc.id);
+  }
+  for (const g of plan.goals ?? []) ids.add(g.id);
+  for (const r of plan.relationships ?? []) ids.add(r.id);
+  return ids;
 }

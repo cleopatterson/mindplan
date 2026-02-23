@@ -18,7 +18,8 @@ export default function App() {
     hoveredNodeIds, hoverHighlight,
     userLinks, addLink, removeLink,
     insights, insightsLoading, dismissInsight,
-    uploadFile, reset, resolveGap, updateNodeField, deleteNode,
+    uploadFile, reset, resolveGap, updateNodeField, addNode, deleteNode,
+    newNodeId, clearNewNodeId,
   } = useFinancialData();
   const mapRef = useRef<HTMLDivElement>(null);
   const mindMapRef = useRef<MindMapHandle>(null);
@@ -37,9 +38,10 @@ export default function App() {
   }, []);
 
   const handleExport = (options: ExportOptions) => {
-    exportPdf(mapRef.current, mindMapRef.current, data!, options).then(() => {
-      setShowExportModal(false);
-    });
+    if (!data) return;
+    exportPdf(mapRef.current, mindMapRef.current, data, options)
+      .then(() => setShowExportModal(false))
+      .catch((err) => console.error('Export failed:', err));
   };
 
   if (appState === 'upload') {
@@ -127,6 +129,9 @@ export default function App() {
               insightsLoading={insightsLoading}
               onDismissInsight={dismissInsight}
               onDeleteNode={deleteNode}
+              onCreateChildNode={addNode}
+              newNodeId={newNodeId}
+              onClearNewNodeId={clearNewNodeId}
             />
           )}
         </main>

@@ -1,0 +1,206 @@
+STATEMENT OF ADVICE
+Prepared for: Anthony & Maria Russo
+Date: 3 April 2025
+Adviser: Ben Crawford, CFP
+Ord Minnett
+
+═══════════════════════════════════════════════════
+CLIENT DETAILS
+═══════════════════════════════════════════════════
+
+Client 1: Anthony Russo
+  Date of Birth: [DOB redacted, age 48]
+  Occupation: Director / Owner — Russo Constructions
+  Annual Salary (from company): $250,000
+  Superannuation: Held in SMSF (see below)
+
+Client 2: Maria Russo
+  Date of Birth: [DOB redacted, age 46]
+  Occupation: Company Secretary / Office Manager — Russo Constructions
+  Annual Salary (from company): $120,000
+  Superannuation: Held in SMSF (see below)
+
+═══════════════════════════════════════════════════
+ENTITY STRUCTURE
+═══════════════════════════════════════════════════
+
+1. Russo Constructions Pty Ltd (Company)
+   ACN: 111 222 333
+   Directors: Anthony Russo, Maria Russo
+   Shareholders: Russo Family Trust (100%)
+
+   Assets:
+   - Business Bank Account (NAB): $185,000
+   - Plant & Equipment (WDV): $420,000
+   - Accounts Receivable: $310,000
+   - Work in Progress: $180,000
+
+   Liabilities:
+   - NAB Business Overdraft
+     Facility: $200,000
+     Drawn: $95,000
+     Rate: 7.45%
+
+   - Equipment Finance (NAB)
+     Outstanding: $220,000
+     Rate: 6.29%
+     Monthly: $8,500
+
+   Revenue FY2025: $4,200,000
+   Net Profit after director salaries: ~$280,000
+
+2. Russo Family Trust (Discretionary Trust)
+   ABN: 88 999 000 111
+   Trustee: Russo Holdings Pty Ltd
+   Appointer: Anthony Russo
+   Beneficiaries: Anthony, Maria, Russo children
+
+   Assets:
+   - Investment Property: 14 Victoria Road, Parramatta NSW 2150
+     Value: $1,350,000
+     Rental Income: $62,000 p.a.
+
+   - Investment Property: Unit 8/120 Church Street, Parramatta NSW 2150
+     Value: $680,000
+     Rental Income: $32,500 p.a.
+
+   - Share Portfolio (Macquarie Wrap)
+     BHP: $85,000
+     CBA: $120,000
+     Woolworths: $45,000
+     Vanguard Intl (VGS): $180,000
+     Total: $430,000
+
+   - Cash (Macquarie CMA): $75,000
+
+   Liabilities:
+   - ANZ Investment Loan — 14 Victoria Road
+     Outstanding: $520,000
+     Rate: 6.19% (interest only)
+
+   - ANZ Investment Loan — Unit 8/120 Church Street
+     Outstanding: $280,000
+     Rate: 6.19% (interest only)
+
+3. Russo Holdings Pty Ltd (Company)
+   ACN: 444 555 666
+   Directors: Anthony Russo
+   Shareholders: Anthony Russo (50%), Maria Russo (50%)
+   Purpose: Corporate trustee for trust and SMSF
+
+   Assets: Nil (trustee only)
+   Liabilities: Nil
+
+4. Russo Super Fund (SMSF)
+   ABN: 66 777 888 999
+   Members: Anthony Russo, Maria Russo
+   Trustee: Russo Holdings Pty Ltd
+   Auditor: BDO Sydney
+
+   Assets:
+   - Commercial Property: Suite 12, 88 George Street, Parramatta NSW 2150
+     Value: $1,200,000
+     Leased to Russo Constructions Pty Ltd
+     Rent: $72,000 p.a. (market rate)
+
+   - Australian Shares (direct):
+     ANZ: 4,000 shares — $120,000
+     Fortescue: 3,000 shares — $54,000
+     Rio Tinto: 800 shares — $96,000
+
+   - Vanguard Diversified Balanced (VDBA): $185,000
+   - Cash (Macquarie CMA): $110,000
+
+   Liabilities:
+   - LRBA (George Street property)
+     Outstanding: $380,000
+     Rate: 6.95%
+     Lender: NAB
+
+   Member Balances:
+     Anthony Russo: $980,000
+     Maria Russo: $585,000
+
+═══════════════════════════════════════════════════
+PERSONAL ASSETS & LIABILITIES
+═══════════════════════════════════════════════════
+
+Personal Assets:
+- Family Home: 45 Cumberland Street, Epping NSW 2121
+  Ownership: Joint Tenants
+  Estimated Value: $2,200,000
+
+- Motor Vehicle: 2024 Audi Q7 55 TFSI
+  Estimated Value: $120,000
+
+- Motor Vehicle: 2022 BMW X3 xDrive30i
+  Estimated Value: $62,000
+
+- Savings (Westpac — joint): $55,000
+
+Personal Liabilities:
+- Home Loan (Westpac)
+  Outstanding: $480,000
+  Rate: 5.89% (variable)
+  Repayment: $3,800/month (P&I)
+
+═══════════════════════════════════════════════════
+INSURANCE
+═══════════════════════════════════════════════════
+
+Anthony Russo:
+- Life Insurance: $2,000,000 (AIA — retail, owned by SMSF)
+- TPD Insurance: $1,000,000 (AIA — retail, owned by SMSF)
+- Income Protection: 75% of salary ($187,500 p.a.), 90-day wait, to age 65 (AIA retail)
+- Business Expense Insurance: $30,000/month, 12-month benefit (QBE)
+
+Maria Russo:
+- Life Insurance: $1,000,000 (AIA — retail, owned by SMSF)
+- TPD Insurance: $500,000 (AIA — retail, owned by SMSF)
+- Income Protection: Not held
+
+═══════════════════════════════════════════════════
+ESTATE PLANNING
+═══════════════════════════════════════════════════
+
+Anthony Russo:
+- Will: In Place (last updated 2021)
+  Executor: Maria Russo
+  Alternate: National Australia Trustees
+- Power of Attorney: Maria Russo
+- Guardianship: Maria Russo
+- SMSF BDBN: Maria Russo 100% — Binding (expires August 2025)
+
+Maria Russo:
+- Will: In Place (last updated 2021)
+  Executor: Anthony Russo
+  Alternate: National Australia Trustees
+- Power of Attorney: Anthony Russo
+- Guardianship: Anthony Russo
+- SMSF BDBN: Anthony Russo 100% — Binding (expires August 2025)
+
+Notes:
+- Both BDBNs expire August 2025 — need urgent renewal
+- Buy/sell agreement between Anthony and key employee (no details sighted)
+
+═══════════════════════════════════════════════════
+FAMILY
+═══════════════════════════════════════════════════
+
+Dependants:
+- Luca Russo (Son, age 16) — Year 11, The King's School
+- Isabella Russo (Daughter, age 13) — Year 8, Meriden School
+- Sofia Russo (Daughter, age 10) — Year 5, Meriden School
+
+═══════════════════════════════════════════════════
+OBJECTIVES
+═══════════════════════════════════════════════════
+
+1. Build business value for eventual sale or transition (target: 7-10 years)
+2. Maximise super contributions for both Anthony and Maria
+3. Pay off the home mortgage within 3 years
+4. Reduce trust debt by converting interest-only loans to P&I
+5. Establish a business succession plan
+6. Review and renew SMSF death benefit nominations before August 2025
+7. Consider key person insurance for the construction business
+8. Fund private school fees for three children (~$40,000 p.a. each)
