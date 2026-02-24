@@ -12,8 +12,9 @@ import {
   allAssetNodeIds,
   liquidAssetNodeIds,
   allLiabilityNodeIds,
+  unvaluedAssetStats,
 } from '../../utils/calculations';
-import { ChevronDown, ChevronUp, DollarSign, PieChart, Droplets, TrendingDown } from 'lucide-react';
+import { ChevronDown, ChevronUp, DollarSign, PieChart, Droplets, TrendingDown, AlertTriangle } from 'lucide-react';
 
 interface SummaryBarProps {
   data: FinancialPlan;
@@ -39,6 +40,8 @@ export function SummaryBar({ data, activeCard, onCardClick, onHoverHighlight }: 
       onCardClick(id, nodeIds);
     }
   };
+
+  const unvalued = useMemo(() => unvaluedAssetStats(data), [data]);
 
   const cards = useMemo(() => {
     const nw = netWorth(data);
@@ -150,6 +153,12 @@ export function SummaryBar({ data, activeCard, onCardClick, onHoverHighlight }: 
             </div>
           ))}
         </div>
+        {unvalued.pct > 30 && (
+          <div className="flex items-center gap-1.5 mt-2 px-1 text-amber-400/80 text-[11px]">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+            <span>Asset totals are approximate — {unvalued.unvalued} of {unvalued.total} assets have no value</span>
+          </div>
+        )}
       </div>
     </div>
   );

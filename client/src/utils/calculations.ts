@@ -260,6 +260,13 @@ export function entityConcentrationDetailed(plan: FinancialPlan): ConcentrationI
   return result.sort((a, b) => b.value - a.value);
 }
 
+/** Count of assets missing a value */
+export function unvaluedAssetStats(plan: FinancialPlan): { unvalued: number; total: number; pct: number } {
+  const all = flatAssets(plan);
+  const unvalued = all.filter((a) => a.value === null).length;
+  return { unvalued, total: all.length, pct: all.length > 0 ? Math.round((unvalued / all.length) * 100) : 0 };
+}
+
 const AUD_FORMATTER = new Intl.NumberFormat('en-AU', {
   style: 'currency',
   currency: 'AUD',

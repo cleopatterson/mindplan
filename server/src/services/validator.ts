@@ -52,6 +52,16 @@ export function enrichGaps(plan: FinancialPlan): void {
     }
   }
 
+  // Income/super cross-validation — in Australia virtually all employed people have super
+  for (const client of plan.clients) {
+    if (client.income !== null && client.income > 0 && client.superBalance === null) {
+      autoGaps.push({ entityId: null, field: 'superBalance', description: `Super balance missing for ${client.name} (has income)`, nodeId: client.id });
+    }
+    if (client.superBalance !== null && client.superBalance > 0 && client.income === null) {
+      autoGaps.push({ entityId: null, field: 'income', description: `Income missing for ${client.name} (has super)`, nodeId: client.id });
+    }
+  }
+
   // Merge with Claude-detected gaps, avoiding duplicates (keyed on nodeId+field when possible)
   const existingKeys = new Set(
     plan.dataGaps.map((g) => g.nodeId ? `${g.nodeId}::${g.field}` : g.description),
