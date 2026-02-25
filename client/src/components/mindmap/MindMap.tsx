@@ -171,7 +171,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
   const connectDidCompleteRef = useRef(false);
   const pendingSelectRef = useRef<string | null>(null);
   const [pickerState, setPickerState] = useState<{
-    x: number; y: number; parentId: string; options: PickerOption[];
+    x: number; y: number; parentId: string; options: PickerOption[]; parentNodeType: string;
   } | null>(null);
 
   useEffect(() => { setNodes(layoutedNodes); }, [layoutedNodes]);
@@ -394,7 +394,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
       const clientX = 'changedTouches' in event ? (event as TouchEvent).changedTouches[0].clientX : (event as MouseEvent).clientX;
       const clientY = 'changedTouches' in event ? (event as TouchEvent).changedTouches[0].clientY : (event as MouseEvent).clientY;
 
-      setPickerState({ x: clientX, y: clientY, parentId: sourceId, options });
+      setPickerState({ x: clientX, y: clientY, parentId: sourceId, options, parentNodeType: nodeType });
     },
     [getNodes],
   );
@@ -467,6 +467,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
           x={pickerState.x}
           y={pickerState.y}
           options={pickerState.options}
+          parentNodeType={pickerState.parentNodeType}
           onPick={handlePickerSelect}
           onClose={() => setPickerState(null)}
         />

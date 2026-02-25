@@ -606,6 +606,8 @@ function EstateItemDetail({ item, data, nodeId, onUpdate }: { item: EstatePlanIt
       <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
         <EditableField label="Status" value={item.status ?? ''} placeholder="current / expired / not_established" onSave={(v) => onUpdate(nodeId, 'status', v)} />
         <div className="border-t border-white/5 my-2" />
+        <EditableField label="Last Reviewed" value={item.lastReviewed?.toString() ?? ''} placeholder="e.g. 2024" onSave={(v) => onUpdate(nodeId, 'lastReviewed', v)} />
+        <div className="border-t border-white/5 my-2" />
         <EditableField label="Primary Person" value={item.primaryPerson ?? ''} placeholder="e.g. Mary Wall" onSave={(v) => onUpdate(nodeId, 'primaryPerson', v)} />
         <div className="border-t border-white/5 my-2" />
         <EditableField label="Alternates" value={item.alternatePeople?.join(', ') ?? ''} placeholder="e.g. Katie McDonald, Nicholas Wall" onSave={(v) => onUpdate(nodeId, 'alternatePeople', v)} />

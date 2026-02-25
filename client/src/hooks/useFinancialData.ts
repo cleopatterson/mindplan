@@ -145,7 +145,7 @@ export function useFinancialData() {
   }, []);
 
   /** Resolve a gap — remove it from the list and optionally update the field value */
-  const resolveGap = useCallback((gapIndex: number, value?: string) => {
+  const resolveGap = useCallback((gapIndex: number, value?: string, resolvedNodeId?: string) => {
     setData((prev) => {
       if (!prev) return prev;
       const gap = prev.dataGaps[gapIndex];
@@ -157,11 +157,12 @@ export function useFinancialData() {
         dataGaps: prev.dataGaps.filter((_, i) => i !== gapIndex),
       };
 
-      // Apply the value if provided, using nodeId for precise targeting
-      if (value && gap.nodeId && gap.field) {
+      // Apply the value if provided, using enriched nodeId for precise targeting
+      const nodeId = resolvedNodeId ?? gap.nodeId;
+      if (value && nodeId && gap.field) {
         const numVal = parseFloat(value.replace(/[,$]/g, ''));
         if (!isNaN(numVal)) {
-          updated = applyGapValue(updated, gap.nodeId, gap.field, numVal);
+          updated = applyGapValue(updated, nodeId, gap.field, numVal);
         }
       }
 
@@ -174,180 +175,17 @@ export function useFinancialData() {
     setData((prev) => {
       if (!prev) return prev;
 
-      // Family root label override
-      if (nodeId === 'family-root' && field === 'familyLabel') {
-        return { ...prev, familyLabel: value || undefined };
-      }
-
-      // Helper to apply a field update to a client
-      const updateClient = (c: typeof prev.clients[0]) => {
-        if (field === 'name') return { ...c, name: value };
-        if (field === 'age') return { ...c, age: value ? parseInt(value.replace(/[,$]/g, '')) : null };
-        if (field === 'occupation') return { ...c, occupation: value || null };
-        if (field === 'income') return { ...c, income: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
-        if (field === 'superBalance') return { ...c, superBalance: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
-        if (field === 'riskProfile') return { ...c, riskProfile: (value || null) as typeof c.riskProfile };
-        return c;
+      // After applying the field update, auto-remove any matching gap
+      const stripMatchingGap = (plan: FinancialPlan): FinancialPlan => {
+        if (!value || !plan.dataGaps.length) return plan;
+        const filtered = plan.dataGaps.filter(
+          (g) => !(g.nodeId === nodeId && g.field === field),
+        );
+        return filtered.length === plan.dataGaps.length ? plan : { ...plan, dataGaps: filtered };
       };
 
-      // Helper to apply a field update to an entity
-      const updateEntity = (e: typeof prev.entities[0]) => {
-        if (field === 'name') return { ...e, name: value };
-        if (field === 'role') return { ...e, role: value || null };
-        if (field === 'trusteeName') return { ...e, trusteeName: value || null };
-        if (field === 'trusteeType') return { ...e, trusteeType: (value === 'individual' || value === 'corporate') ? value as 'individual' | 'corporate' : null };
-        return e;
-      };
-
-      // Helper to apply a field update to an asset
-      const updateAsset = (a: typeof prev.personalAssets[0]) => {
-        if (field === 'name') return { ...a, name: value };
-        if (field === 'type') return { ...a, type: value as Asset['type'] };
-        if (field === 'value') return { ...a, value: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
-        if (field === 'details') return { ...a, details: value || null };
-        return a;
-      };
-
-      // Helper to apply a field update to a liability
-      const updateLiability = (l: typeof prev.personalLiabilities[0]) => {
-        if (field === 'name') return { ...l, name: value };
-        if (field === 'type') return { ...l, type: value as Liability['type'] };
-        if (field === 'amount') return { ...l, amount: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
-        if (field === 'interestRate') return { ...l, interestRate: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
-        if (field === 'details') return { ...l, details: value || null };
-        return l;
-      };
-
-      // Try clients — only clone the matched client
-      const clientIdx = prev.clients.findIndex((c) => c.id === nodeId);
-      if (clientIdx !== -1) {
-        const clients = prev.clients.map((c, i) => i === clientIdx ? updateClient(c) : c);
-        return { ...prev, clients };
-      }
-
-      // Try entities (entity-level fields only)
-      const entityIdx = prev.entities.findIndex((e) => e.id === nodeId);
-      if (entityIdx !== -1) {
-        const entities = prev.entities.map((e, i) => i === entityIdx ? updateEntity(e) : e);
-        return { ...prev, entities };
-      }
-
-      // Try personal assets
-      const personalAssetIdx = prev.personalAssets.findIndex((a) => a.id === nodeId);
-      if (personalAssetIdx !== -1) {
-        const personalAssets = prev.personalAssets.map((a, i) => i === personalAssetIdx ? updateAsset(a) : a);
-        return { ...prev, personalAssets };
-      }
-
-      // Try entity-owned assets
-      for (let ei = 0; ei < prev.entities.length; ei++) {
-        const assetIdx = prev.entities[ei].assets.findIndex((a) => a.id === nodeId);
-        if (assetIdx !== -1) {
-          const entities = prev.entities.map((e, i) =>
-            i === ei ? { ...e, assets: e.assets.map((a, j) => j === assetIdx ? updateAsset(a) : a) } : e
-          );
-          return { ...prev, entities };
-        }
-      }
-
-      // Try personal liabilities
-      const personalLiabilityIdx = prev.personalLiabilities.findIndex((l) => l.id === nodeId);
-      if (personalLiabilityIdx !== -1) {
-        const personalLiabilities = prev.personalLiabilities.map((l, i) => i === personalLiabilityIdx ? updateLiability(l) : l);
-        return { ...prev, personalLiabilities };
-      }
-
-      // Try entity-owned liabilities
-      for (let ei = 0; ei < prev.entities.length; ei++) {
-        const liabilityIdx = prev.entities[ei].liabilities.findIndex((l) => l.id === nodeId);
-        if (liabilityIdx !== -1) {
-          const entities = prev.entities.map((e, i) =>
-            i === ei ? { ...e, liabilities: e.liabilities.map((l, j) => j === liabilityIdx ? updateLiability(l) : l) } : e
-          );
-          return { ...prev, entities };
-        }
-      }
-
-      // Try family members
-      const memberIdx = (prev.familyMembers ?? []).findIndex((m) => m.id === nodeId);
-      if (memberIdx !== -1) {
-        const familyMembers = prev.familyMembers.map((m, i) => {
-          if (i !== memberIdx) return m;
-          if (field === 'name') return { ...m, name: value };
-          if (field === 'age') return { ...m, age: value ? parseInt(value.replace(/[,$]/g, '')) : null };
-          if (field === 'relationship') return { ...m, relationship: value as FamilyMember['relationship'] };
-          if (field === 'isDependant') return { ...m, isDependant: value === 'true' };
-          if (field === 'partner') return { ...m, partner: value || null };
-          if (field === 'details') return { ...m, details: value || null };
-          return m;
-        });
-        return { ...prev, familyMembers };
-      }
-
-      // Try grandchildren (nested under family members)
-      for (let mi = 0; mi < (prev.familyMembers ?? []).length; mi++) {
-        const gcIdx = (prev.familyMembers[mi].children ?? []).findIndex((gc) => gc.id === nodeId);
-        if (gcIdx !== -1) {
-          const familyMembers = prev.familyMembers.map((m, i) => {
-            if (i !== mi) return m;
-            const children = m.children.map((gc, j) => {
-              if (j !== gcIdx) return gc;
-              if (field === 'name') return { ...gc, name: value };
-              if (field === 'age') return { ...gc, age: value ? parseInt(value.replace(/[,$]/g, '')) : null };
-              if (field === 'isDependant') return { ...gc, isDependant: value === 'true' };
-              if (field === 'details') return { ...gc, details: value || null };
-              return gc;
-            });
-            return { ...m, children };
-          });
-          return { ...prev, familyMembers };
-        }
-      }
-
-      // Try estate planning items
-      const estateIdx = (prev.estatePlanning ?? []).findIndex((e) => e.id === nodeId);
-      if (estateIdx !== -1) {
-        const estatePlanning = prev.estatePlanning.map((e, i) => {
-          if (i !== estateIdx) return e;
-          if (field === 'status') return { ...e, status: value as typeof e.status };
-          if (field === 'primaryPerson') return { ...e, primaryPerson: value || null };
-          if (field === 'alternatePeople') return { ...e, alternatePeople: value ? value.split(',').map((s) => s.trim()) : [] };
-          if (field === 'details') return { ...e, details: value || null };
-          return e;
-        });
-        return { ...prev, estatePlanning };
-      }
-
-      // Try goals
-      const goalIdx = (prev.goals ?? []).findIndex((g) => g.id === nodeId);
-      if (goalIdx !== -1) {
-        const goals = prev.goals!.map((g, i) => {
-          if (i !== goalIdx) return g;
-          if (field === 'name') return { ...g, name: value };
-          if (field === 'category') return { ...g, category: value as Goal['category'] };
-          if (field === 'detail') return { ...g, detail: value || null };
-          if (field === 'timeframe') return { ...g, timeframe: value || null };
-          if (field === 'value') return { ...g, value: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
-          return g;
-        });
-        return { ...prev, goals };
-      }
-
-      // Try relationships
-      const relIdx = (prev.relationships ?? []).findIndex((r) => r.id === nodeId);
-      if (relIdx !== -1) {
-        const relationships = prev.relationships!.map((r, i) => {
-          if (i !== relIdx) return r;
-          if (field === 'type') return { ...r, type: value as Relationship['type'] };
-          if (field === 'firmName') return { ...r, firmName: value || null };
-          if (field === 'contactName') return { ...r, contactName: value || null };
-          if (field === 'notes') return { ...r, notes: value || null };
-          return r;
-        });
-        return { ...prev, relationships };
-      }
-
-      return prev;
+      const result = applyFieldUpdate(prev, nodeId, field, value);
+      return stripMatchingGap(result);
     });
   }, []);
 
@@ -476,6 +314,173 @@ export function useFinancialData() {
   };
 }
 
+/** Apply a field update to a node by ID (immutable). Returns the updated plan or prev if no match. */
+function applyFieldUpdate(prev: FinancialPlan, nodeId: string, field: string, value: string): FinancialPlan {
+  // Family root label override
+  if (nodeId === 'family-root' && field === 'familyLabel') {
+    return { ...prev, familyLabel: value || undefined };
+  }
+
+  const updateClient = (c: FinancialPlan['clients'][0]) => {
+    if (field === 'name') return { ...c, name: value };
+    if (field === 'age') return { ...c, age: value ? parseInt(value.replace(/[,$]/g, '')) : null };
+    if (field === 'occupation') return { ...c, occupation: value || null };
+    if (field === 'income') return { ...c, income: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
+    if (field === 'superBalance') return { ...c, superBalance: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
+    if (field === 'riskProfile') return { ...c, riskProfile: (value || null) as typeof c.riskProfile };
+    return c;
+  };
+
+  const updateEntity = (e: FinancialPlan['entities'][0]) => {
+    if (field === 'name') return { ...e, name: value };
+    if (field === 'role') return { ...e, role: value || null };
+    if (field === 'trusteeName') return { ...e, trusteeName: value || null };
+    if (field === 'trusteeType') return { ...e, trusteeType: (value === 'individual' || value === 'corporate') ? value as 'individual' | 'corporate' : null };
+    return e;
+  };
+
+  const updateAsset = (a: FinancialPlan['personalAssets'][0]) => {
+    if (field === 'name') return { ...a, name: value };
+    if (field === 'type') return { ...a, type: value as Asset['type'] };
+    if (field === 'value') return { ...a, value: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
+    if (field === 'details') return { ...a, details: value || null };
+    return a;
+  };
+
+  const updateLiability = (l: FinancialPlan['personalLiabilities'][0]) => {
+    if (field === 'name') return { ...l, name: value };
+    if (field === 'type') return { ...l, type: value as Liability['type'] };
+    if (field === 'amount') return { ...l, amount: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
+    if (field === 'interestRate') return { ...l, interestRate: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
+    if (field === 'details') return { ...l, details: value || null };
+    return l;
+  };
+
+  // Clients
+  const clientIdx = prev.clients.findIndex((c) => c.id === nodeId);
+  if (clientIdx !== -1) {
+    return { ...prev, clients: prev.clients.map((c, i) => i === clientIdx ? updateClient(c) : c) };
+  }
+
+  // Entities
+  const entityIdx = prev.entities.findIndex((e) => e.id === nodeId);
+  if (entityIdx !== -1) {
+    return { ...prev, entities: prev.entities.map((e, i) => i === entityIdx ? updateEntity(e) : e) };
+  }
+
+  // Personal assets
+  const pai = prev.personalAssets.findIndex((a) => a.id === nodeId);
+  if (pai !== -1) {
+    return { ...prev, personalAssets: prev.personalAssets.map((a, i) => i === pai ? updateAsset(a) : a) };
+  }
+
+  // Entity-owned assets
+  for (let ei = 0; ei < prev.entities.length; ei++) {
+    const ai = prev.entities[ei].assets.findIndex((a) => a.id === nodeId);
+    if (ai !== -1) {
+      return { ...prev, entities: prev.entities.map((e, i) =>
+        i === ei ? { ...e, assets: e.assets.map((a, j) => j === ai ? updateAsset(a) : a) } : e) };
+    }
+  }
+
+  // Personal liabilities
+  const pli = prev.personalLiabilities.findIndex((l) => l.id === nodeId);
+  if (pli !== -1) {
+    return { ...prev, personalLiabilities: prev.personalLiabilities.map((l, i) => i === pli ? updateLiability(l) : l) };
+  }
+
+  // Entity-owned liabilities
+  for (let ei = 0; ei < prev.entities.length; ei++) {
+    const li = prev.entities[ei].liabilities.findIndex((l) => l.id === nodeId);
+    if (li !== -1) {
+      return { ...prev, entities: prev.entities.map((e, i) =>
+        i === ei ? { ...e, liabilities: e.liabilities.map((l, j) => j === li ? updateLiability(l) : l) } : e) };
+    }
+  }
+
+  // Family members
+  const mi = (prev.familyMembers ?? []).findIndex((m) => m.id === nodeId);
+  if (mi !== -1) {
+    const familyMembers = prev.familyMembers.map((m, i) => {
+      if (i !== mi) return m;
+      if (field === 'name') return { ...m, name: value };
+      if (field === 'age') return { ...m, age: value ? parseInt(value.replace(/[,$]/g, '')) : null };
+      if (field === 'relationship') return { ...m, relationship: value as FamilyMember['relationship'] };
+      if (field === 'isDependant') return { ...m, isDependant: value === 'true' };
+      if (field === 'partner') return { ...m, partner: value || null };
+      if (field === 'details') return { ...m, details: value || null };
+      return m;
+    });
+    return { ...prev, familyMembers };
+  }
+
+  // Grandchildren
+  for (let fi = 0; fi < (prev.familyMembers ?? []).length; fi++) {
+    const gi = (prev.familyMembers[fi].children ?? []).findIndex((gc) => gc.id === nodeId);
+    if (gi !== -1) {
+      const familyMembers = prev.familyMembers.map((m, i) => {
+        if (i !== fi) return m;
+        const children = m.children.map((gc, j) => {
+          if (j !== gi) return gc;
+          if (field === 'name') return { ...gc, name: value };
+          if (field === 'age') return { ...gc, age: value ? parseInt(value.replace(/[,$]/g, '')) : null };
+          if (field === 'isDependant') return { ...gc, isDependant: value === 'true' };
+          if (field === 'details') return { ...gc, details: value || null };
+          return gc;
+        });
+        return { ...m, children };
+      });
+      return { ...prev, familyMembers };
+    }
+  }
+
+  // Estate planning items
+  const epi = (prev.estatePlanning ?? []).findIndex((e) => e.id === nodeId);
+  if (epi !== -1) {
+    const estatePlanning = prev.estatePlanning.map((e, i) => {
+      if (i !== epi) return e;
+      if (field === 'status') return { ...e, status: value as typeof e.status };
+      if (field === 'primaryPerson') return { ...e, primaryPerson: value || null };
+      if (field === 'alternatePeople') return { ...e, alternatePeople: value ? value.split(',').map((s) => s.trim()) : [] };
+      if (field === 'details') return { ...e, details: value || null };
+      if (field === 'lastReviewed') return { ...e, lastReviewed: value ? parseInt(value) : null };
+      return e;
+    });
+    return { ...prev, estatePlanning };
+  }
+
+  // Goals
+  const goalIdx = (prev.goals ?? []).findIndex((g) => g.id === nodeId);
+  if (goalIdx !== -1) {
+    const goals = prev.goals!.map((g, i) => {
+      if (i !== goalIdx) return g;
+      if (field === 'name') return { ...g, name: value };
+      if (field === 'category') return { ...g, category: value as Goal['category'] };
+      if (field === 'detail') return { ...g, detail: value || null };
+      if (field === 'timeframe') return { ...g, timeframe: value || null };
+      if (field === 'value') return { ...g, value: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
+      return g;
+    });
+    return { ...prev, goals };
+  }
+
+  // Relationships
+  const relIdx = (prev.relationships ?? []).findIndex((r) => r.id === nodeId);
+  if (relIdx !== -1) {
+    const relationships = prev.relationships!.map((r, i) => {
+      if (i !== relIdx) return r;
+      if (field === 'type') return { ...r, type: value as Relationship['type'] };
+      if (field === 'firmName') return { ...r, firmName: value || null };
+      if (field === 'contactName') return { ...r, contactName: value || null };
+      if (field === 'notes') return { ...r, notes: value || null };
+      return r;
+    });
+    return { ...prev, relationships };
+  }
+
+  return prev;
+}
+
 /** Apply a resolved value to the exact node by ID (immutable) */
 function applyGapValue(plan: FinancialPlan, nodeId: string, field: string, value: number): FinancialPlan {
   // Clients
@@ -515,6 +520,14 @@ function applyGapValue(plan: FinancialPlan, nodeId: string, field: string, value
   const pli = plan.personalLiabilities.findIndex((l) => l.id === nodeId);
   if (pli !== -1) {
     return { ...plan, personalLiabilities: plan.personalLiabilities.map((l, i) => i === pli ? { ...l, amount: value } : l) };
+  }
+
+  // Estate planning items
+  const epi = (plan.estatePlanning ?? []).findIndex((e) => e.id === nodeId);
+  if (epi !== -1) {
+    const item = plan.estatePlanning[epi];
+    const updated = field === 'lastReviewed' ? { ...item, lastReviewed: value } : item;
+    return { ...plan, estatePlanning: plan.estatePlanning.map((e, i) => i === epi ? updated : e) };
   }
 
   // Entity assets and liabilities

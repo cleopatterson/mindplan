@@ -23,7 +23,7 @@ interface DashboardProps {
   onClearHighlight: () => void;
   hoveredNodeIds: Set<string>;
   onHoverHighlight: (nodeIds: string[]) => void;
-  onResolveGap: (gapIndex: number, value?: string) => void;
+  onResolveGap: (gapIndex: number, value?: string, resolvedNodeId?: string) => void;
   onUpdateField: (nodeId: string, field: string, value: string) => void;
   userLinks: Edge[];
   onAddLink: (edge: Edge) => void;
@@ -157,12 +157,15 @@ export function Dashboard({
 
           {/* Floating badges — top left over map */}
           <div className="absolute top-3 left-3 z-20 flex flex-col gap-2">
-            {hasGaps && !showGaps && (
+            {hasGaps && (
               <button
                 onClick={openGaps}
-                className="gaps-badge cursor-pointer flex items-center gap-2 px-3 py-2
-                  bg-amber-500/15 backdrop-blur-md border border-amber-500/30 rounded-lg
-                  text-amber-300 text-sm font-medium hover:bg-amber-500/25 transition-all"
+                className={`gaps-badge cursor-pointer flex items-center gap-2 px-3 py-2
+                  backdrop-blur-md border rounded-lg
+                  text-sm font-medium transition-all
+                  ${showGaps
+                    ? 'badge-active bg-amber-500/25 border-amber-400/40 text-amber-300'
+                    : 'bg-amber-500/15 border-amber-500/30 text-amber-300 hover:bg-amber-500/25'}`}
               >
                 <AlertTriangle className="w-4 h-4" />
                 {enrichedGaps.length} gaps
@@ -348,7 +351,7 @@ function resolveGapNodeId(gap: DataGap, plan: FinancialPlan): string | undefined
   }
 
   // Estate planning gaps
-  if (['status', 'primaryPerson'].includes(gap.field)) {
+  if (['status', 'primaryPerson', 'lastReviewed'].includes(gap.field)) {
     for (const item of plan.estatePlanning ?? []) {
       const client = plan.clients.find((c) => c.id === item.clientId);
       if (client && gap.description.includes(client.name)) return item.id;

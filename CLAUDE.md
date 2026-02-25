@@ -67,6 +67,24 @@ Upload → text extraction → pre-API scrubbing → Claude API (tool use + Zod 
 - Asset allocation groups `managed_fund` + `shares` together as "Shares"
 - Debt ratio color-coded: green <30%, amber 30-50%, red >50%
 
+### Drag-to-Create
+- Dragging from a node handle into empty space opens a `NodeTypePicker` context menu
+- `nodeChildTypes.ts` defines valid child types per parent node type
+- `addNode()` in `useFinancialData` creates the node, `newNodeId` + auto-focus flow opens the detail panel with the name field selected
+
+### Testing
+- `test/batch-test.ts` — batch quality test harness, uploads files to `/api/parse` and validates responses
+- Run: `npx tsx test/batch-test.ts` (requires server running on localhost:3001)
+- `test/batch-results.json` — per-file metrics from last run
+- `test/batch-data.json` — full parsed data from last run
+- `client_files/` — 73 real client `.docx` fact-find files (not committed)
+- Last run (2026-02-23): 73/73 passed, 0 failures, 0 warnings
+
+### LLM Providers
+- `server/src/services/llm.ts` — provider abstraction
+- `server/src/services/mlx.ts` — MLX local model support
+- `server/src/services/ollama.ts` — Ollama local model support
+
 ## Conventions
 
 - All node components use `React.memo` and fixed widths matching dagre constants

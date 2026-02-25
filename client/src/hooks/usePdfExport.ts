@@ -142,11 +142,11 @@ export function usePdfExport() {
               flowY = 14;
             } else {
               // Divider between sections on same page
-              flowY += 8;
+              flowY += 16;
               pdf.setDrawColor(210);
               pdf.setLineWidth(0.2);
               pdf.line(15, flowY, pw - 15, flowY);
-              flowY += 10;
+              flowY += 20;
             }
           };
           const newFlowPage = () => {
@@ -233,6 +233,26 @@ export function usePdfExport() {
 }
 
 // ── Helpers ──
+
+/** Compute row height based on the tallest wrapped cell.
+ *  Takes an array of { text, fontSize, maxWidth } for each cell that may wrap.
+ *  Returns the max row height (at least baseH). */
+function dynamicRowH(
+  pdf: jsPDF,
+  cells: { text: string; fontSize: number; maxWidth: number }[],
+  baseH: number,
+): number {
+  let maxLines = 1;
+  for (const cell of cells) {
+    if (!cell.text) continue;
+    pdf.setFontSize(cell.fontSize);
+    const lines = pdf.splitTextToSize(cell.text, cell.maxWidth);
+    if (lines.length > maxLines) maxLines = lines.length;
+  }
+  if (maxLines <= 1) return baseH;
+  // ~3.5mm per extra line of text
+  return baseH + (maxLines - 1) * 3.5;
+}
 
 function drawHeader(pdf: jsPDF, pw: number, options: ExportOptions): number {
   const m = 12;
@@ -368,8 +388,6 @@ function drawSummaryPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan
       if (client.age) info.push(`Age ${client.age}`);
       if (client.occupation) info.push(client.occupation);
       if (client.income) info.push(`Income ${formatAUD(client.income)}`);
-      if (client.superBalance) info.push(`Super ${formatAUD(client.superBalance)}`);
-      if (client.riskProfile) info.push(RISK_PROFILE_LABELS[client.riskProfile] ?? client.riskProfile);
       pdf.text(info.join('  \u2022  '), m + Math.min(60, pw * 0.2), y + 6.5);
       y += 12;
     });
@@ -428,9 +446,13 @@ function drawSummaryPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan
     }
 
     rows.forEach((row, i) => {
+      const rowH = dynamicRowH(pdf, [
+        { text: row.name, fontSize: 8.5, maxWidth: tableW * 0.27 },
+      ], 8);
+
       if (i % 2 === 0) {
         pdf.setFillColor(252, 252, 253);
-        pdf.rect(m, y - 3.5, pw - m * 2, 8, 'F');
+        pdf.rect(m, y - 3.5, pw - m * 2, rowH, 'F');
       }
 
       const equity = row.assets - row.liab;
@@ -461,7 +483,7 @@ function drawSummaryPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan
       pdf.text(formatAUD(equity), colX.equity, y + 1);
       pdf.setFont('helvetica', 'normal');
 
-      y += 8;
+      y += rowH;
     });
 
     // Total row
@@ -506,7 +528,11 @@ function drawGapsSection(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan
   y += 6;
 
   data.dataGaps.forEach((gap, i) => {
-    if (y > ph - 20) {
+    const rowH = dynamicRowH(pdf, [
+      { text: gap.description, fontSize: 8.5, maxWidth: pw - m * 2 - 14 },
+    ], 9);
+
+    if (y + rowH > ph - 20) {
       pdf.addPage();
       drawAccentBar(pdf, pw);
       y = 14;
@@ -514,7 +540,7 @@ function drawGapsSection(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan
 
     if (i % 2 === 0) {
       pdf.setFillColor(248, 250, 252);
-      pdf.roundedRect(m, y - 3, pw - m * 2, 8, 1, 1, 'F');
+      pdf.roundedRect(m, y - 3, pw - m * 2, rowH, 1, 1, 'F');
     }
 
     pdf.setFillColor(...BLUE);
@@ -529,7 +555,7 @@ function drawGapsSection(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan
     pdf.setFont('helvetica', 'normal');
     pdf.text(gap.description, m + 10, y + 1.5, { maxWidth: pw - m * 2 - 14 });
 
-    y += 9;
+    y += rowH;
   });
 
   return y + 2;
@@ -750,11 +776,18 @@ function drawEstateSection(pdf: jsPDF, pw: number, _ph: number, data: FinancialP
         pdf.setTextColor(120);
 
         if (type === 'super_nomination' && items.length > 0) {
-          // Show count + binding type
-          if (items.length > 1) pdf.text(`${items.length} nominations`, cellX + 2, y + 5, { maxWidth: cellW - 4 });
+          // Collect unique beneficiaries across all fund nominations
+          const beneficiaries = new Set<string>();
+          for (const it of items) {
+            if (it.primaryPerson) beneficiaries.add(it.primaryPerson);
+            if (it.alternatePeople) it.alternatePeople.forEach((p) => beneficiaries.add(p));
+          }
+          if (beneficiaries.size > 0) {
+            pdf.text(`${beneficiaries.size} nominations`, cellX + 2, y + 5, { maxWidth: cellW - 4 });
+          }
           const isBinding = items.some((it) => it.details?.toLowerCase().includes('binding'));
           const nomType = isBinding ? 'Binding' : 'Non-binding';
-          pdf.text(nomType, cellX + 2, y + (items.length > 1 ? 8.5 : 5), { maxWidth: cellW - 4 });
+          pdf.text(nomType, cellX + 2, y + (beneficiaries.size > 0 ? 8.5 : 5), { maxWidth: cellW - 4 });
         } else {
           // Show all people (primaryPerson + alternatePeople)
           const people: string[] = [];
@@ -1017,7 +1050,11 @@ function drawGoalsSection(pdf: jsPDF, pw: number, ph: number, data: FinancialPla
   y += 9;
 
   data.goals.forEach((goal, i) => {
-    if (y > ph - 20) {
+    const rowH = dynamicRowH(pdf, [
+      { text: goal.name, fontSize: 8.5, maxWidth: tableW * 0.34 },
+    ], 8);
+
+    if (y + rowH > ph - 20) {
       pdf.addPage();
       drawAccentBar(pdf, pw);
       y = 14;
@@ -1025,7 +1062,7 @@ function drawGoalsSection(pdf: jsPDF, pw: number, ph: number, data: FinancialPla
 
     if (i % 2 === 0) {
       pdf.setFillColor(252, 252, 253);
-      pdf.rect(m, y - 3.5, tableW, 8, 'F');
+      pdf.rect(m, y - 3.5, tableW, rowH, 'F');
     }
 
     pdf.setFontSize(8.5);
@@ -1051,7 +1088,7 @@ function drawGoalsSection(pdf: jsPDF, pw: number, ph: number, data: FinancialPla
     pdf.setTextColor(40);
     pdf.text(goal.value ? formatAUD(goal.value) : '\u2014', colX.value, y + 1);
 
-    y += 8;
+    y += rowH;
   });
 
   return y + 2;
@@ -1106,7 +1143,12 @@ function drawRelationshipsSection(pdf: jsPDF, pw: number, ph: number, data: Fina
   y += 9;
 
   data.relationships.forEach((rel, i) => {
-    if (y > ph - 20) {
+    const rowH = dynamicRowH(pdf, [
+      { text: rel.firmName ?? '', fontSize: 8.5, maxWidth: tableW * 0.22 },
+      { text: rel.notes ?? '', fontSize: 7.5, maxWidth: tableW * 0.22 },
+    ], 8);
+
+    if (y + rowH > ph - 20) {
       pdf.addPage();
       drawAccentBar(pdf, pw);
       y = 14;
@@ -1114,7 +1156,7 @@ function drawRelationshipsSection(pdf: jsPDF, pw: number, ph: number, data: Fina
 
     if (i % 2 === 0) {
       pdf.setFillColor(252, 252, 253);
-      pdf.rect(m, y - 3.5, tableW, 8, 'F');
+      pdf.rect(m, y - 3.5, tableW, rowH, 'F');
     }
 
     const typeLabel = RELATIONSHIP_TYPE_LABELS[rel.type] ?? rel.type;
@@ -1142,7 +1184,7 @@ function drawRelationshipsSection(pdf: jsPDF, pw: number, ph: number, data: Fina
     pdf.setTextColor(100);
     pdf.text(rel.notes ?? '\u2014', colX.notes, y + 1, { maxWidth: tableW * 0.22 });
 
-    y += 8;
+    y += rowH;
   });
 
   return y + 2;

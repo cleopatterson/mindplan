@@ -354,7 +354,7 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
     });
 
     for (const rel of plan.relationships) {
-      const typeLabel = rel.type.replace(/_/g, ' ');
+      const typeLabel = rel.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
       nodes.push({
         id: rel.id,

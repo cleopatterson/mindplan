@@ -5,7 +5,7 @@ import { Check, X, Crosshair } from 'lucide-react';
 interface GapsChecklistProps {
   gaps: DataGap[];
   entities: Entity[];
-  onResolveGap: (gapIndex: number, value?: string) => void;
+  onResolveGap: (gapIndex: number, value?: string, resolvedNodeId?: string) => void;
   onHoverGap: (nodeIds: string[]) => void;
   onFocusGap: (nodeId: string) => void;
 }
@@ -16,7 +16,7 @@ export function GapsChecklist({ gaps, entities, onResolveGap, onHoverGap, onFocu
   const entityMap = new Map(entities.map((e) => [e.id, e.name]));
 
   const isNumericGap = (gap: DataGap) =>
-    ['value', 'amount', 'income', 'age', 'superBalance', 'interestRate'].includes(gap.field);
+    ['value', 'amount', 'income', 'age', 'superBalance', 'interestRate', 'lastReviewed'].includes(gap.field);
 
   const startEdit = (index: number) => {
     setEditingIndex(index);
@@ -24,13 +24,13 @@ export function GapsChecklist({ gaps, entities, onResolveGap, onHoverGap, onFocu
   };
 
   const submitEdit = (index: number) => {
-    onResolveGap(index, editValue || undefined);
+    onResolveGap(index, editValue || undefined, gaps[index]?.nodeId ?? undefined);
     setEditingIndex(null);
     setEditValue('');
   };
 
   const dismissGap = (index: number) => {
-    onResolveGap(index);
+    onResolveGap(index, undefined, gaps[index]?.nodeId ?? undefined);
     setEditingIndex(null);
   };
 
@@ -47,7 +47,7 @@ export function GapsChecklist({ gaps, entities, onResolveGap, onHoverGap, onFocu
                     type="text"
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
-                    placeholder={gap.field === 'age' ? 'e.g. 52' : 'e.g. 250,000'}
+                    placeholder={gap.field === 'age' ? 'e.g. 52' : gap.field === 'lastReviewed' ? 'e.g. 2024' : 'e.g. 250,000'}
                     className="flex-1 text-sm px-2 py-1 bg-white/5 border border-white/20 rounded text-white/80 placeholder-white/20 focus:outline-none focus:border-blue-400"
                     autoFocus
                     onKeyDown={(e) => {
