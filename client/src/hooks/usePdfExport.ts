@@ -6,7 +6,7 @@ import type { ExportOptions } from '../components/export/ExportModal';
 import type { MindMapHandle } from '../components/mindmap/MindMap';
 import {
   netWorth, totalAssets, totalLiabilities, entityEquity, formatAUD,
-  assetAllocationDetailed,
+  assetAllocationDetailed, personalAssetsForCalc,
 } from '../utils/calculations';
 
 // ── Brand colours ──
@@ -440,7 +440,7 @@ function drawSummaryPage(pdf: jsPDF, pw: number, ph: number, data: FinancialPlan
       rows.push({
         name: 'Personal',
         type: '\u2014',
-        assets: data.personalAssets.reduce((s, a) => s + (a.value ?? 0), 0),
+        assets: personalAssetsForCalc(data).reduce((s, a) => s + (a.value ?? 0), 0),
         liab: data.personalLiabilities.reduce((s, l) => s + (l.amount ?? 0), 0),
       });
     }

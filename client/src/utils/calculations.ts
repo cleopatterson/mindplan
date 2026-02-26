@@ -1,8 +1,25 @@
 import type { FinancialPlan, Asset, Liability, Entity } from 'shared/types';
 
-/** Flatten all assets across personal + entities (shared helper) */
+/** True when at least one SMSF entity has its own underlying assets */
+function hasSmsfWithAssets(plan: FinancialPlan): boolean {
+  return plan.entities.some((e) => e.type === 'smsf' && e.assets.length > 0);
+}
+
+/**
+ * Personal assets for financial calculations. Excludes type:'super' when an
+ * SMSF entity holds its own underlying assets, because the personal super/
+ * pension balances are member-account views of the same money.
+ */
+export function personalAssetsForCalc(plan: FinancialPlan): Asset[] {
+  if (hasSmsfWithAssets(plan)) {
+    return plan.personalAssets.filter((a) => a.type !== 'super');
+  }
+  return plan.personalAssets;
+}
+
+/** Flatten all assets across personal + entities for calculations (deduped) */
 function flatAssets(plan: FinancialPlan): Asset[] {
-  const result = [...plan.personalAssets];
+  const result = [...personalAssetsForCalc(plan)];
   for (const entity of plan.entities) {
     for (const asset of entity.assets) result.push(asset);
   }
@@ -21,9 +38,9 @@ function sumAmounts(liabilities: Liability[]): number {
   return total;
 }
 
-/** Sum of all asset values across all entities + personal */
+/** Sum of all asset values across all entities + personal (SMSF-deduped) */
 export function totalAssets(plan: FinancialPlan): number {
-  return sumValues(plan.personalAssets) + plan.entities.reduce((s, e) => s + sumValues(e.assets), 0);
+  return sumValues(personalAssetsForCalc(plan)) + plan.entities.reduce((s, e) => s + sumValues(e.assets), 0);
 }
 
 /** Sum of all liability amounts across all entities + personal */
@@ -106,9 +123,9 @@ export function allLiabilityNodeIds(plan: FinancialPlan): string[] {
   ];
 }
 
-/** % of wealth per entity — single-pass computation */
+/** % of wealth per entity — single-pass computation (SMSF-deduped) */
 export function entityConcentration(plan: FinancialPlan): { name: string; pct: number }[] {
-  const personalTotal = sumValues(plan.personalAssets);
+  const personalTotal = sumValues(personalAssetsForCalc(plan));
   const entityTotals = plan.entities.map((e) => ({ name: e.name, total: sumValues(e.assets) }));
   const grandTotal = personalTotal + entityTotals.reduce((s, e) => s + e.total, 0);
   if (grandTotal === 0) return [];
@@ -189,14 +206,14 @@ export interface LiquidityDetailed {
   illiquidAssets: LiquidityItem[];
 }
 
-/** Liquidity breakdown with per-asset lists and owner names */
+/** Liquidity breakdown with per-asset lists and owner names (SMSF-deduped) */
 export function liquidityBreakdownDetailed(plan: FinancialPlan): LiquidityDetailed {
   const liquidTypes = new Set(['cash', 'shares', 'managed_fund']);
   const liquidAssets: LiquidityItem[] = [];
   const illiquidAssets: LiquidityItem[] = [];
 
-  // Personal assets
-  for (const a of plan.personalAssets) {
+  // Personal assets (excluding duplicated super when SMSF has underlying assets)
+  for (const a of personalAssetsForCalc(plan)) {
     const item = { name: a.name, value: a.value || 0, owner: 'Personal' };
     if (liquidTypes.has(a.type)) liquidAssets.push(item);
     else illiquidAssets.push(item);
@@ -245,9 +262,9 @@ export function allLiabilitiesDetailed(plan: FinancialPlan): LiabilityItem[] {
 
 export interface ConcentrationItem { name: string; value: number; pct: number }
 
-/** Per-entity dollar values and percentages */
+/** Per-entity dollar values and percentages (SMSF-deduped) */
 export function entityConcentrationDetailed(plan: FinancialPlan): ConcentrationItem[] {
-  const personalTotal = sumValues(plan.personalAssets);
+  const personalTotal = sumValues(personalAssetsForCalc(plan));
   const entityTotals = plan.entities.map((e) => ({ name: e.name, total: sumValues(e.assets) }));
   const grandTotal = personalTotal + entityTotals.reduce((s, e) => s + e.total, 0);
   if (grandTotal === 0) return [];

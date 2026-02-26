@@ -5,7 +5,7 @@ import { Dashboard } from './components/Dashboard';
 import { ExportModal, type ExportOptions } from './components/export/ExportModal';
 import type { MindMapHandle } from './components/mindmap/MindMap';
 import { LogoFull } from './components/Logo';
-import { RotateCcw, Download, Loader2, Sun, Moon } from 'lucide-react';
+import { RotateCcw, Download, Loader2, Sun, Moon, Workflow } from 'lucide-react';
 import { useRef, useState, useCallback } from 'react';
 import { usePdfExport } from './hooks/usePdfExport';
 import { ThemeContext, type Theme } from './contexts/ThemeContext';
@@ -28,6 +28,15 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(() =>
     (localStorage.getItem('mindplan-theme') as Theme) ?? 'dark',
   );
+  const [view, setView] = useState<'mindmap' | 'sankey'>('mindmap');
+
+  const toggleView = useCallback(() => {
+    setView((prev) => {
+      const next = prev === 'mindmap' ? 'sankey' : 'mindmap';
+      localStorage.setItem('mindplan-view', next);
+      return next;
+    });
+  }, []);
 
   const toggleTheme = useCallback(() => {
     setTheme((prev) => {
@@ -66,6 +75,20 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Sankey view toggle — hidden for now, feature parked for future use
+            {appState === 'dashboard' && (
+              <button
+                onClick={toggleView}
+                className={`cursor-pointer p-2 rounded-lg transition-colors
+                  ${view === 'sankey'
+                    ? 'text-blue-400 bg-blue-500/10'
+                    : isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/5' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                title={view === 'mindmap' ? 'Switch to wealth flow view' : 'Switch to mind map view'}
+              >
+                <Workflow className="w-4 h-4" />
+              </button>
+            )}
+            */}
             {appState === 'dashboard' && (
               <button
                 onClick={toggleTheme}
@@ -111,6 +134,7 @@ export default function App() {
           {appState === 'dashboard' && data && (
             <Dashboard
               data={data}
+              view={view}
               mapRef={mapRef}
               mindMapRef={mindMapRef}
               selectedNodeIds={selectedNodeIds}

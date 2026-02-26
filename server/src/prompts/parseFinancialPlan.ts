@@ -65,7 +65,11 @@ Australian financial plans typically involve:
    - timeframe: When the goal should be achieved, e.g. "5 years", "by 2030", "ongoing"
    - value: Target dollar value if mentioned (e.g. retirement income target), null otherwise
    - These are in ADDITION to the simple objectives[] array — extract both.
-14. Extract professional adviser relationships:
+14. SMSF and personal super/pension:
+   - When the document lists BOTH personal super/pension balances (member accounts like "Super Accumulation", "Account Based Pension") AND an SMSF entity with underlying assets (shares, property, cash), these represent the same money from two views — member balances vs fund holdings.
+   - STILL extract both: personal super/pension items go in personalAssets (type: 'super'), and the SMSF's underlying assets go in the entity's assets array. The app handles deduplication in totals.
+   - Set the client's superBalance to their total member balance (accumulation + pension phases combined).
+15. Extract professional adviser relationships:
    - type: accountant, stockbroker, solicitor, insurance_adviser, mortgage_broker, or other
    - firmName: The firm or company name
    - contactName: The individual contact person name
