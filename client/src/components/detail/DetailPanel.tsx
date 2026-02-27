@@ -312,6 +312,7 @@ const assetTypeOptions = [
   { value: 'cash', label: 'Cash' },
   { value: 'managed_fund', label: 'Managed Fund' },
   { value: 'super', label: 'Super' },
+  { value: 'pension', label: 'Pension' },
   { value: 'insurance', label: 'Insurance' },
   { value: 'vehicle', label: 'Vehicle' },
   { value: 'other', label: 'Other' },

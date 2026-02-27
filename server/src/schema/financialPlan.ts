@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const AssetSchema = z.object({
   id: z.string().describe('Unique ID, e.g. "asset-1"'),
   name: z.string().describe('Asset name, e.g. "123 Smith St, Bondi"'),
-  type: z.enum(['property', 'shares', 'cash', 'managed_fund', 'super', 'insurance', 'vehicle', 'other']),
+  type: z.enum(['property', 'shares', 'cash', 'managed_fund', 'super', 'pension', 'insurance', 'vehicle', 'other']),
   value: z.nullable(z.number()).describe('Current value in AUD, null if unknown'),
   ownerIds: z.array(z.string()).default([]).describe('Client IDs who own this asset. For personal assets: e.g. ["client-1","client-2"] if joint, ["client-1"] if sole. Empty for entity assets.'),
   details: z.nullable(z.string()).describe('Additional details'),

@@ -8,7 +8,7 @@ export interface NodeData extends Record<string, unknown> {
   label: string;
   sublabel?: string;
   value?: number | null;
-  nodeType: 'family' | 'client' | 'entity' | 'asset' | 'liability' | 'estateGroup' | 'estateClient' | 'estateItem' | 'familyGroup' | 'familyMember' | 'goalsGroup' | 'goal' | 'relationshipsGroup' | 'relationship';
+  nodeType: 'family' | 'client' | 'entity' | 'asset' | 'liability' | 'assetGroup' | 'estateGroup' | 'estateClient' | 'estateItem' | 'familyGroup' | 'familyMember' | 'goalsGroup' | 'goal' | 'relationshipsGroup' | 'relationship';
   entityType?: Entity['type'];
   assetType?: Asset['type'];
   liabilityType?: Liability['type'];
@@ -18,6 +18,10 @@ export interface NodeData extends Record<string, unknown> {
   isJoint?: boolean;
   ownerNames?: string[];
   trusteeName?: string | null;
+  assetGroupCategory?: string;
+  assetGroupType?: string;
+  isExpanded?: boolean;
+  parentOwnerId?: string;
   side: Side;
   raw?: Client | Entity | Asset | Liability | EstatePlanItem | FamilyMember | Grandchild | Goal | Relationship;
 }
@@ -79,22 +83,33 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
     (ownerIds?.length > 0 ? ownerIds : defaultOwnerId ? [defaultOwnerId] : [])
       .filter((id) => allClientIds.has(id));
 
+  // Collect personal assets by primary owner for grouping
+  const assetsByOwner = new Map<string, { asset: Asset; owners: string[]; ownerNames: string[] }[]>();
   for (const asset of plan.personalAssets) {
     const owners = resolveOwners(asset.ownerIds);
     const primaryOwner = owners[0];
     if (!primaryOwner) continue;
     const ownerNames = owners.map((id) => clientNameById.get(id) ?? id);
+    const list = assetsByOwner.get(primaryOwner) ?? [];
+    list.push({ asset, owners, ownerNames });
+    assetsByOwner.set(primaryOwner, list);
+  }
 
-    addAssetNode(nodes, edges, asset, primaryOwner, 'left', owners.length > 1, ownerNames);
+  for (const [ownerId, items] of assetsByOwner) {
+    addGroupedAssetNodes(nodes, edges, items.map((i) => i.asset), ownerId, 'left',
+      items.map((i) => ({ isJoint: i.owners.length > 1, ownerNames: i.ownerNames })));
+
     // Cross-link edges to additional owners (joint ownership)
-    for (const ownerId of owners.slice(1)) {
-      edges.push({
-        id: `link-${ownerId}-${asset.id}`,
-        source: ownerId,
-        target: asset.id,
-        type: 'smoothstep',
-        data: { isCrossLink: true },
-      });
+    for (const { asset, owners } of items) {
+      for (const additionalOwner of owners.slice(1)) {
+        edges.push({
+          id: `link-${additionalOwner}-${asset.id}`,
+          source: additionalOwner,
+          target: asset.id,
+          type: 'smoothstep',
+          data: { isCrossLink: true },
+        });
+      }
     }
   }
 
@@ -406,15 +421,92 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
       sourceHandle: 'left',
     });
 
-    for (const asset of entity.assets) {
-      addAssetNode(nodes, edges, asset, entity.id, 'left');
-    }
+    addGroupedAssetNodes(nodes, edges, entity.assets, entity.id, 'left');
     for (const liability of entity.liabilities) {
       addLiabilityNode(nodes, edges, liability, entity.id, 'left');
     }
   }
 
   return { nodes, edges };
+}
+
+/** Raw asset type → display label for group nodes */
+export const ASSET_TYPE_DISPLAY: Record<string, string> = {
+  property: 'Property',
+  shares: 'Shares',
+  cash: 'Cash',
+  managed_fund: 'Managed Funds',
+  super: 'Super',
+  pension: 'Pension',
+  insurance: 'Insurance',
+  vehicle: 'Vehicle',
+  other: 'Other',
+};
+
+function formatCompactAUD(value: number): string {
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
+  return formatAUD(value);
+}
+
+function addGroupedAssetNodes(
+  nodes: Node<NodeData>[],
+  edges: Edge[],
+  assets: Asset[],
+  parentId: string,
+  side: Side,
+  perAssetMeta?: { isJoint: boolean; ownerNames: string[] }[],
+) {
+  // Group assets by raw type
+  const grouped = new Map<string, { asset: Asset; idx: number }[]>();
+  for (let i = 0; i < assets.length; i++) {
+    const rawType = assets[i].type;
+    const list = grouped.get(rawType) ?? [];
+    list.push({ asset: assets[i], idx: i });
+    grouped.set(rawType, list);
+  }
+
+  for (const [rawType, items] of grouped) {
+    if (items.length < 2) {
+      // Single asset of this type — flat node, no group wrapper
+      const { asset, idx } = items[0];
+      const meta = perAssetMeta?.[idx];
+      addAssetNode(nodes, edges, asset, parentId, side, meta?.isJoint, meta?.ownerNames);
+      continue;
+    }
+
+    // 2+ assets of same type → create group node
+    const displayLabel = ASSET_TYPE_DISPLAY[rawType] ?? 'Other';
+    const groupId = `asset-group-${parentId}-${rawType}`;
+    const totalValue = items.reduce((sum, { asset }) => sum + (asset.value || 0), 0);
+    const sublabelParts = [`${items.length} item${items.length > 1 ? 's' : ''}`];
+    if (totalValue > 0) sublabelParts.push(formatCompactAUD(totalValue));
+
+    nodes.push({
+      id: groupId,
+      type: 'assetGroupNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: displayLabel,
+        sublabel: sublabelParts.join(' · '),
+        nodeType: 'assetGroup',
+        assetGroupCategory: displayLabel,
+        assetGroupType: rawType,
+        parentOwnerId: parentId,
+        side,
+      },
+    });
+    edges.push({
+      id: `${parentId}-${groupId}`,
+      source: parentId,
+      target: groupId,
+    });
+
+    for (const { asset, idx } of items) {
+      const meta = perAssetMeta?.[idx];
+      addAssetNode(nodes, edges, asset, groupId, side, meta?.isJoint, meta?.ownerNames);
+    }
+  }
 }
 
 function addAssetNode(

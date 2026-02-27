@@ -10,6 +10,7 @@ const PICKER_HEADINGS: Record<string, { label: string; Icon: typeof Target }> = 
   familyMember: { label: 'Add Grandchild', Icon: Users },
   goalsGroup: { label: 'Add Goal', Icon: Target },
   relationshipsGroup: { label: 'Add Adviser', Icon: Handshake },
+  assetGroup: { label: 'Add Asset', Icon: Wallet },
   estateClient: { label: 'Add Estate Document', Icon: FileCheck },
 };
 

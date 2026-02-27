@@ -47,6 +47,10 @@ export function getPickerOptions(nodeType: NodeData['nodeType']): PickerOption[]
         { label: 'Mortgage Broker', childType: 'relationship', overrides: { type: 'mortgage_broker' } },
         { label: 'Other', childType: 'relationship', overrides: { type: 'other' } },
       ];
+    case 'assetGroup':
+      return [
+        { label: 'Asset', childType: 'asset' },
+      ];
     case 'estateClient':
       return [
         { label: 'Will', childType: 'estateItem', overrides: { type: 'will' } },

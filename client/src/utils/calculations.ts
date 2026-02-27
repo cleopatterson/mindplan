@@ -12,7 +12,7 @@ function hasSmsfWithAssets(plan: FinancialPlan): boolean {
  */
 export function personalAssetsForCalc(plan: FinancialPlan): Asset[] {
   if (hasSmsfWithAssets(plan)) {
-    return plan.personalAssets.filter((a) => a.type !== 'super');
+    return plan.personalAssets.filter((a) => a.type !== 'super' && a.type !== 'pension');
   }
   return plan.personalAssets;
 }
@@ -58,12 +58,13 @@ export function entityEquity(entity: Entity): number {
 }
 
 /** Map raw asset types to display-friendly grouped categories */
-const ASSET_GROUP: Record<string, string> = {
+export const ASSET_GROUP: Record<string, string> = {
   property: 'Property',
   shares: 'Shares',
   managed_fund: 'Shares',   // managed funds grouped with shares
   cash: 'Cash',
   super: 'Super',
+  pension: 'Super',          // pension grouped with super for summary bar
   insurance: 'Insurance',
   vehicle: 'Vehicle',
   other: 'Other',

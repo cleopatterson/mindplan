@@ -67,7 +67,8 @@ Australian financial plans typically involve:
    - These are in ADDITION to the simple objectives[] array — extract both.
 14. SMSF and personal super/pension:
    - When the document lists BOTH personal super/pension balances (member accounts like "Super Accumulation", "Account Based Pension") AND an SMSF entity with underlying assets (shares, property, cash), these represent the same money from two views — member balances vs fund holdings.
-   - STILL extract both: personal super/pension items go in personalAssets (type: 'super'), and the SMSF's underlying assets go in the entity's assets array. The app handles deduplication in totals.
+   - STILL extract both: personal super/pension items go in personalAssets, and the SMSF's underlying assets go in the entity's assets array. The app handles deduplication in totals.
+   - **Super vs Pension type**: Use type: 'super' for accumulation phase super (still contributing/growing). Use type: 'pension' for drawdown/retirement phase accounts (Account Based Pension, Transition to Retirement pension, allocated pension). If unclear, default to 'super'.
    - Set the client's superBalance to their total member balance (accumulation + pension phases combined).
 15. Extract professional adviser relationships:
    - type: accountant, stockbroker, solicitor, insurance_adviser, mortgage_broker, or other

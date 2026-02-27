@@ -57,6 +57,7 @@ export type AssetType =
   | 'cash'
   | 'managed_fund'
   | 'super'
+  | 'pension'
   | 'insurance'
   | 'vehicle'
   | 'other';

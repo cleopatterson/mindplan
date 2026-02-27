@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Home, TrendingUp, Banknote, Shield, Car, ShieldCheck, Wallet, Briefcase } from 'lucide-react';
+import { Home, TrendingUp, Banknote, Shield, Car, ShieldCheck, Wallet, Briefcase, Landmark } from 'lucide-react';
 import type { NodeData } from '../../../utils/transformToGraph';
 import type { Asset } from 'shared/types';
 
@@ -10,6 +10,7 @@ const ASSET_ICONS: Record<Asset['type'], typeof Home> = {
   managed_fund: Briefcase,
   cash: Banknote,
   super: Shield,
+  pension: Landmark,
   vehicle: Car,
   insurance: ShieldCheck,
   other: Wallet,

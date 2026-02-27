@@ -38,6 +38,7 @@ import { GoalsGroupNode } from './nodes/GoalsGroupNode';
 import { GoalNode } from './nodes/GoalNode';
 import { RelationshipsGroupNode } from './nodes/RelationshipsGroupNode';
 import { RelationshipNode } from './nodes/RelationshipNode';
+import { AssetGroupNode } from './nodes/AssetGroupNode';
 
 const nodeTypes: NodeTypes = {
   familyNode: FamilyNode,
@@ -54,6 +55,7 @@ const nodeTypes: NodeTypes = {
   goalNode: GoalNode,
   relationshipsGroupNode: RelationshipsGroupNode,
   relationshipNode: RelationshipNode,
+  assetGroupNode: AssetGroupNode,
 };
 
 interface MindMapProps {
@@ -116,7 +118,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
 ) {
   const theme = useTheme();
   const isDark = theme === 'dark';
-  const { fitView, getNodes, setCenter } = useReactFlow();
+  const { fitView, getNodes, setCenter, getViewport, setViewport } = useReactFlow();
   const edgeStyle = useMemo<React.CSSProperties>(() => ({
     stroke: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)',
     strokeWidth: 2,
@@ -133,7 +135,54 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
     console.log(`⏱ [mindmap] transformToGraph: ${(performance.now() - t0).toFixed(1)}ms (${result.nodes.length} nodes, ${result.edges.length} edges)`);
     return result;
   }, [data]);
-  const { nodes: layoutedNodes, edges: layoutedEdges } = useGraphLayout(rawNodes, rawEdges);
+
+  // Collapsible asset groups — all collapsed by default
+  const [expandedGroupIds, setExpandedGroupIds] = useState<Set<string>>(new Set());
+
+  // Reset collapsed state when data changes (new upload)
+  const dataRef = useRef(data);
+  useEffect(() => {
+    if (data !== dataRef.current) {
+      dataRef.current = data;
+      setExpandedGroupIds(new Set());
+    }
+  }, [data]);
+
+  // Filter out children of collapsed groups + stamp isExpanded on group nodes
+  const { nodes: visibleNodes, edges: visibleEdges } = useMemo(() => {
+    // Collect all assetGroup node IDs
+    const groupNodeIds = new Set<string>();
+    for (const node of rawNodes) {
+      if (node.data.nodeType === 'assetGroup') groupNodeIds.add(node.id);
+    }
+
+    // Find children of collapsed groups (edges from collapsed group → child)
+    const hiddenNodeIds = new Set<string>();
+    for (const edge of rawEdges) {
+      if (groupNodeIds.has(edge.source) && !expandedGroupIds.has(edge.source)) {
+        hiddenNodeIds.add(edge.target);
+      }
+    }
+
+    // Filter nodes: hide children, stamp isExpanded on groups
+    const filteredNodes = rawNodes
+      .filter((n) => !hiddenNodeIds.has(n.id))
+      .map((n) => {
+        if (n.data.nodeType === 'assetGroup') {
+          return { ...n, data: { ...n.data, isExpanded: expandedGroupIds.has(n.id) } };
+        }
+        return n;
+      });
+
+    // Filter edges: hide edges to/from hidden nodes
+    const filteredEdges = rawEdges.filter(
+      (e) => !hiddenNodeIds.has(e.source) && !hiddenNodeIds.has(e.target),
+    );
+
+    return { nodes: filteredNodes, edges: filteredEdges };
+  }, [rawNodes, rawEdges, expandedGroupIds]);
+
+  const { nodes: layoutedNodes, edges: layoutedEdges } = useGraphLayout(visibleNodes, visibleEdges);
 
   // Merge structural edges with user-drawn cross-links
   const allEdges = useMemo(() => [...layoutedEdges, ...userLinks], [layoutedEdges, userLinks]);
@@ -166,15 +215,43 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
     },
   }), [fitView, setCenter, getNodes]);
 
+  // Viewport anchor — stabilize position when expanding/collapsing groups
+  const pendingAnchorRef = useRef<{
+    nodeId: string;
+    oldPos: { x: number; y: number };
+    viewport: { x: number; y: number; zoom: number };
+  } | null>(null);
+
   // --- Drag-to-create-child state ---
   const connectSourceRef = useRef<string | null>(null);
   const connectDidCompleteRef = useRef(false);
   const pendingSelectRef = useRef<string | null>(null);
   const [pickerState, setPickerState] = useState<{
-    x: number; y: number; parentId: string; options: PickerOption[]; parentNodeType: string;
+    x: number; y: number; parentId: string; options: PickerOption[]; parentNodeType: string; sourceGroupId?: string;
   } | null>(null);
 
-  useEffect(() => { setNodes(layoutedNodes); }, [layoutedNodes]);
+  useEffect(() => {
+    setNodes(layoutedNodes);
+
+    // Compensate viewport so the toggled group node stays in the same screen position
+    const anchor = pendingAnchorRef.current;
+    if (anchor) {
+      pendingAnchorRef.current = null;
+      const newNode = layoutedNodes.find((n) => n.id === anchor.nodeId);
+      if (newNode) {
+        const dx = newNode.position.x - anchor.oldPos.x;
+        const dy = newNode.position.y - anchor.oldPos.y;
+        if (dx !== 0 || dy !== 0) {
+          const { zoom } = anchor.viewport;
+          setViewport({
+            x: anchor.viewport.x - dx * zoom,
+            y: anchor.viewport.y - dy * zoom,
+            zoom,
+          });
+        }
+      }
+    }
+  }, [layoutedNodes, setViewport]);
   useEffect(() => { setEdges(allEdges); }, [allEdges]);
 
   // Auto-select a newly created node once it appears in the layout
@@ -331,6 +408,22 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
 
   const onNodeClick: NodeMouseHandler = useCallback(
     (event, node) => {
+      // Asset group nodes toggle expand/collapse instead of selecting
+      if ((node.data as NodeData).nodeType === 'assetGroup') {
+        // Capture the node's current position + viewport so we can anchor after re-layout
+        pendingAnchorRef.current = {
+          nodeId: node.id,
+          oldPos: { x: node.position.x, y: node.position.y },
+          viewport: getViewport(),
+        };
+        setExpandedGroupIds((prev) => {
+          const next = new Set(prev);
+          if (next.has(node.id)) next.delete(node.id);
+          else next.add(node.id);
+          return next;
+        });
+        return;
+      }
       const isAdditive = event.shiftKey;
       if (!isAdditive && selectedNodeIds.has(node.id) && selectedNodeIds.size === 1) {
         // Clicking the only selected node deselects it
@@ -339,7 +432,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
         onSelectNode(node.id, isAdditive);
       }
     },
-    [onSelectNode, selectedNodeIds],
+    [onSelectNode, selectedNodeIds, getViewport],
   );
 
   const onConnectStart = useCallback(
@@ -387,14 +480,23 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
       const sourceNode = getNodes().find((n) => n.id === sourceId);
       if (!sourceNode?.data) return;
 
-      const nodeType = (sourceNode.data as NodeData).nodeType;
+      const nodeData = sourceNode.data as NodeData;
+      const nodeType = nodeData.nodeType;
       const options = getPickerOptions(nodeType);
       if (!options) return;
+
+      // For assetGroup nodes, resolve to the actual owner (client/entity) for addNode
+      const resolvedParentId = nodeType === 'assetGroup' && nodeData.parentOwnerId
+        ? nodeData.parentOwnerId
+        : sourceId;
+
+      // Track source group so we can auto-expand it after creating a child
+      const sourceGroupId = nodeType === 'assetGroup' ? sourceId : undefined;
 
       const clientX = 'changedTouches' in event ? (event as TouchEvent).changedTouches[0].clientX : (event as MouseEvent).clientX;
       const clientY = 'changedTouches' in event ? (event as TouchEvent).changedTouches[0].clientY : (event as MouseEvent).clientY;
 
-      setPickerState({ x: clientX, y: clientY, parentId: sourceId, options, parentNodeType: nodeType });
+      setPickerState({ x: clientX, y: clientY, parentId: resolvedParentId, options, parentNodeType: nodeType, sourceGroupId });
     },
     [getNodes],
   );
@@ -402,6 +504,14 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
   const handlePickerSelect = useCallback(
     (option: PickerOption) => {
       if (!pickerState) return;
+      // Auto-expand the source group so the new child is visible
+      if (pickerState.sourceGroupId) {
+        setExpandedGroupIds((prev) => {
+          const next = new Set(prev);
+          next.add(pickerState.sourceGroupId!);
+          return next;
+        });
+      }
       const newId = onCreateChildNode(pickerState.parentId, option.childType, option.overrides);
       pendingSelectRef.current = newId;
       setPickerState(null);
@@ -458,6 +568,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
             if (type === 'familyGroup' || type === 'familyMember') return '#f59e0b';
             if (type === 'goalsGroup' || type === 'goal') return '#14b8a6';
             if (type === 'relationshipsGroup' || type === 'relationship') return '#f43f5e';
+            if (type === 'assetGroup') return '#64748b';
             return '#6b7280';
           }}
         />
