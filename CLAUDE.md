@@ -63,8 +63,23 @@ Upload → text extraction → pre-API scrubbing → Claude API (tool use + Zod 
 - Deduplication uses `nodeId::field` key (not description strings)
 - Client-side `resolveGap()` uses `nodeId` for precise field targeting across all node types
 
+### Asset Groups (Collapsible)
+- Assets are grouped by raw `asset.type` when 2+ share the same type under a parent
+- Groups are **collapsed by default** — click to expand/collapse (chevron indicator)
+- `ASSET_TYPE_DISPLAY` in `transformToGraph.ts` maps raw type → display label (e.g. `managed_fund` → "Managed Funds")
+- Group node IDs: `asset-group-${parentId}-${rawType}`
+- `expandedGroupIds` state in `MindMap.tsx` tracks which groups are open
+- Viewport anchoring on toggle prevents screen jumping (captures node position + viewport before re-layout, compensates after)
+- Drag-to-create from a collapsed group auto-expands it
+- Hidden children of collapsed groups are filtered between `transformToGraph` and `useGraphLayout`
+
+### Asset Types
+- `super` = accumulation phase, `pension` = drawdown/retirement phase (Account Based Pension, TTR)
+- Both grouped under "Super" in summary bar (`ASSET_GROUP` in `calculations.ts`)
+- Both excluded from `personalAssetsForCalc()` when SMSF has underlying assets (dedup)
+
 ### Summary Bar
-- Asset allocation groups `managed_fund` + `shares` together as "Shares"
+- Asset allocation groups `managed_fund` + `shares` together as "Shares", `pension` + `super` as "Super"
 - Debt ratio color-coded: green <30%, amber 30-50%, red >50%
 
 ### Drag-to-Create
