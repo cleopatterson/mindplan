@@ -950,7 +950,7 @@ function drawFamilySection(pdf: jsPDF, pw: number, _ph: number, data: FinancialP
     pdf.setLineWidth(0.4);
     pdf.line(cx, junctionY, cx, y);
 
-    const relationship = member.relationship === 'son' ? 'Son' : member.relationship === 'daughter' ? 'Daughter' : member.relationship;
+    const relationship = member.relationship.charAt(0).toUpperCase() + member.relationship.slice(1);
     const subtitle = [member.age ? `Age ${member.age}` : null, relationship].filter(Boolean).join(' \u2022 ');
     const color = member.isDependant ? AMBER : EMERALD;
     drawPersonBox(pdf, x, y, boxW, boxH, member.name, null, subtitle, color, nameFontSize, subtitleFontSize);
@@ -990,7 +990,7 @@ function drawFamilySection(pdf: jsPDF, pw: number, _ph: number, data: FinancialP
         // Drop line to grandchild
         pdf.line(gcCx, gcJunctionY, gcCx, gcY);
 
-        const gcRelation = gc.relationship === 'grandson' ? 'Grandson' : 'Granddaughter';
+        const gcRelation = 'Grandchild';
         const gcSub = [gc.age ? `Age ${gc.age}` : null, gcRelation].filter(Boolean).join(' \u2022 ');
         drawPersonBox(pdf, gcX, gcY, gcBoxW, gcBoxH, gc.name, null, gcSub, SLATE, nameFontSize, subtitleFontSize);
         maxY = Math.max(maxY, gcY + gcBoxH);

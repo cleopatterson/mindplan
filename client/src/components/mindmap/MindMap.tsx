@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useMemo, useCallback, useState, useEffect, useLayoutEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -24,6 +24,7 @@ import type { FinancialPlan } from 'shared/types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { transformToGraph, type NodeData } from '../../utils/transformToGraph';
 import { useGraphLayout } from '../../hooks/useGraphLayout';
+import { useRevealAnimation } from '../../hooks/useRevealAnimation';
 import { FamilyNode } from './nodes/FamilyNode';
 import { ClientNode } from './nodes/ClientNode';
 import { EntityNode } from './nodes/EntityNode';
@@ -39,6 +40,7 @@ import { GoalNode } from './nodes/GoalNode';
 import { RelationshipsGroupNode } from './nodes/RelationshipsGroupNode';
 import { RelationshipNode } from './nodes/RelationshipNode';
 import { AssetGroupNode } from './nodes/AssetGroupNode';
+import { GoalCategoryGroupNode } from './nodes/GoalCategoryGroupNode';
 
 const nodeTypes: NodeTypes = {
   familyNode: FamilyNode,
@@ -56,6 +58,7 @@ const nodeTypes: NodeTypes = {
   relationshipsGroupNode: RelationshipsGroupNode,
   relationshipNode: RelationshipNode,
   assetGroupNode: AssetGroupNode,
+  goalCategoryGroupNode: GoalCategoryGroupNode,
 };
 
 interface MindMapProps {
@@ -96,20 +99,10 @@ const CROSS_LINK_STYLE: React.CSSProperties = {
   strokeDasharray: '4 3',
 };
 
-const DEFAULT_EDGE_STYLE: React.CSSProperties = {
-  stroke: 'rgba(255,255,255,0.25)',
-  strokeWidth: 2,
-};
-
 const CONNECTION_LINE_STYLE: React.CSSProperties = {
   stroke: 'rgba(168,85,247,0.5)',
   strokeWidth: 1.5,
   strokeDasharray: '6 4',
-};
-
-const DEFAULT_EDGE_OPTIONS = {
-  type: 'smoothstep' as const,
-  style: DEFAULT_EDGE_STYLE,
 };
 
 const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInner(
@@ -125,21 +118,20 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
   }), [isDark]);
 
   const edgeOptions = useMemo(() => ({
-    type: 'smoothstep' as const,
+    type: 'default' as const,
     style: edgeStyle,
   }), [edgeStyle]);
 
-  const { nodes: rawNodes, edges: rawEdges } = useMemo(() => {
-    const t0 = performance.now();
-    const result = transformToGraph(data);
-    console.log(`⏱ [mindmap] transformToGraph: ${(performance.now() - t0).toFixed(1)}ms (${result.nodes.length} nodes, ${result.edges.length} edges)`);
-    return result;
-  }, [data]);
+  const { nodes: rawNodes, edges: rawEdges } = useMemo(() => transformToGraph(data), [data]);
 
   // Collapsible asset groups — all collapsed by default
   const [expandedGroupIds, setExpandedGroupIds] = useState<Set<string>>(new Set());
 
-  // Reset collapsed state when data changes (new upload)
+  // Reveal animation — staggered pop-in on initial data load only
+  const { applyReveal } = useRevealAnimation();
+
+  // Reset collapsed state when data identity changes (new upload)
+  // Note: reveal resets naturally on remount (component unmounts between uploads)
   const dataRef = useRef(data);
   useEffect(() => {
     if (data !== dataRef.current) {
@@ -150,10 +142,10 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
 
   // Filter out children of collapsed groups + stamp isExpanded on group nodes
   const { nodes: visibleNodes, edges: visibleEdges } = useMemo(() => {
-    // Collect all assetGroup node IDs
+    // Collect all collapsible group node IDs
     const groupNodeIds = new Set<string>();
     for (const node of rawNodes) {
-      if (node.data.nodeType === 'assetGroup') groupNodeIds.add(node.id);
+      if (node.data.nodeType === 'assetGroup' || node.data.nodeType === 'goalCategoryGroup') groupNodeIds.add(node.id);
     }
 
     // Find children of collapsed groups (edges from collapsed group → child)
@@ -168,7 +160,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
     const filteredNodes = rawNodes
       .filter((n) => !hiddenNodeIds.has(n.id))
       .map((n) => {
-        if (n.data.nodeType === 'assetGroup') {
+        if (n.data.nodeType === 'assetGroup' || n.data.nodeType === 'goalCategoryGroup') {
           return { ...n, data: { ...n.data, isExpanded: expandedGroupIds.has(n.id) } };
         }
         return n;
@@ -184,10 +176,15 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
 
   const { nodes: layoutedNodes, edges: layoutedEdges } = useGraphLayout(visibleNodes, visibleEdges);
 
-  // Merge structural edges with user-drawn cross-links
-  const allEdges = useMemo(() => [...layoutedEdges, ...userLinks], [layoutedEdges, userLinks]);
+  const { nodes: revealedNodes, edges: revealedEdges } = useMemo(
+    () => applyReveal(layoutedNodes, layoutedEdges),
+    [applyReveal, layoutedNodes, layoutedEdges],
+  );
 
-  const [nodes, setNodes] = useState<Node<NodeData>[]>(layoutedNodes);
+  // Merge structural edges with user-drawn cross-links
+  const allEdges = useMemo(() => [...revealedEdges, ...userLinks], [revealedEdges, userLinks]);
+
+  const [nodes, setNodes] = useState<Node<NodeData>[]>(revealedNodes);
   const [edges, setEdges] = useState<Edge[]>(allEdges);
 
   useImperativeHandle(ref, () => ({
@@ -230,14 +227,15 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
     x: number; y: number; parentId: string; options: PickerOption[]; parentNodeType: string; sourceGroupId?: string;
   } | null>(null);
 
-  useEffect(() => {
-    setNodes(layoutedNodes);
+  useLayoutEffect(() => {
+    setNodes(revealedNodes);
+    setEdges(allEdges);
 
     // Compensate viewport so the toggled group node stays in the same screen position
     const anchor = pendingAnchorRef.current;
     if (anchor) {
       pendingAnchorRef.current = null;
-      const newNode = layoutedNodes.find((n) => n.id === anchor.nodeId);
+      const newNode = revealedNodes.find((n) => n.id === anchor.nodeId);
       if (newNode) {
         const dx = newNode.position.x - anchor.oldPos.x;
         const dy = newNode.position.y - anchor.oldPos.y;
@@ -251,29 +249,44 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
         }
       }
     }
-  }, [layoutedNodes, setViewport]);
-  useEffect(() => { setEdges(allEdges); }, [allEdges]);
+  }, [revealedNodes, allEdges, setViewport]);
 
-  // Auto-select a newly created node once it appears in the layout
+  // Auto-expand collapsed groups that contain a newly created node,
+  // then select the node once it appears in the layout.
   useEffect(() => {
-    if (pendingSelectRef.current) {
-      const nodeId = pendingSelectRef.current;
-      if (layoutedNodes.some((n) => n.id === nodeId)) {
-        onSelectNode(nodeId, false);
-      }
+    if (!pendingSelectRef.current) return;
+    const nodeId = pendingSelectRef.current;
+
+    // If the node is already in the layout, select it immediately
+    if (layoutedNodes.some((n) => n.id === nodeId)) {
+      onSelectNode(nodeId, false);
       pendingSelectRef.current = null;
+      return;
     }
-  }, [layoutedNodes, onSelectNode]);
 
-  // Log once per data change when layout is first applied (marks the end of the pipeline)
-  const didLogMount = useRef(false);
-  useEffect(() => { didLogMount.current = false; }, [data]);
-  useEffect(() => {
-    if (!didLogMount.current && layoutedNodes.length > 0) {
-      didLogMount.current = true;
-      console.timeEnd('⏱ [client] Total upload→render');
+    // Node isn't visible — check if it's hidden inside a collapsed group.
+    // Look through rawNodes/rawEdges (pre-collapse-filter) to find the group.
+    const inRaw = rawNodes.some((n) => n.id === nodeId);
+    if (inRaw) {
+      // Find the edge whose target is our node — its source is the parent (possibly a group)
+      const parentEdge = rawEdges.find((e) => e.target === nodeId);
+      if (parentEdge) {
+        const parentNode = rawNodes.find((n) => n.id === parentEdge.source);
+        if ((parentNode?.data.nodeType === 'assetGroup' || parentNode?.data.nodeType === 'goalCategoryGroup') && !expandedGroupIds.has(parentEdge.source)) {
+          // Expand the group — the next render cycle will include our node in layoutedNodes
+          setExpandedGroupIds((prev) => {
+            const next = new Set(prev);
+            next.add(parentEdge.source);
+            return next;
+          });
+          return; // Keep pendingSelectRef — the next render pass will select the node
+        }
+      }
     }
-  }, [layoutedNodes]);
+
+    // Node not found anywhere — give up (stale ref)
+    pendingSelectRef.current = null;
+  }, [layoutedNodes, rawNodes, rawEdges, expandedGroupIds, onSelectNode]);
 
   // Pre-build adjacency maps once — O(E), stable between data changes
   const { parentOf, childrenOf } = useMemo(() => {
@@ -345,7 +358,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
           ...node.style,
           opacity:
             hasAnyHighlight && !activeIds.has(node.id) && node.data.nodeType !== 'family'
-              ? (isPreview ? 0.35 : 0.15)
+              ? (isPreview ? (isDark ? 0.35 : 0.5) : (isDark ? 0.15 : 0.25))
               : 1,
           transition: 'opacity 0.2s ease',
         },
@@ -366,7 +379,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
             : false;
         // When no highlight is active, restore original style
         const baseStyle = isLink ? LINK_STYLE : isCrossLink ? CROSS_LINK_STYLE : edgeStyle;
-        const dimmedStroke = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+        const dimmedStroke = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)';
         return {
           ...edge,
           style: {
@@ -408,8 +421,9 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
 
   const onNodeClick: NodeMouseHandler = useCallback(
     (event, node) => {
-      // Asset group nodes toggle expand/collapse instead of selecting
-      if ((node.data as NodeData).nodeType === 'assetGroup') {
+      // Collapsible group nodes toggle expand/collapse instead of selecting
+      const nt = (node.data as NodeData).nodeType;
+      if (nt === 'assetGroup' || nt === 'goalCategoryGroup') {
         // Capture the node's current position + viewport so we can anchor after re-layout
         pendingAnchorRef.current = {
           nodeId: node.id,
@@ -459,7 +473,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
         id: `link-${params.source}-${params.target}`,
         source: params.source,
         target: params.target,
-        type: 'smoothstep',
+        type: 'default',
         style: LINK_STYLE,
         data: { isUserLink: true },
       };
@@ -553,7 +567,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
         maxZoom={2}
         colorMode={isDark ? 'dark' : 'light'}
       >
-        <Background color={isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)'} gap={20} />
+        <Background color={isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.06)'} gap={20} size={1.5} />
         <Controls />
         <MiniMap
           style={{ background: isDark ? '#1e1e2e' : '#f8fafc' }}
@@ -566,7 +580,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
             if (type === 'liability') return '#ef4444';
             if (type === 'estateGroup' || type === 'estateClient' || type === 'estateItem') return '#6366f1';
             if (type === 'familyGroup' || type === 'familyMember') return '#f59e0b';
-            if (type === 'goalsGroup' || type === 'goal') return '#14b8a6';
+            if (type === 'goalsGroup' || type === 'goalCategoryGroup' || type === 'goal') return '#14b8a6';
             if (type === 'relationshipsGroup' || type === 'relationship') return '#f43f5e';
             if (type === 'assetGroup') return '#64748b';
             return '#6b7280';

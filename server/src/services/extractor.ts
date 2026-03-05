@@ -9,15 +9,13 @@ export async function extractText(buffer: Buffer, mimetype: string): Promise<str
 
   if (
     mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-    mimetype === 'application/msword'
+    mimetype === 'application/msword' ||
+    mimetype === 'application/zip' ||
+    mimetype === 'application/octet-stream'
   ) {
     const result = await mammoth.extractRawText({ buffer });
     return result.value;
   }
 
-  if (mimetype === 'text/plain') {
-    return buffer.toString('utf-8');
-  }
-
-  throw new Error(`Unsupported file type: ${mimetype}. Please upload a PDF, Word, or text file.`);
+  throw new Error(`Unsupported file type. Please upload a Word document (.docx).`);
 }

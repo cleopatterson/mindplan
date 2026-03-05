@@ -20,7 +20,6 @@ export const RelationshipNode = memo(function RelationshipNode({ data }: { data:
       <div className="flex items-center justify-center w-7 h-7 rounded-md shrink-0 bg-rose-400/10">
         <Handshake className="w-4 h-4 text-rose-300/50" />
       </div>
-      <Handle type="source" position={Position.Right} className="!bg-rose-300/50" />
     </div>
   );
 });

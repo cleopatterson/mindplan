@@ -20,7 +20,6 @@ export const GoalNode = memo(function GoalNode({ data }: { data: NodeData }) {
       <div className="flex items-center justify-center w-7 h-7 rounded-md shrink-0 bg-teal-400/10">
         <Target className="w-4 h-4 text-teal-300/50" />
       </div>
-      <Handle type="source" position={Position.Right} className="!bg-teal-300/50" />
     </div>
   );
 });

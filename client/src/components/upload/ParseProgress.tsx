@@ -17,7 +17,12 @@ const quips = [
   'Making sense of it all...',
 ];
 
-export function ParseProgress() {
+interface ParseProgressProps {
+  /** When true, races the progress to 100% and signals completion */
+  complete?: boolean;
+}
+
+export function ParseProgress({ complete }: ParseProgressProps) {
   const theme = useTheme();
   const isDark = theme === 'dark';
   const [progress, setProgress] = useState(0);
@@ -26,6 +31,7 @@ export function ParseProgress() {
 
   // Asymptotic progress — always creeping, never stalling
   useEffect(() => {
+    if (complete) return; // Stop ticking once complete
     const id = setInterval(() => {
       const elapsed = Date.now() - startTime.current;
       // Exponential decay: approaches 95% but never arrives
@@ -33,7 +39,22 @@ export function ParseProgress() {
       setProgress(pct);
     }, 200);
     return () => clearInterval(id);
-  }, []);
+  }, [complete]);
+
+  // When data is ready, race to 100%
+  useEffect(() => {
+    if (!complete) return;
+    const raceStart = Date.now();
+    const startPct = progress;
+    const id = setInterval(() => {
+      const elapsed = Date.now() - raceStart;
+      const t = Math.min(elapsed / 400, 1); // 400ms race to 100
+      const pct = startPct + (100 - startPct) * t;
+      setProgress(pct);
+      if (t >= 1) clearInterval(id);
+    }, 16);
+    return () => clearInterval(id);
+  }, [complete]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Rotate quips
   useEffect(() => {

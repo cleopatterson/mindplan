@@ -140,7 +140,7 @@ export function Dashboard({
       <div className="flex-1 min-w-0 flex flex-col transition-all duration-300 ease-out">
         {/* Map — takes remaining height */}
         <div className="flex-1 min-h-0 relative">
-          <div ref={mapRef} className={`absolute inset-0 ${isDark ? 'bg-[#1a1a2e]' : 'bg-slate-100'}`}>
+          <div ref={mapRef} className={`absolute inset-0 ${isDark ? 'bg-[#1a1a2e]' : 'bg-[radial-gradient(ellipse_at_center,_#f8fafc_0%,_#edf1f7_50%,_#dfe5ed_100%)]'}`}>
             <MindMap
               ref={mindMapRef}
               data={data}

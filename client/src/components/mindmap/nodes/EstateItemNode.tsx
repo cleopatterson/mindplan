@@ -32,7 +32,6 @@ export const EstateItemNode = memo(function EstateItemNode({ data }: { data: Nod
       <div className={`flex items-center justify-center w-7 h-7 rounded-md shrink-0 ${hasIssue ? 'bg-red-400/10' : 'bg-indigo-400/10'}`}>
         <Icon className={`w-4 h-4 ${hasIssue ? 'text-red-300/50' : 'text-indigo-300/50'}`} />
       </div>
-      <Handle type="source" position={Position.Right} className="!bg-indigo-300/20 !w-1.5 !h-1.5" />
     </div>
   );
 });

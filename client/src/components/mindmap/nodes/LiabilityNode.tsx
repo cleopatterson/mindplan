@@ -47,11 +47,6 @@ export const LiabilityNode = memo(function LiabilityNode({ data }: { data: NodeD
         </div>
       </div>
       {!isLeft && iconBox}
-      <Handle
-        type="source"
-        position={isLeft ? Position.Left : Position.Right}
-        className="!bg-red-400/20 !w-1.5 !h-1.5"
-      />
     </div>
   );
 });

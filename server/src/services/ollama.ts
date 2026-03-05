@@ -4,9 +4,10 @@ import { InsightsOutputSchema } from '../schema/insights.js';
 import { PARSE_SYSTEM_PROMPT } from '../prompts/parseFinancialPlan.js';
 import { INSIGHTS_SYSTEM_PROMPT } from '../prompts/generateInsights.js';
 import type { FinancialPlan, Insight } from 'shared/types';
+import { coercePlan } from './coerce.js';
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma3:4b';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma3:12b';
 
 const financialPlanJsonSchema = zodToJsonSchema(FinancialPlanSchema, {
   target: 'openApi3',
@@ -18,140 +19,73 @@ const insightsJsonSchema = zodToJsonSchema(InsightsOutputSchema, {
   $refStrategy: 'seen',
 });
 
-// ── Coerce common small-model mistakes before Zod validation ──
+// ── Few-shot example for extraction quality ──
 
-const ASSET_TYPE_MAP: Record<string, string> = {
-  'residential property': 'property',
-  'commercial property': 'property',
-  'investment property': 'property',
-  'real estate': 'property',
-  'managed funds': 'managed_fund',
-  'managed fund': 'managed_fund',
-  'share': 'shares',
-  'equity': 'shares',
-  'superannuation': 'super',
-  'life insurance': 'insurance',
-  'motor vehicle': 'vehicle',
-  'car': 'vehicle',
-};
+const FEWSHOT_DOC = `FACT FIND — INITIAL MEETING NOTES
+Client: Simon Blake
+Date: 2 February 2025
+Adviser: Jenny Wu, Count Financial
 
-const LIABILITY_TYPE_MAP: Record<string, string> = {
-  'home loan': 'mortgage',
-  'home mortgage': 'mortgage',
-  'personal loan': 'loan',
-  'car loan': 'loan',
-  'credit': 'credit_card',
-};
+Simon Blake, aged around 44. Works in IT — not sure of exact role or employer.
+Says he earns "about $130k".
 
-const VALID_ASSET_TYPES = new Set(['property', 'shares', 'cash', 'managed_fund', 'super', 'insurance', 'vehicle', 'other']);
-const VALID_LIABILITY_TYPES = new Set(['mortgage', 'loan', 'credit_card', 'other']);
-const VALID_ENTITY_TYPES = new Set(['trust', 'smsf', 'company', 'partnership']);
-const VALID_ESTATE_TYPES = new Set(['will', 'poa', 'guardianship', 'super_nomination']);
+Super is with some industry fund — couldn't remember which one. Thinks the balance is around $80,000.
 
-/** Ensure a key exists on an object, defaulting to null if absent */
-function ensureNull(obj: Record<string, unknown>, ...keys: string[]) {
-  for (const k of keys) {
-    if (!(k in obj) || obj[k] === undefined) obj[k] = null;
-  }
-}
+Owns a 2-bedroom unit in Newtown, bought a few years ago. Thinks it's worth about $750,000 now. Has a mortgage with Westpac, outstanding amount approximately $480,000.
 
-/** Ensure a key exists on an object, defaulting to a value if absent */
-function ensureDefault(obj: Record<string, unknown>, key: string, fallback: unknown) {
-  if (!(key in obj) || obj[key] === undefined) obj[key] = fallback;
-}
+Has a car — some kind of sedan, maybe 2017 model. Didn't give a value.
+Bank account with Westpac, says there's "not much in there, maybe $10,000 or so".
 
-/** Map a string field to a valid enum value, falling back to 'other' */
-function coerceEnum(obj: Record<string, unknown>, field: string, aliasMap: Record<string, string>, validSet: Set<string>) {
-  const val = obj[field];
-  if (typeof val !== 'string') return;
-  if (validSet.has(val)) return;
-  const mapped = aliasMap[val.toLowerCase()];
-  obj[field] = mapped ?? 'other';
-}
+No investment properties, no shares, no other investments.
+Single, never married. No children. Parents are both alive and well.
 
-/**
- * Patch the raw Ollama JSON to fix common small-model issues:
- * - Missing nullable fields → null
- * - Invented enum values → mapped or 'other'
- * - Missing arrays → []
- */
-function coercePlan(raw: unknown): void {
-  if (!raw || typeof raw !== 'object') return;
-  const plan = raw as Record<string, unknown>;
+Insurance: Has whatever the default cover is through his super fund. No private insurance.
 
-  // Ensure top-level arrays exist
-  ensureDefault(plan, 'clients', []);
-  ensureDefault(plan, 'entities', []);
-  ensureDefault(plan, 'personalAssets', []);
-  ensureDefault(plan, 'personalLiabilities', []);
-  ensureDefault(plan, 'estatePlanning', []);
-  ensureDefault(plan, 'familyMembers', []);
-  ensureDefault(plan, 'objectives', []);
-  ensureDefault(plan, 'dataGaps', []);
+Estate planning: No will. No power of attorney. Nothing in place.
 
-  // Clients
-  for (const c of (plan.clients as Record<string, unknown>[]) ?? []) {
-    ensureNull(c, 'age', 'occupation', 'income', 'superBalance');
-  }
+Objectives:
+- "Sort out my finances"
+- "Maybe look at getting an investment property eventually"
+- Wants to make sure he's "not going to be broke when I'm old"
 
-  // Assets (personal + entity-held)
-  const allAssets = [
-    ...((plan.personalAssets as Record<string, unknown>[]) ?? []),
-  ];
-  for (const entity of (plan.entities as Record<string, unknown>[]) ?? []) {
-    ensureDefault(entity, 'assets', []);
-    ensureDefault(entity, 'liabilities', []);
-    allAssets.push(...((entity.assets as Record<string, unknown>[]) ?? []));
-  }
-  for (const a of allAssets) {
-    ensureNull(a, 'value', 'details');
-    ensureDefault(a, 'ownerIds', []);
-    coerceEnum(a, 'type', ASSET_TYPE_MAP, VALID_ASSET_TYPES);
-  }
+Other professional advisers:
+- Accountant: David Park at Park & Associates
+- Solicitor: none currently`;
 
-  // Liabilities (personal + entity-held)
-  const allLiabilities = [
-    ...((plan.personalLiabilities as Record<string, unknown>[]) ?? []),
-  ];
-  for (const entity of (plan.entities as Record<string, unknown>[]) ?? []) {
-    allLiabilities.push(...((entity.liabilities as Record<string, unknown>[]) ?? []));
-  }
-  for (const l of allLiabilities) {
-    ensureNull(l, 'amount', 'interestRate', 'details');
-    ensureDefault(l, 'ownerIds', []);
-    coerceEnum(l, 'type', LIABILITY_TYPE_MAP, VALID_LIABILITY_TYPES);
-  }
+const FEWSHOT_RESPONSE = JSON.stringify({
+  clients: [{
+    id: "client-1", name: "Simon Blake", age: 44,
+    occupation: "IT (exact role unknown)", income: 130000,
+    superBalance: 80000, riskProfile: null,
+  }],
+  entities: [],
+  personalAssets: [
+    { id: "asset-1", name: "2-bedroom unit, Newtown", type: "property", value: 750000, ownerIds: ["client-1"], details: "Approximate value" },
+    { id: "asset-2", name: "Motor Vehicle", type: "vehicle", value: null, ownerIds: ["client-1"], details: "Sedan, approximately 2017 model" },
+    { id: "asset-3", name: "Bank Account (Westpac)", type: "cash", value: 10000, ownerIds: ["client-1"], details: "Approximate balance" },
+  ],
+  personalLiabilities: [
+    { id: "liability-1", name: "Westpac Mortgage - Newtown unit", type: "mortgage", amount: 480000, interestRate: null, ownerIds: ["client-1"], details: "Standard variable rate — exact rate unknown" },
+  ],
+  estatePlanning: [
+    { id: "estate-1", clientId: "client-1", type: "will", status: "not_established", lastReviewed: null, primaryPerson: null, alternatePeople: null, details: "No will in place", hasIssue: true },
+    { id: "estate-2", clientId: "client-1", type: "poa", status: "not_established", lastReviewed: null, primaryPerson: null, alternatePeople: null, details: "No power of attorney in place", hasIssue: true },
+  ],
+  familyMembers: [],
+  objectives: ["Sort out finances", "Consider purchasing an investment property", "Ensure adequate retirement savings"],
+  goals: [
+    { id: "goal-1", name: "Sort out finances", category: "wealth", detail: "General financial organisation", timeframe: null, value: null },
+    { id: "goal-2", name: "Purchase investment property", category: "wealth", detail: "Considering buying an investment property", timeframe: null, value: null },
+    { id: "goal-3", name: "Retirement savings", category: "retirement", detail: "Ensure adequate retirement savings", timeframe: null, value: null },
+  ],
+  relationships: [
+    { id: "rel-1", clientIds: ["client-1"], type: "accountant", firmName: "Park & Associates", contactName: "David Park", notes: null },
+    { id: "rel-2", clientIds: ["client-1"], type: "financial_adviser", firmName: "Count Financial", contactName: "Jenny Wu", notes: null },
+  ],
+  dataGaps: [],
+});
 
-  // Entities
-  for (const e of (plan.entities as Record<string, unknown>[]) ?? []) {
-    ensureNull(e, 'role', 'trusteeName', 'trusteeType');
-    ensureDefault(e, 'linkedClientIds', []);
-    coerceEnum(e, 'type', {}, VALID_ENTITY_TYPES);
-  }
-
-  // Estate planning
-  for (const ep of (plan.estatePlanning as Record<string, unknown>[]) ?? []) {
-    ensureNull(ep, 'status', 'lastReviewed', 'primaryPerson', 'alternatePeople', 'details');
-    ensureDefault(ep, 'hasIssue', false);
-    coerceEnum(ep, 'type', { 'power_of_attorney': 'poa', 'power of attorney': 'poa' }, VALID_ESTATE_TYPES);
-  }
-
-  // Family members
-  for (const fm of (plan.familyMembers as Record<string, unknown>[]) ?? []) {
-    ensureNull(fm, 'partner', 'age', 'details');
-    ensureDefault(fm, 'isDependant', false);
-    ensureDefault(fm, 'children', []);
-    for (const gc of (fm.children as Record<string, unknown>[]) ?? []) {
-      ensureNull(gc, 'age', 'details');
-      ensureDefault(gc, 'isDependant', false);
-    }
-  }
-
-  // Data gaps
-  for (const dg of (plan.dataGaps as Record<string, unknown>[]) ?? []) {
-    ensureNull(dg, 'entityId');
-  }
-}
+// ── Ollama API ──
 
 interface OllamaChatResponse {
   message: { role: string; content: string };
@@ -162,8 +96,7 @@ interface OllamaChatResponse {
 
 async function ollamaChat(
   model: string,
-  systemPrompt: string,
-  userMessage: string,
+  messages: { role: string; content: string }[],
   jsonSchema: Record<string, unknown>,
 ): Promise<string> {
   const url = `${OLLAMA_URL}/api/chat`;
@@ -174,12 +107,14 @@ async function ollamaChat(
     body: JSON.stringify({
       model,
       stream: false,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage },
-      ],
+      messages,
       format: jsonSchema,
+      options: {
+        num_ctx: 32768,
+        temperature: 0.1,
+      },
     }),
+    signal: AbortSignal.timeout(600_000),
   });
 
   if (!response.ok) {
@@ -203,8 +138,14 @@ export async function parseWithOllama(documentText: string): Promise<FinancialPl
   const t0 = performance.now();
   const raw = await ollamaChat(
     OLLAMA_MODEL,
-    PARSE_SYSTEM_PROMPT,
-    `Extract the complete financial structure from this document:\n\n${documentText}`,
+    [
+      { role: 'system', content: PARSE_SYSTEM_PROMPT },
+      // Few-shot example
+      { role: 'user', content: `Extract the complete financial structure from this document:\n\n${FEWSHOT_DOC}` },
+      { role: 'assistant', content: FEWSHOT_RESPONSE },
+      // Actual document
+      { role: 'user', content: `Extract the complete financial structure from this document:\n\n${documentText}` },
+    ],
     financialPlanJsonSchema,
   );
   console.log(`⏱ [ollama] Total API call: ${(performance.now() - t0).toFixed(0)}ms`);
@@ -239,8 +180,10 @@ export async function generateOllamaInsights(plan: FinancialPlan): Promise<Insig
   const t0 = performance.now();
   const raw = await ollamaChat(
     OLLAMA_MODEL,
-    INSIGHTS_SYSTEM_PROMPT,
-    `Analyze this financial plan and produce actionable insights:\n\n${planJson}`,
+    [
+      { role: 'system', content: INSIGHTS_SYSTEM_PROMPT },
+      { role: 'user', content: `Analyze this financial plan and produce actionable insights:\n\n${planJson}` },
+    ],
     insightsJsonSchema,
   );
   console.log(`⏱ [ollama-insights] Total API call: ${(performance.now() - t0).toFixed(0)}ms`);

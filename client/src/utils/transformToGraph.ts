@@ -8,7 +8,7 @@ export interface NodeData extends Record<string, unknown> {
   label: string;
   sublabel?: string;
   value?: number | null;
-  nodeType: 'family' | 'client' | 'entity' | 'asset' | 'liability' | 'assetGroup' | 'estateGroup' | 'estateClient' | 'estateItem' | 'familyGroup' | 'familyMember' | 'goalsGroup' | 'goal' | 'relationshipsGroup' | 'relationship';
+  nodeType: 'family' | 'client' | 'entity' | 'asset' | 'liability' | 'assetGroup' | 'estateGroup' | 'estateClient' | 'estateItem' | 'familyGroup' | 'familyMember' | 'goalsGroup' | 'goalCategoryGroup' | 'goal' | 'relationshipsGroup' | 'relationship';
   entityType?: Entity['type'];
   assetType?: Asset['type'];
   liabilityType?: Liability['type'];
@@ -20,6 +20,7 @@ export interface NodeData extends Record<string, unknown> {
   trusteeName?: string | null;
   assetGroupCategory?: string;
   assetGroupType?: string;
+  goalGroupCategory?: string;
   isExpanded?: boolean;
   parentOwnerId?: string;
   side: Side;
@@ -96,6 +97,8 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
   }
 
   for (const [ownerId, items] of assetsByOwner) {
+    // Sort: individual assets first, joint assets last (pushes joint toward space between clients)
+    items.sort((a, b) => (a.owners.length > 1 ? 1 : 0) - (b.owners.length > 1 ? 1 : 0));
     addGroupedAssetNodes(nodes, edges, items.map((i) => i.asset), ownerId, 'left',
       items.map((i) => ({ isJoint: i.owners.length > 1, ownerNames: i.ownerNames })));
 
@@ -106,14 +109,20 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
           id: `link-${additionalOwner}-${asset.id}`,
           source: additionalOwner,
           target: asset.id,
-          type: 'smoothstep',
+          type: 'default',
           data: { isCrossLink: true },
         });
       }
     }
   }
 
-  for (const liability of plan.personalLiabilities) {
+  // Sort personal liabilities: individual first, joint last (matches asset ordering)
+  const sortedLiabilities = [...plan.personalLiabilities].sort((a, b) => {
+    const aJoint = resolveOwners(a.ownerIds).length > 1 ? 1 : 0;
+    const bJoint = resolveOwners(b.ownerIds).length > 1 ? 1 : 0;
+    return aJoint - bJoint;
+  });
+  for (const liability of sortedLiabilities) {
     const owners = resolveOwners(liability.ownerIds);
     const primaryOwner = owners[0];
     if (!primaryOwner) continue;
@@ -125,7 +134,7 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
         id: `link-${ownerId}-${liability.id}`,
         source: ownerId,
         target: liability.id,
-        type: 'smoothstep',
+        type: 'default',
         data: { isCrossLink: true },
       });
     }
@@ -300,7 +309,7 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
     }
   }
 
-  // RIGHT SIDE — goals group + individual goals
+  // RIGHT SIDE — goals group → category groups → individual goals
   if (plan.goals?.length > 0) {
     const goalsGroupId = 'goals-group';
     nodes.push({
@@ -321,29 +330,89 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
       sourceHandle: 'right',
     });
 
+    // Group goals by category
+    const goalsByCategory = new Map<string, Goal[]>();
     for (const goal of plan.goals) {
-      const parts: string[] = [];
-      if (goal.category) parts.push(goal.category);
-      if (goal.timeframe) parts.push(goal.timeframe);
+      const cat = goal.category || 'other';
+      const list = goalsByCategory.get(cat) ?? [];
+      list.push(goal);
+      goalsByCategory.set(cat, list);
+    }
+
+    for (const [category, categoryGoals] of goalsByCategory) {
+      if (categoryGoals.length < 2) {
+        // Single goal in this category — flat node, no group wrapper
+        const goal = categoryGoals[0];
+        const parts: string[] = [];
+        if (goal.category) parts.push(GOAL_CATEGORY_DISPLAY[goal.category] ?? goal.category);
+        if (goal.timeframe) parts.push(goal.timeframe);
+
+        nodes.push({
+          id: goal.id,
+          type: 'goalNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: goal.name,
+            sublabel: parts.join(' · ') || undefined,
+            value: goal.value,
+            nodeType: 'goal',
+            side: 'right',
+            raw: goal,
+          },
+        });
+        edges.push({
+          id: `${goalsGroupId}-${goal.id}`,
+          source: goalsGroupId,
+          target: goal.id,
+        });
+        continue;
+      }
+
+      // 2+ goals of same category → create group node
+      const displayLabel = GOAL_CATEGORY_DISPLAY[category] ?? 'Other';
+      const catGroupId = `goal-cat-${category}`;
 
       nodes.push({
-        id: goal.id,
-        type: 'goalNode',
+        id: catGroupId,
+        type: 'goalCategoryGroupNode',
         position: { x: 0, y: 0 },
         data: {
-          label: goal.name,
-          sublabel: parts.join(' · ') || undefined,
-          value: goal.value,
-          nodeType: 'goal',
+          label: displayLabel,
+          sublabel: `${categoryGoals.length} goals`,
+          nodeType: 'goalCategoryGroup',
+          goalGroupCategory: displayLabel,
           side: 'right',
-          raw: goal,
         },
       });
       edges.push({
-        id: `${goalsGroupId}-${goal.id}`,
+        id: `${goalsGroupId}-${catGroupId}`,
         source: goalsGroupId,
-        target: goal.id,
+        target: catGroupId,
       });
+
+      for (const goal of categoryGoals) {
+        const parts: string[] = [];
+        if (goal.timeframe) parts.push(goal.timeframe);
+
+        nodes.push({
+          id: goal.id,
+          type: 'goalNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: goal.name,
+            sublabel: parts.join(' · ') || undefined,
+            value: goal.value,
+            nodeType: 'goal',
+            side: 'right',
+            raw: goal,
+          },
+        });
+        edges.push({
+          id: `${catGroupId}-${goal.id}`,
+          source: catGroupId,
+          target: goal.id,
+        });
+      }
     }
   }
 
@@ -429,6 +498,17 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
 
   return { nodes, edges };
 }
+
+/** Goal category → display label for group nodes */
+export const GOAL_CATEGORY_DISPLAY: Record<string, string> = {
+  retirement: 'Retirement',
+  wealth: 'Wealth',
+  protection: 'Protection',
+  estate: 'Estate',
+  lifestyle: 'Lifestyle',
+  education: 'Education',
+  other: 'Other',
+};
 
 /** Raw asset type → display label for group nodes */
 export const ASSET_TYPE_DISPLAY: Record<string, string> = {

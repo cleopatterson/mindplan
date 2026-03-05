@@ -2,3 +2,14 @@ node_modules/
 dist/
 .env
 *.tsbuildinfo
+.DS_Store
+
+# Real client data — never commit
+client_files/
+test/batch-data.json
+test/batch-results.json
+training/
+
+# Firebase service account key
+*-firebase-adminsdk-*.json
+firebase-service-account*.json

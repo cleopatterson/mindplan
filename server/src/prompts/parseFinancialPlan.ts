@@ -50,12 +50,12 @@ Australian financial plans typically involve:
    - Set type to 'will', 'poa', 'guardianship', or 'super_nomination'.
    - Set status to 'current', 'expired', or 'not_established' (null if unknown).
 12. Extract family members as a TWO-LEVEL hierarchy:
-   - **Level 1 (familyMembers)**: Direct children of the clients — sons and daughters only.
-     - Set relationship to 'son', 'daughter', or 'other'.
+   - **Level 1 (familyMembers)**: Direct children of the clients.
+     - Set relationship to 'child' or 'other'.
      - Include their partner/spouse name if mentioned.
      - Set isDependant to true only if they are financially dependent on the clients.
    - **Level 2 (children array on each family member)**: Grandchildren nested under their parent.
-     - Set relationship to 'grandson' or 'granddaughter'.
+     - Set relationship to 'grandchild'.
      - Link each grandchild to the correct parent (e.g. if "Archie is son of Anthony", Archie goes in Anthony's children array).
    - Include age if mentioned at either level.
 13. Extract structured goals and objectives:

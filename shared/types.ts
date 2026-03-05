@@ -89,7 +89,7 @@ export interface EstatePlanItem {
 export interface FamilyMember {
   id: string;
   name: string;
-  relationship: 'son' | 'daughter' | 'other';
+  relationship: 'child' | 'other';
   partner: string | null;        // spouse/partner name
   age: number | null;
   isDependant: boolean;
@@ -100,7 +100,7 @@ export interface FamilyMember {
 export interface Grandchild {
   id: string;
   name: string;
-  relationship: 'grandson' | 'granddaughter';
+  relationship: 'grandchild';
   age: number | null;
   isDependant: boolean;
   details: string | null;

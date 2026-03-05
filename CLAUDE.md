@@ -34,7 +34,7 @@ Environment variables (`.env` at root):
 ## Architecture Decisions
 
 ### Data Flow
-Upload → text extraction → pre-API scrubbing → Claude API (tool use + Zod schema) → surname restoration → gap enrichment → anonymization → JSON response → ReactFlow mind map
+Upload → text extraction → **Claude API path**: pre-API scrubbing → Claude API (tool use + Zod schema) → surname restoration | **Local parser path**: `splitSections` → per-section parsers → `assemble` | → gap enrichment → anonymization → JSON response → ReactFlow mind map
 
 ### Key Server Files
 - `server/src/schema/financialPlan.ts` — Zod schema defining the `FinancialPlan` structure (used as Claude tool schema)
@@ -47,6 +47,7 @@ Upload → text extraction → pre-API scrubbing → Claude API (tool use + Zod 
 - Both sides stitched at the central family node, then top-aligned
 - Left-side nodes are right-aligned, right-side nodes are left-aligned (rank-based)
 - Node widths are FIXED (`w-[Xpx]`) and must match `NODE_WIDTH` constants in `useGraphLayout.ts`
+- Asset/liability ordering: individual assets first, joint assets last per owner (pushes joint items between clients visually)
 
 ### Edge Types
 - **Structural edges**: dagre-layouted parent→child connections
@@ -60,6 +61,7 @@ Upload → text extraction → pre-API scrubbing → Claude API (tool use + Zod 
 
 ### Gap System
 - Server-side `enrichGaps()` (in `validator.ts`) detects critical missing data only: client ages, asset values, liability amounts
+- Insurance assets are excluded from gap detection (cover amount is not an asset value)
 - Deduplication uses `nodeId::field` key (not description strings)
 - Client-side `resolveGap()` uses `nodeId` for precise field targeting across all node types
 
@@ -72,6 +74,7 @@ Upload → text extraction → pre-API scrubbing → Claude API (tool use + Zod 
 - Viewport anchoring on toggle prevents screen jumping (captures node position + viewport before re-layout, compensates after)
 - Drag-to-create from a collapsed group auto-expands it
 - Hidden children of collapsed groups are filtered between `transformToGraph` and `useGraphLayout`
+- Layout sync uses `useLayoutEffect` (not `useEffect`) to prevent edge flicker on expand/collapse
 
 ### Asset Types
 - `super` = accumulation phase, `pension` = drawdown/retirement phase (Account Based Pension, TTR)
@@ -94,6 +97,38 @@ Upload → text extraction → pre-API scrubbing → Claude API (tool use + Zod 
 - `test/batch-data.json` — full parsed data from last run
 - `client_files/` — 73 real client `.docx` fact-find files (not committed)
 - Last run (2026-02-23): 73/73 passed, 0 failures, 0 warnings
+- `test/test-local-batch.ts` — local parser batch test, compares against Claude gold standard
+- Run: `npx tsx test/test-local-batch.ts` (no server needed, avg 151ms/file)
+- Last run (2026-03-04): 69/73 passed, 4 gold standard inconsistencies
+
+### Local Code-Based Parser
+Deterministic parser for Plutosoft "Client Fact Find" `.docx` documents. No API calls — runs in ~150ms/file.
+
+- `server/src/services/local/index.ts` — entry point (`parseWithLocal`)
+- `server/src/services/local/splitSections.ts` — splits mammoth raw text into named sections using ordered landmark detection
+- `server/src/services/local/assembler.ts` — assembles section parse results into a `FinancialPlan`
+- `server/src/services/local/parseTable.ts` — generic table cell splitter for raw text tables
+- `server/src/services/local/utils.ts` — shared utilities (`parseDollar`, `normalizeName`, `isNoInfoLine`)
+- `server/src/services/local/sections/` — per-section parsers:
+  - `header.ts`, `personalDetails.ts` — client names, ages, occupations
+  - `income.ts`, `riskProfile.ts` — client income and risk profile
+  - `personalAssets.ts` — bank accounts, financial investments, shares, lifestyle assets
+  - `superPension.ts` — superannuation and pension accounts
+  - `insurance.ts` — life, TPD, trauma, income protection policies
+  - `loans.ts` — personal liabilities (mortgages, car loans, credit cards)
+  - `investmentProperty.ts` — investment properties with rental details
+  - `entityStructure.ts` — entity names, types, directors/trustees
+  - `entityHoldings.ts` — entity assets and liabilities (shares, property, cash, loans)
+  - `estatePlanning.ts` — wills, EPA, EPG, super nominations
+  - `goals.ts`, `dependants.ts`, `relationships.ts` — goals, family, professional relationships
+
+Key parser patterns:
+- Insurance sub-covers within a named policy are skipped (only the named policy is an item)
+- `isLiabilityType()` excludes "loan offset" (it's a cash asset, not a liability)
+- Insurance assets have `value: null` in gap detection and unvalued stats (cover ≠ asset value)
+- SMSF member balance entries are deduped against personal super (pattern-matched names)
+- Fuzzy entity name matching (suffix-based fallback) for entity holdings → entity structure joins
+- Test: `npx tsx test/test-local-batch.ts` — 69/73 pass rate against Claude gold standard
 
 ### LLM Providers
 - `server/src/services/llm.ts` — provider abstraction

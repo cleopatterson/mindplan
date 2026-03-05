@@ -4,6 +4,7 @@ import { InsightsOutputSchema } from '../schema/insights.js';
 import { PARSE_SYSTEM_PROMPT } from '../prompts/parseFinancialPlan.js';
 import { INSIGHTS_SYSTEM_PROMPT } from '../prompts/generateInsights.js';
 import type { FinancialPlan, Insight } from 'shared/types';
+import { coercePlan } from './coerce.js';
 
 const MLX_URL = process.env.MLX_URL || 'http://127.0.0.1:8080';
 
@@ -107,6 +108,9 @@ export async function parseWithMlx(documentText: string): Promise<FinancialPlan>
     console.error('[mlx] Failed to parse JSON response:', raw.slice(0, 500));
     throw new Error('MLX server did not return valid JSON');
   }
+
+  // Coerce common small-model mistakes before validation
+  coercePlan(parsed);
 
   const result = FinancialPlanSchema.safeParse(parsed);
   if (!result.success) {

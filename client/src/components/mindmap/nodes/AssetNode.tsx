@@ -52,11 +52,6 @@ export const AssetNode = memo(function AssetNode({ data }: { data: NodeData }) {
         </div>
       </div>
       {!isLeft && iconBox}
-      <Handle
-        type="source"
-        position={isLeft ? Position.Left : Position.Right}
-        className="!bg-white/20 !w-1.5 !h-1.5"
-      />
     </div>
   );
 });

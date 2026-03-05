@@ -56,7 +56,7 @@ export const EstatePlanItemSchema = z.object({
 export const GrandchildSchema = z.object({
   id: z.string().describe('Unique ID, e.g. "grandchild-1"'),
   name: z.string(),
-  relationship: z.enum(['grandson', 'granddaughter']),
+  relationship: z.enum(['grandchild']),
   age: z.nullable(z.number()),
   isDependant: z.boolean().describe('True if a financial dependant'),
   details: z.nullable(z.string()),
@@ -64,8 +64,8 @@ export const GrandchildSchema = z.object({
 
 export const FamilyMemberSchema = z.object({
   id: z.string().describe('Unique ID, e.g. "family-1"'),
-  name: z.string().describe('Direct child name (son/daughter)'),
-  relationship: z.enum(['son', 'daughter', 'other']),
+  name: z.string().describe('Direct child name'),
+  relationship: z.enum(['child', 'other']),
   partner: z.nullable(z.string()).describe('Spouse/partner name, null if unmarried'),
   age: z.nullable(z.number()),
   isDependant: z.boolean().describe('True if a financial dependant'),
@@ -104,7 +104,7 @@ export const FinancialPlanSchema = z.object({
   personalAssets: z.array(AssetSchema).describe('Assets held personally, not in entities'),
   personalLiabilities: z.array(LiabilitySchema).describe('Liabilities held personally'),
   estatePlanning: z.array(EstatePlanItemSchema).default([]).describe('Estate planning documents — wills, POA, guardianship, super nominations. Empty array if none mentioned.'),
-  familyMembers: z.array(FamilyMemberSchema).default([]).describe('Direct children (sons/daughters) of the clients. Grandchildren are nested inside each child\'s "children" array. Empty array if none mentioned.'),
+  familyMembers: z.array(FamilyMemberSchema).default([]).describe('Direct children of the clients. Grandchildren are nested inside each child\'s "children" array. Empty array if none mentioned.'),
   objectives: z.array(z.string()).describe('Financial objectives mentioned in the document'),
   goals: z.array(GoalSchema).default([]).describe('Structured goals and objectives with category, timeframe, and target value. Empty array if none mentioned.'),
   relationships: z.array(RelationshipSchema).default([]).describe('Professional advisers and relationships — accountants, stockbrokers, solicitors, insurance advisers, mortgage brokers. Empty array if none mentioned.'),

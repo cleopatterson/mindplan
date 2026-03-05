@@ -1,16 +1,20 @@
 import { useFinancialData } from './hooks/useFinancialData';
+import { useAuth } from './hooks/useAuth';
 import { LandingPage } from './components/landing/LandingPage';
+import { LoginPage } from './components/auth/LoginPage';
 import { ParseProgress } from './components/upload/ParseProgress';
 import { Dashboard } from './components/Dashboard';
 import { ExportModal, type ExportOptions } from './components/export/ExportModal';
 import type { MindMapHandle } from './components/mindmap/MindMap';
 import { LogoFull } from './components/Logo';
-import { RotateCcw, Download, Loader2, Sun, Moon } from 'lucide-react';
+import { RotateCcw, Download, Loader2, Sun, Moon, LogOut } from 'lucide-react';
 import { useRef, useState, useCallback } from 'react';
 import { usePdfExport } from './hooks/usePdfExport';
 import { ThemeContext, type Theme } from './contexts/ThemeContext';
 
 export default function App() {
+  const { user, loading: authLoading, signIn, signOut, resetPassword, getIdToken } = useAuth();
+  const [showLogin, setShowLogin] = useState(false);
   const {
     appState, data, error,
     selectedNodeIds, selectNode,
@@ -20,7 +24,7 @@ export default function App() {
     insights, insightsLoading, dismissInsight,
     uploadFile, reset, resolveGap, updateNodeField, addNode, deleteNode,
     newNodeId, clearNewNodeId,
-  } = useFinancialData();
+  } = useFinancialData(getIdToken);
   const mapRef = useRef<HTMLDivElement>(null);
   const mindMapRef = useRef<MindMapHandle>(null);
   const { exportPdf, exporting } = usePdfExport();
@@ -43,8 +47,39 @@ export default function App() {
       .catch((err) => console.error('Export failed:', err));
   };
 
+  const handleSignOut = useCallback(async () => {
+    await signOut();
+    reset();
+    setShowLogin(false);
+  }, [signOut, reset]);
+
+  // Auth loading — show spinner
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0f0f1a] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-white/30 animate-spin" />
+      </div>
+    );
+  }
+
+  // Not logged in — show login page or landing
+  if (!user) {
+    if (showLogin) {
+      return (
+        <LoginPage
+          onSignIn={signIn}
+          onResetPassword={resetPassword}
+          onBack={() => setShowLogin(false)}
+        />
+      );
+    }
+    return <LandingPage onLogin={() => setShowLogin(true)} />;
+  }
+
+  // Logged in — upload state
   if (appState === 'upload') {
-    return <LandingPage onUpload={uploadFile} error={error} />;
+    const firstName = user.displayName?.split(' ')[0] ?? user.email?.split('@')[0] ?? 'there';
+    return <LandingPage user={{ firstName }} onUpload={uploadFile} onSignOut={handleSignOut} error={error} />;
   }
 
   const isDark = theme === 'dark';
@@ -75,16 +110,14 @@ export default function App() {
                 {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
             )}
-            {appState === 'dashboard' && (
-              <button
-                onClick={reset}
-                className={`cursor-pointer flex items-center gap-2 text-sm transition-colors
-                  ${isDark ? 'text-white/30 hover:text-white/60' : 'text-gray-400 hover:text-gray-600'}`}
-                title="Upload new plan"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-            )}
+            <button
+              onClick={handleSignOut}
+              className={`cursor-pointer p-2 rounded-lg transition-colors
+                ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/5' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+              title="Sign out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
             {appState === 'dashboard' && (
               <button
                 onClick={() => setShowExportModal(true)}
@@ -106,7 +139,9 @@ export default function App() {
         </header>
 
         <main className="flex-1 min-h-0 flex items-center justify-center">
-          {appState === 'parsing' && <ParseProgress />}
+          {(appState === 'parsing' || appState === 'completing') && (
+            <ParseProgress complete={appState === 'completing'} />
+          )}
           {appState === 'dashboard' && data && (
             <Dashboard
               data={data}

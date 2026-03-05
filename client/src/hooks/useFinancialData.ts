@@ -3,9 +3,9 @@ import type { Edge } from '@xyflow/react';
 import type { FinancialPlan, ParseResponse, Insight, InsightsResponse, Asset, Liability, FamilyMember, Grandchild, Goal, Relationship, EstatePlanItem } from 'shared/types';
 import type { ChildNodeType } from '../utils/nodeChildTypes';
 
-export type AppState = 'upload' | 'parsing' | 'dashboard';
+export type AppState = 'upload' | 'parsing' | 'completing' | 'dashboard';
 
-export function useFinancialData() {
+export function useFinancialData(getIdToken?: () => Promise<string>) {
   const [appState, setAppState] = useState<AppState>('upload');
   const [data, setData] = useState<FinancialPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,17 +26,26 @@ export function useFinancialData() {
       const formData = new FormData();
       formData.append('file', file);
 
-      console.time('⏱ [client] Total upload→render');
-      console.time('⏱ [client] Fetch /api/parse');
-      const res = await fetch('/api/parse', { method: 'POST', body: formData });
+      const headers: Record<string, string> = {};
+      if (getIdToken) {
+        headers['Authorization'] = `Bearer ${await getIdToken()}`;
+      }
+
+      const res = await fetch('/api/parse', { method: 'POST', body: formData, headers });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `Server error (${res.status})`);
+      }
       const json: ParseResponse = await res.json();
-      console.timeEnd('⏱ [client] Fetch /api/parse');
 
       if (!json.success || !json.data) {
         throw new Error(json.error || 'Failed to parse document');
       }
 
-      console.log(`⏱ [client] Response payload: ${JSON.stringify(json.data).length} chars`);
+      // Signal the spinner to race to 100%, then transition to dashboard
+      setAppState('completing');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       setData(json.data);
       setAppState('dashboard');
 
@@ -55,21 +64,24 @@ export function useFinancialData() {
 
     setInsightsLoading(true);
     try {
-      console.time('⏱ [client] Fetch /api/insights');
+      const insightHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (getIdToken) {
+        insightHeaders['Authorization'] = `Bearer ${await getIdToken()}`;
+      }
+
       const res = await fetch('/api/insights', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: insightHeaders,
         body: JSON.stringify({ data: plan }),
         signal: controller.signal,
       });
       const json: InsightsResponse = await res.json();
-      console.timeEnd('⏱ [client] Fetch /api/insights');
-      if (json.success && json.insights) {
+      if (json.success && json.insights && json.insights.length > 0) {
         setInsights(json.insights);
       }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
-        console.error('[insights] Failed to fetch insights:', err);
+        // Insights are non-critical — silently ignore failures
       }
     } finally {
       if (!controller.signal.aborted) {
@@ -227,7 +239,7 @@ export function useFinancialData() {
 
         case 'familyMember': {
           const member: FamilyMember = {
-            id: newId, name: '', relationship: 'son',
+            id: newId, name: '', relationship: 'child',
             partner: null, age: null, isDependant: false, details: null, children: [],
             ...(overrides as Partial<FamilyMember>),
           };
@@ -236,7 +248,7 @@ export function useFinancialData() {
 
         case 'grandchild': {
           const grandchild: Grandchild = {
-            id: newId, name: '', relationship: 'grandson',
+            id: newId, name: '', relationship: 'grandchild',
             age: null, isDependant: false, details: null,
             ...(overrides as Partial<Grandchild>),
           };

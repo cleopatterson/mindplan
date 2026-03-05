@@ -675,7 +675,7 @@ function FamilyMemberDetail({ member, data, nodeId, onUpdate, autoFocusName }: {
 // ── Grandchild Detail ──
 
 function GrandchildDetail({ grandchild, parent, data, nodeId, onUpdate, autoFocusName }: { grandchild: Grandchild; parent: FamilyMember; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void; autoFocusName?: boolean }) {
-  const relLabel = grandchild.relationship === 'grandson' ? 'Grandson' : 'Granddaughter';
+  const relLabel = 'Grandchild';
 
   return (
     <div className="space-y-3">
@@ -1089,10 +1089,10 @@ function ToggleField({
       <div className="flex items-center justify-between">
         <div className="text-[10px] text-white/30 uppercase tracking-wide">{label}</div>
         <div className={`w-8 h-4.5 rounded-full relative transition-colors cursor-pointer
-          ${value ? 'bg-amber-500/40' : 'bg-white/10'}`}
+          ${value ? 'bg-amber-500/40' : 'bg-white/20'}`}
         >
           <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all
-            ${value ? 'left-[calc(100%-16px)] bg-amber-400' : 'left-0.5 bg-white/30'}`}
+            ${value ? 'left-[calc(100%-16px)] bg-amber-400' : 'left-0.5 bg-white/50'}`}
           />
         </div>
       </div>

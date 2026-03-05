@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { extractText } from '../services/extractor.js';
 import { scrubSensitiveData, restoreSurnames } from '../services/scrub.js';
-import { parseWithClaude } from '../services/claude.js';
+import { parsePlan } from '../services/llm.js';
 import { enrichGaps } from '../services/validator.js';
 import { anonymize } from '../services/anonymize.js';
 import type { ParseResponse } from 'shared/types';
@@ -12,22 +12,30 @@ const upload = multer({
   limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
   fileFilter: (_req, file, cb) => {
     const allowed = [
-      'application/pdf',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/msword',
-      'text/plain',
+      'application/zip',          // .docx files are ZIP archives — some clients send this MIME
+      'application/octet-stream', // generic binary fallback
     ];
-    if (allowed.includes(file.mimetype)) {
+    const ext = file.originalname.toLowerCase();
+    if (allowed.includes(file.mimetype) && (ext.endsWith('.docx') || ext.endsWith('.doc'))) {
       cb(null, true);
     } else {
-      cb(new Error('Only PDF, Word, and text files are supported'));
+      cb(new Error('Only Word documents (.docx) are supported'));
     }
   },
 });
 
 export const parseRouter = Router();
 
-parseRouter.post('/parse', upload.single('file'), async (req, res) => {
+parseRouter.post('/parse', (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ success: false, error: err.message } satisfies ParseResponse);
+    }
+    next();
+  });
+}, async (req, res) => {
   const t0 = performance.now();
   try {
     if (!req.file) {
@@ -50,25 +58,34 @@ parseRouter.post('/parse', upload.single('file'), async (req, res) => {
       return;
     }
 
-    // Step 2: Scrub sensitive data before sending to API
-    const t2 = performance.now();
-    const { text: scrubbedText, surnames } = scrubSensitiveData(text);
-    console.log(`⏱ [parse] Step 2 — Scrub: ${(performance.now() - t2).toFixed(0)}ms (${text.length - scrubbedText.length} chars removed)`);
+    const isLocal = (process.env.LLM_PROVIDER || 'claude') === 'local';
 
-    // Step 3: Parse with Claude (using scrubbed text)
-    const t3 = performance.now();
-    const plan = await parseWithClaude(scrubbedText);
-    console.log(`⏱ [parse] Step 3 — Claude API: ${(performance.now() - t3).toFixed(0)}ms`);
+    let plan;
+    if (isLocal) {
+      // Local mode: parse raw text directly, no scrub/anonymize (data never leaves machine)
+      const t3 = performance.now();
+      plan = await parsePlan(text);
+      console.log(`⏱ [parse] Step 2 — Local parse: ${(performance.now() - t3).toFixed(0)}ms`);
+    } else {
+      // Cloud mode: scrub → parse → restore surnames
+      const t2 = performance.now();
+      const { text: scrubbedText, surnames } = scrubSensitiveData(text);
+      console.log(`⏱ [parse] Step 2 — Scrub: ${(performance.now() - t2).toFixed(0)}ms (${text.length - scrubbedText.length} chars removed)`);
 
-    // Step 4: Restore surnames in structured data (before anonymize strips them from person fields)
-    restoreSurnames(plan, surnames);
+      const t3 = performance.now();
+      plan = await parsePlan(scrubbedText);
+      console.log(`⏱ [parse] Step 3 — LLM parse: ${(performance.now() - t3).toFixed(0)}ms`);
 
-    // Step 5: Enrich data gaps
+      // Restore surnames in structured data (before anonymize strips them from person fields)
+      restoreSurnames(plan, surnames);
+    }
+
+    // Enrich data gaps
     const t5 = performance.now();
     enrichGaps(plan);
-    console.log(`⏱ [parse] Step 5 — Gap enrichment: ${(performance.now() - t5).toFixed(0)}ms (${plan.dataGaps.length} gaps)`);
+    console.log(`⏱ [parse] Step ${isLocal ? 3 : 5} — Gap enrichment: ${(performance.now() - t5).toFixed(0)}ms (${plan.dataGaps.length} gaps)`);
 
-    // Step 5b: Derive family label from real surnames before anonymization strips them
+    // Derive family label from real surnames before anonymization strips them
     if (!plan.familyLabel) {
       const surnameList = plan.clients.map((c) => c.name.trim().split(/\s+/).pop()).filter(Boolean) as string[];
       const unique = [...new Set(surnameList)];
@@ -77,8 +94,10 @@ parseRouter.post('/parse', upload.single('file'), async (req, res) => {
         : plan.clients.map((c) => c.name.split(' ')[0]).join(' & ');
     }
 
-    // Step 6: Anonymize — strip surnames from person-name fields
-    anonymize(plan);
+    // Anonymize — strip surnames from person-name fields (skip in local mode)
+    if (!isLocal) {
+      anonymize(plan);
+    }
 
     console.log(`⏱ [parse] Total request: ${(performance.now() - t0).toFixed(0)}ms`);
 

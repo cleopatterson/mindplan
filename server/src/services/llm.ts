@@ -1,15 +1,23 @@
 import type { FinancialPlan, Insight } from 'shared/types';
 
-const PROVIDER = process.env.LLM_PROVIDER || 'claude';
+function getProvider() {
+  return process.env.LLM_PROVIDER || 'claude';
+}
 
-console.log(`🔧 [llm] Provider: ${PROVIDER}`);
+let logged = false;
 
 export async function parsePlan(documentText: string): Promise<FinancialPlan> {
-  if (PROVIDER === 'ollama') {
+  const provider = getProvider();
+  if (!logged) { console.log(`🔧 [llm] Provider: ${provider}`); logged = true; }
+  if (provider === 'local') {
+    const { parseWithLocal } = await import('./local/index.js');
+    return parseWithLocal(documentText);
+  }
+  if (provider === 'ollama') {
     const { parseWithOllama } = await import('./ollama.js');
     return parseWithOllama(documentText);
   }
-  if (PROVIDER === 'mlx') {
+  if (provider === 'mlx') {
     const { parseWithMlx } = await import('./mlx.js');
     return parseWithMlx(documentText);
   }
@@ -18,11 +26,15 @@ export async function parsePlan(documentText: string): Promise<FinancialPlan> {
 }
 
 export async function generateInsights(plan: FinancialPlan): Promise<Insight[]> {
-  if (PROVIDER === 'ollama') {
+  const provider = getProvider();
+  if (provider === 'local') {
+    return [];
+  }
+  if (provider === 'ollama') {
     const { generateOllamaInsights } = await import('./ollama.js');
     return generateOllamaInsights(plan);
   }
-  if (PROVIDER === 'mlx') {
+  if (provider === 'mlx') {
     const { generateMlxInsights } = await import('./mlx.js');
     return generateMlxInsights(plan);
   }

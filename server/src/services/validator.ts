@@ -15,9 +15,9 @@ export function enrichGaps(plan: FinancialPlan): void {
     }
   }
 
-  // Asset values — critical for net worth and allocation
+  // Asset values — critical for net worth and allocation (skip insurance — cover amount is not an asset value)
   for (const asset of plan.personalAssets) {
-    if (asset.value === null) {
+    if (asset.value === null && asset.type !== 'insurance') {
       autoGaps.push({ entityId: null, field: 'value', description: `Value missing for "${asset.name}"`, nodeId: asset.id });
     }
   }

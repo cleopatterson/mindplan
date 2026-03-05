@@ -18,14 +18,12 @@ export function getPickerOptions(nodeType: NodeData['nodeType']): PickerOption[]
       ];
     case 'familyGroup':
       return [
-        { label: 'Son', childType: 'familyMember', overrides: { relationship: 'son' } },
-        { label: 'Daughter', childType: 'familyMember', overrides: { relationship: 'daughter' } },
+        { label: 'Child', childType: 'familyMember', overrides: { relationship: 'child' } },
         { label: 'Other', childType: 'familyMember', overrides: { relationship: 'other' } },
       ];
     case 'familyMember':
       return [
-        { label: 'Grandson', childType: 'grandchild', overrides: { relationship: 'grandson' } },
-        { label: 'Granddaughter', childType: 'grandchild', overrides: { relationship: 'granddaughter' } },
+        { label: 'Grandchild', childType: 'grandchild', overrides: { relationship: 'grandchild' } },
       ];
     case 'goalsGroup':
       return [

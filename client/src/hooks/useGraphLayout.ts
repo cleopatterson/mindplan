@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import dagre from '@dagrejs/dagre';
-import type { Node, Edge } from '@xyflow/react';
+import { Position, type Node, type Edge } from '@xyflow/react';
 import type { NodeData } from '../utils/transformToGraph';
 
 const NODE_WIDTH: Record<NodeData['nodeType'], number> = {
@@ -15,6 +15,7 @@ const NODE_WIDTH: Record<NodeData['nodeType'], number> = {
   familyGroup: 180,
   familyMember: 180,
   goalsGroup: 180,
+  goalCategoryGroup: 200,
   goal: 200,
   relationshipsGroup: 180,
   relationship: 200,
@@ -33,6 +34,7 @@ const NODE_HEIGHT: Record<NodeData['nodeType'], number> = {
   familyGroup: 56,
   familyMember: 50,
   goalsGroup: 56,
+  goalCategoryGroup: 56,
   goal: 50,
   relationshipsGroup: 56,
   relationship: 50,
@@ -45,7 +47,6 @@ const NODE_HEIGHT: Record<NodeData['nodeType'], number> = {
  */
 export function useGraphLayout(nodes: Node<NodeData>[], edges: Edge[]) {
   return useMemo(() => {
-    const t0 = performance.now();
     const familyNode = nodes.find((n) => n.data.nodeType === 'family');
     if (!familyNode) return { nodes, edges };
 
@@ -153,8 +154,27 @@ export function useGraphLayout(nodes: Node<NodeData>[], edges: Edge[]) {
       return node;
     });
 
-    console.log(`⏱ [layout] Dagre layout: ${(performance.now() - t0).toFixed(1)}ms (${nodes.length} nodes, left: ${leftNodes.length}, right: ${rightNodes.length})`);
-    return { nodes: positioned, edges };
+    // Stamp sourcePosition/targetPosition so bezier edges curve from the correct side
+    const leftEdgeIds = new Set(leftEdges.map((e) => e.id));
+    const rightEdgeIds = new Set(rightEdges.map((e) => e.id));
+    const positionedEdges = edges.map((edge) => {
+      if (leftEdgeIds.has(edge.id)) {
+        return { ...edge, sourcePosition: Position.Left, targetPosition: Position.Right };
+      }
+      if (rightEdgeIds.has(edge.id)) {
+        return { ...edge, sourcePosition: Position.Right, targetPosition: Position.Left };
+      }
+      // Cross-links / user links: infer from node sides
+      const srcSide = positioned.find((n) => n.id === edge.source)?.data.side;
+      const tgtSide = positioned.find((n) => n.id === edge.target)?.data.side;
+      return {
+        ...edge,
+        sourcePosition: srcSide === 'left' ? Position.Left : Position.Right,
+        targetPosition: tgtSide === 'left' ? Position.Right : Position.Left,
+      };
+    });
+
+    return { nodes: positioned, edges: positionedEdges };
   }, [nodes, edges]);
 }
 
@@ -181,7 +201,7 @@ function runDagre(
 ): Map<string, { x: number; y: number }> {
   const g = new dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir, nodesep: 50, ranksep: 100 });
+  g.setGraph({ rankdir, nodesep: 60, ranksep: 130 });
 
   for (const node of nodes) {
     const type = node.data.nodeType;

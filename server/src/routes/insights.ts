@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { generateInsights } from '../services/claude.js';
+import { generateInsights } from '../services/llm.js';
 import { FinancialPlanSchema } from '../schema/financialPlan.js';
 import type { InsightsResponse } from 'shared/types';
 

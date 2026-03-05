@@ -79,7 +79,7 @@ export function scrubSensitiveData(text: string): ScrubResult {
   const redactedCount = (scrubbed.match(/\[REDACTED\]|\[DOB redacted\]/g) || []).length;
   const surnameCount = (scrubbed.match(/__SN\d+__/g) || []).length;
   console.log(
-    `⏱ [scrub] Detected surnames: [${surnames.join(', ')}] | ` +
+    `⏱ [scrub] ${surnames.length} surname(s) detected | ` +
     `${surnameCount} surname replacements, ${redactedCount} other redactions`,
   );
 

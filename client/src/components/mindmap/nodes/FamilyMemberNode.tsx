@@ -4,7 +4,7 @@ import { User, Baby } from 'lucide-react';
 import type { NodeData } from '../../../utils/transformToGraph';
 
 export const FamilyMemberNode = memo(function FamilyMemberNode({ data }: { data: NodeData }) {
-  const isGrandchild = data.familyRelationship === 'grandson' || data.familyRelationship === 'granddaughter';
+  const isGrandchild = data.familyRelationship === 'grandchild';
   const Icon = isGrandchild ? Baby : User;
 
   return (
@@ -25,7 +25,7 @@ export const FamilyMemberNode = memo(function FamilyMemberNode({ data }: { data:
       <div className={`flex items-center justify-center w-7 h-7 rounded-md shrink-0 ${isGrandchild ? 'bg-amber-400/5' : 'bg-amber-400/10'}`}>
         <Icon className={`w-4 h-4 ${isGrandchild ? 'text-amber-300/30' : 'text-amber-300/50'}`} />
       </div>
-      <Handle type="source" position={Position.Right} className="!bg-amber-300/50" />
+      {!isGrandchild && <Handle type="source" position={Position.Right} className="!bg-amber-300/50" />}
     </div>
   );
 });
