@@ -7,10 +7,11 @@ import { Dashboard } from './components/Dashboard';
 import { ExportModal, type ExportOptions } from './components/export/ExportModal';
 import type { MindMapHandle } from './components/mindmap/MindMap';
 import { LogoFull } from './components/Logo';
-import { RotateCcw, Download, Loader2, Sun, Moon, LogOut } from 'lucide-react';
+import { Download, Upload, Loader2, Sun, Moon, LogOut, MessageSquarePlus } from 'lucide-react';
 import { useRef, useState, useCallback } from 'react';
 import { usePdfExport } from './hooks/usePdfExport';
 import { ThemeContext, type Theme } from './contexts/ThemeContext';
+import { FeedbackPanel } from './components/feedback/FeedbackPanel';
 
 export default function App() {
   const { user, loading: authLoading, signIn, signOut, resetPassword, getIdToken } = useAuth();
@@ -32,6 +33,9 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(() =>
     (localStorage.getItem('mindplan-theme') as Theme) ?? 'dark',
   );
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
   const toggleTheme = useCallback(() => {
     setTheme((prev) => {
       const next = prev === 'dark' ? 'light' : 'dark';
@@ -92,6 +96,7 @@ export default function App() {
         <header className={`shrink-0 border-b px-5 py-3 flex items-center justify-between transition-colors duration-300
           ${isDark ? 'border-white/10' : 'border-gray-200 bg-white'}`}
         >
+          {/* Left — logo */}
           <div className="flex items-center gap-3 cursor-pointer group" onClick={reset} title="Back to home">
             <LogoFull size="sm" dark={isDark} />
             <span className={`text-xs hidden sm:block transition-colors
@@ -99,19 +104,18 @@ export default function App() {
             >Legacy Wealth Blueprint</span>
           </div>
 
+          {/* Right — actions */}
           <div className="flex items-center gap-3">
-            {appState === 'dashboard' && (
-              <button
-                onClick={toggleTheme}
-                className={`cursor-pointer p-2 rounded-lg transition-colors
-                  ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/5' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-                title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-              >
-                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
-            )}
             <button
-              onClick={handleSignOut}
+              onClick={() => setShowFeedback(true)}
+              className={`cursor-pointer p-2 rounded-lg transition-colors
+                ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/5' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+              title="Send feedback"
+            >
+              <MessageSquarePlus className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
               className={`cursor-pointer p-2 rounded-lg transition-colors
                 ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/5' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
               title="Sign out"
@@ -119,21 +123,53 @@ export default function App() {
               <LogOut className="w-4 h-4" />
             </button>
             {appState === 'dashboard' && (
-              <button
-                onClick={() => setShowExportModal(true)}
-                disabled={exporting}
-                className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white
-                  bg-gradient-to-r from-blue-600 to-purple-600
-                  hover:from-blue-500 hover:to-purple-500
-                  disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-purple-500/20"
-              >
-                {exporting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Download className="w-4 h-4" />
-                )}
-                {exporting ? 'Exporting...' : 'Export PDF'}
-              </button>
+              <>
+                <button
+                  onClick={toggleTheme}
+                  className={`cursor-pointer p-2 rounded-lg transition-colors
+                    ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/5' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                  title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                  {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </button>
+                <input
+                  ref={uploadInputRef}
+                  type="file"
+                  accept=".docx,.doc,.pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      reset();
+                      setTimeout(() => uploadFile(file), 50);
+                    }
+                    e.target.value = '';
+                  }}
+                />
+                <button
+                  onClick={() => uploadInputRef.current?.click()}
+                  className={`cursor-pointer p-2 rounded-lg transition-colors
+                    ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/5' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                  title="Upload new document"
+                >
+                  <Upload className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setShowExportModal(true)}
+                  disabled={exporting}
+                  className="cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white
+                    bg-gradient-to-r from-blue-600 to-purple-600
+                    hover:from-blue-500 hover:to-purple-500
+                    disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-purple-500/20"
+                >
+                  {exporting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  {exporting ? 'Exporting...' : 'Export PDF'}
+                </button>
+              </>
             )}
           </div>
         </header>
@@ -179,6 +215,45 @@ export default function App() {
             onExport={handleExport}
             onClose={() => setShowExportModal(false)}
           />
+        )}
+
+        {/* Feedback panel */}
+        {showFeedback && user && (
+          <FeedbackPanel user={user} onClose={() => setShowFeedback(false)} />
+        )}
+
+        {/* Logout confirmation */}
+        {showLogoutConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className={`rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 ${isDark ? 'bg-[#1a1a2e] border border-white/10' : 'bg-white border border-gray-200'}`}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-orange-500/10">
+                  <LogOut className="w-5 h-5 text-orange-400" />
+                </div>
+                <h3 className={`font-semibold ${isDark ? 'text-white/90' : 'text-gray-900'}`}>Sign out?</h3>
+              </div>
+              <p className={`text-sm mb-5 ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
+                Are you sure you want to sign out? Any unsaved changes will be lost.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className={`cursor-pointer px-4 py-2 text-sm rounded-lg transition-colors ${isDark ? 'text-white/50 hover:bg-white/5' : 'text-gray-500 hover:bg-gray-100'}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLogoutConfirm(false);
+                    handleSignOut();
+                  }}
+                  className="cursor-pointer px-4 py-2 text-sm rounded-lg bg-orange-500/90 text-white hover:bg-orange-500 transition-colors"
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </ThemeContext.Provider>

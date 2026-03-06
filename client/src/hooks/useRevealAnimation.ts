@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
 import type { Node, Edge } from '@xyflow/react';
 import type { NodeData } from '../utils/transformToGraph';
 
@@ -17,12 +17,16 @@ const EDGE_BUFFER_MS = 120;   // extra delay for edges after both nodes visible
  * Only fires once per mount (new upload) — subsequent
  * calls (expand/collapse, highlights, edits) return nodes/edges unchanged.
  *
- * After all animations complete, the CSS classes are removed so
- * the highlight system's inline opacity works without conflict.
+ * After all animations complete, a React state update triggers
+ * re-render to remove the CSS classes cleanly via reconciliation
+ * (never via direct DOM manipulation, which desynchronizes React).
  */
 export function useRevealAnimation() {
   const revealedDataRef = useRef(false);
   const cleanupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // State-based cleanup: when flipped, applyReveal's identity changes,
+  // forcing useMemo consumers to recompute and get clean (classless) edges.
+  const [revealVersion, setRevealVersion] = useState(0);
 
   // Clean up timer on unmount — also reset state so Strict Mode re-mount works
   useEffect(() => {
@@ -38,14 +42,12 @@ export function useRevealAnimation() {
       nodes: Node<NodeData>[],
       edges: Edge[],
     ): { nodes: Node<NodeData>[]; edges: Edge[] } => {
-      // Already revealed once this mount — skip (edits, expand/collapse, etc.)
+      // Already revealed once this mount — return clean edges (no reveal classes).
+      // React reconciliation will remove classes from the DOM naturally.
       if (revealedDataRef.current) {
-        // Flush pending reveal cleanup so DOM classes are gone before React reconciles
         if (cleanupTimerRef.current) {
           clearTimeout(cleanupTimerRef.current);
           cleanupTimerRef.current = null;
-          document.querySelectorAll('.reveal-node').forEach((el) => el.classList.remove('reveal-node'));
-          document.querySelectorAll('.reveal-edge').forEach((el) => el.classList.remove('reveal-edge'));
         }
         return { nodes, edges };
       }
@@ -114,7 +116,8 @@ export function useRevealAnimation() {
         };
       });
 
-      // Schedule cleanup: remove animation classes after all animations complete
+      // Schedule cleanup: trigger React state update to remove animation classes
+      // via normal reconciliation (applyReveal returns clean edges once revealedDataRef is true).
       const totalDuration = Math.max(
         maxNodeDelay + NODE_ANIM_MS,
         maxEdgeDelay + EDGE_ANIM_MS,
@@ -122,17 +125,15 @@ export function useRevealAnimation() {
 
       if (cleanupTimerRef.current) clearTimeout(cleanupTimerRef.current);
       cleanupTimerRef.current = setTimeout(() => {
-        document.querySelectorAll('.reveal-node').forEach((el) => {
-          el.classList.remove('reveal-node');
-        });
-        document.querySelectorAll('.reveal-edge').forEach((el) => {
-          el.classList.remove('reveal-edge');
-        });
+        cleanupTimerRef.current = null;
+        // Bump version to change applyReveal identity → useMemo recomputes → clean edges
+        setRevealVersion((v) => v + 1);
       }, totalDuration);
 
       return { nodes: revealedNodes, edges: revealedEdges };
     },
-    [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [revealVersion],
   );
 
   const resetReveal = useCallback(() => {

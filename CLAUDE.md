@@ -130,6 +130,14 @@ Key parser patterns:
 - Fuzzy entity name matching (suffix-based fallback) for entity holdings → entity structure joins
 - Test: `npx tsx test/test-local-batch.ts` — 69/73 pass rate against Claude gold standard
 
+### Feedback System
+- Firestore-based (collection: `feedback`) — no server endpoint needed
+- `client/src/components/feedback/FeedbackPanel.tsx` — submit + history panel
+- `client/src/firebase.ts` — exports `db` (Firestore instance)
+- Admin UID `7Ldd1nNF7vcDpjxpjaOe5xx1Nrh2` (Tony) sees all feedback with filter/respond/mark-addressed
+- Non-admin users see only their own feedback history
+- Firestore rules: authenticated create, user-scoped read, admin-only update
+
 ### LLM Providers
 - `server/src/services/llm.ts` — provider abstraction
 - `server/src/services/mlx.ts` — MLX local model support
