@@ -1,0 +1,3700 @@
+
+######################################################################
+# TEST 73
+######################################################################
+--- Personal Details ---
+Personal details
+
+19 May 1952,22 March 1960
+
+Description
+
+Client
+
+Partner
+
+Full name
+
+Robert Clarence Bodenstaff
+
+Monica Ruth Bodenstaff
+
+Date of birth
+
+19 May 1952
+
+22 March 1960
+
+Age
+
+73
+
+65
+
+Occupation
+
+Retired
+
+Retired
+
+
+
+Robert,19 May 1952
+
+Robert,19 May 1952
+
+--- Income ---
+Your income
+
+No information recorded.
+
+--- Lifestyle Assets ---
+Lifestyle assets
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+4 Mascot Court, Hillarys
+
+Robert & Monica
+
+Residential home
+
+$1,800,000
+
+Car - BMW
+
+Robert
+
+Car
+
+$5,000
+
+Caravan
+
+Robert
+
+Caravan or camper trailer
+
+$60,000
+
+Home and Contents
+
+Robert & Monica
+
+Home contents
+
+$300,000
+
+Total
+
+$2,165,000
+
+
+
+--- Bank Accounts ---
+Bank accounts
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+CBA Netbank Saver
+
+Monica
+
+Savings
+
+$7,820
+
+CBA Smart Access Account
+
+Robert & Monica
+
+Savings
+
+$516
+
+CBA Smart Access Account - Main
+
+Robert & Monica
+
+Everyday cash account
+
+$8,667
+
+NAB Business Account
+
+Robert & Monica
+
+Everyday cash account
+
+$27,567
+
+Total
+
+$44,571
+
+
+
+--- Financial Investments ---
+Financial investments
+
+No information recorded. 
+
+
+
+
+
+--- Superannuation: (empty) ---
+--- Pension ---
+Pension
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Monica's SMSF Pension
+
+Monica
+
+Account based pension
+
+Centrelink income test: Deemed
+
+$638,218
+
+Rob's SMSF Pension
+
+Robert
+
+Account based pension
+
+Centrelink income test: Deemed
+
+$438,035
+
+Total
+
+$1,076,252
+
+
+
+--- Shares ---
+Shares
+
+No information recorded.
+
+--- Investment Property ---
+Investment property
+
+No information recorded.
+
+--- Loans ---
+Loans
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+NAB
+
+Robert & Monica
+
+Other (secured)
+
+Bank: Bank Australia
+
+Loan facility: $300,000
+
+Repay loan: 2055
+
+Payment: Minimum per month (Principal & Interest)
+
+Interest rate: 7.00% (Variable)
+
+Tax deductible percentage: 0.0%
+
+Security: 4 Mascot Court, Hillarys
+
+-$75,000
+
+Total
+
+-$75,000
+
+
+
+--- Entity Structure ---
+Entities
+
+Description
+
+Type
+
+Directors/trustees
+
+Shareholders/beneficiaries
+
+Arbor Centre Superannuation Fund
+
+SMSF
+
+Arbor Super Pty Ltd
+
+MonicaRobert
+
+Bodenstaff Family Trust
+
+Trust (Discretionary)
+
+
+
+MonicaRobert
+
+
+
+--- Entity Holdings ---
+Entities
+
+Description
+
+Type
+
+Amount
+
+Arbor Centre Superannuation Fund
+
+Macquarie CMA (xxx6119)
+
+Everyday cash account
+
+$81,881
+
+Ausiex Portfolio - Arbor Centre SF
+
+Investment portfolio
+
+$391,886
+
+Euroz Hartleys Portfolio - Arbor Centre SF
+
+Investment portfolio
+
+$487,231
+
+CBA Business Cheque (xxx3644)
+
+Savings
+
+$5,381
+
+Macquarie Accelerator (xxx3449)
+
+Savings
+
+$39,874
+
+Bishop Resources
+
+Unlisted
+
+$70,000
+
+Total
+
+
+
+$1,076,252
+
+Bodenstaff Family Trust
+
+Property - 731 Welshpool Road
+
+Commercial property
+
+$2,000,000
+
+Default cash a/c Bodenstaff Family Trust
+
+Everyday cash account
+
+$40,722
+
+Total
+
+
+
+$2,040,722
+
+
+
+--- Insurance ---
+Life Insurance, TPD, Trauma and Income Protection
+
+No information recorded.
+
+
+######################################################################
+# TEST 74
+######################################################################
+--- Personal Details ---
+Personal details
+
+,
+
+Description
+
+Client
+
+Partner
+
+Full name
+
+Gregory Bevan
+
+Christine Bevan
+
+Date of birth
+
+
+
+
+
+Age
+
+
+
+
+
+
+
+Gregory,
+
+Gregory,
+
+--- Income ---
+Your income
+
+No information recorded.
+
+--- Lifestyle Assets: (empty) ---
+--- Bank Accounts ---
+Bank accounts
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Everyday cash a/c
+
+Gregory & Christine
+
+Everyday cash account
+
+$1
+
+Total
+
+$1
+
+
+
+--- Financial Investments ---
+Financial investments
+
+No information recorded.
+
+--- Superannuation: (empty) ---
+--- Pension: (empty) ---
+--- Shares: (empty) ---
+--- Investment Property: (empty) ---
+--- Loans: (empty) ---
+--- Entity Structure ---
+Entities
+
+Description
+
+Type
+
+Directors/trustees
+
+Shareholders/beneficiaries
+
+Bevans Lifestock Transport SMSF
+
+SMSF
+
+
+
+ChristineGregory
+
+
+
+--- Entity Holdings ---
+Entities
+
+Description
+
+Type
+
+Amount
+
+Bevans Lifestock Transport SMSF
+
+Macquarie CMA #8893
+
+Everyday cash account
+
+$12,858
+
+NAB Cash Management #7333
+
+Everyday cash account
+
+$24,166
+
+Prime Portfolio
+
+Investment portfolio
+
+$387,074
+
+Macquarie Accelerator #0326
+
+Savings
+
+$55,432
+
+Prime Australian Equities Growth SMA (SMAPRM02S)
+
+Savings
+
+$2,824
+
+Prime Defensive Income SMA (SMAPRM03S)
+
+Savings
+
+$1,604
+
+Prime International Growth SMA (SMAPRM04S)
+
+Savings
+
+$12,381
+
+Total
+
+
+
+$496,339
+
+
+
+--- Insurance: (empty) ---
+
+######################################################################
+# TEST 75
+######################################################################
+--- Personal Details ---
+Personal details
+
+21 November 1964,30 October 1967
+
+Description
+
+Client
+
+Partner
+
+Full name
+
+Tyson John Buzza
+
+Odette Buzza
+
+Date of birth
+
+21 November 1964
+
+30 October 1967
+
+Age
+
+61
+
+58
+
+
+
+Tyson,21 November 1964
+
+Tyson,21 November 1964
+
+--- Income ---
+Your income
+
+No information recorded.
+
+--- Lifestyle Assets ---
+Lifestyle assets
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Residential home - 69A Glenelg Ave
+
+Tyson & Odette
+
+Residential home
+
+$1,400,000
+
+Total
+
+$1,400,000
+
+
+
+--- Bank Accounts ---
+Bank accounts
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Everyday cash a/c
+
+Tyson & Odette
+
+Everyday cash account
+
+$1
+
+Total
+
+$1
+
+
+
+--- Financial Investments ---
+Financial investments
+
+No information recorded. 
+
+
+
+
+
+--- Superannuation ---
+Superannuation
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Odette Buzza - HESTA Super
+
+Odette
+
+Accumulation (taxed)
+
+$261,992
+
+Tyson Buzza - AMP SignatureSuper
+
+Tyson
+
+Accumulation (taxed)
+
+$279,544
+
+Total
+
+$541,535
+
+
+
+--- Pension: (empty) ---
+--- Shares ---
+Shares
+
+No information recorded.
+
+--- Investment Property ---
+Investment property
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+14 Ashton Street Margaret River
+
+Odette
+
+Holiday home
+
+Cost base: $0
+
+Tax deductible depreciation: $0
+
+CGT: 100.0%
+
+$400,000
+
+Total
+
+$400,000
+
+
+
+--- Loans: (empty) ---
+--- Entity Structure ---
+Entities
+
+Description
+
+Type
+
+Directors/trustees
+
+Shareholders/beneficiaries
+
+Estate of Anna Elliott
+
+Trust (Discretionary)
+
+Mercedes ElliottRodney Shea
+
+Testamentary Trust - Odette Buzza 
+
+TJB Family Trust
+
+Trust (Discretionary)
+
+Tyson
+
+OdetteTyson
+
+Testamentary Trust - Odette Buzza 
+
+Trust (Discretionary)
+
+Odette
+
+Odette
+
+
+
+--- Entity Holdings ---
+Entities
+
+Description
+
+Type
+
+Amount
+
+Estate of Anna Elliott
+
+Cash
+
+Everyday cash account
+
+$2,020,000
+
+Secured Loans
+
+Non-related loan
+
+$1,172,000
+
+Syndicate Loans
+
+Non-related loan
+
+$1,408,000
+
+Unsecured Loans
+
+Non-related loan
+
+$1,274,000
+
+Bunbury Land
+
+Unlisted
+
+$600,000
+
+Bunbury Service Centre
+
+Unlisted
+
+$400,000
+
+Charles Street Land
+
+Unlisted
+
+$400,000
+
+Midvale Central Shopping Centre
+
+Unlisted
+
+$1,865,000
+
+Tapping Commercial
+
+Unlisted
+
+$510,000
+
+Vasse Township
+
+Unlisted
+
+$409,000
+
+Vasse Truck Stop and Land
+
+Unlisted
+
+$2,400,000
+
+Woodvale Boulevard Shopping Centre
+
+Unlisted
+
+$1,550,000
+
+Total
+
+
+
+$14,008,000
+
+TJB Family Trust
+
+Default cash a/c TJB Family Trust
+
+Everyday cash account
+
+$0
+
+Total
+
+
+
+$0
+
+Testamentary Trust - Odette Buzza 
+
+Investment in Alkimos Shopping Centre
+
+Commercial property
+
+$1,037,000
+
+Default cash a/c Testamentary Trust - Odette Buzza 
+
+Everyday cash account
+
+$419,000
+
+Canaccord Portfolio
+
+Investment portfolio
+
+$182,046
+
+76 Channel View, Dawesville
+
+Residential property
+
+$286,666
+
+Unit 13/67 Smiths Beach Road Yallingup
+
+Residential property
+
+$166,666
+
+Total
+
+
+
+$2,091,378
+
+
+
+--- Insurance ---
+Life Insurance, TPD, Trauma and Income Protection
+
+The following table shows a summary of the benefits covered.
+
+Policy
+
+Life insured
+
+Policy owner
+
+Features
+
+Cover amount
+
+HESTA Super Insurance
+
+Life cover
+
+Odette
+
+Odette Buzza - HESTA Super
+
+Premium type: Stepped
+
+
+
+$43,200
+
+
+
+
+######################################################################
+# TEST 76
+######################################################################
+--- Personal Details ---
+Personal details
+
+19 July 1958,23 November 1958
+
+Description
+
+Client
+
+Partner
+
+Full name
+
+Andrew Cairns 
+
+Jacqueline Cairns
+
+Date of birth
+
+19 July 1958
+
+23 November 1958
+
+Age
+
+67
+
+67
+
+Occupation
+
+Engineer
+
+Counsellor
+
+
+
+Andrew,19 July 1958
+
+Andrew,19 July 1958
+
+--- Income ---
+Your income
+
+Description
+
+Owner
+
+Amount
+
+Consultant
+
+Andrew
+
+$126,748
+
+Counsellor
+
+Jacqueline
+
+$69,908
+
+Rental income - Investment Property - 23 Darzee Street, Brassall QLD
+
+Andrew & Jacqueline
+
+$11,215
+
+Total
+
+$207,871
+
+
+
+--- Lifestyle Assets ---
+Lifestyle assets
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Home contents
+
+Andrew & Jacqueline
+
+Home contents
+
+Insured value: $121,000
+
+$150,000
+
+Hyundai 
+
+Andrew
+
+Car
+
+Insured value: $8,000
+
+$8,000
+
+Mazda CX5
+
+Andrew
+
+Car
+
+Insured value: $25,000
+
+$25,000
+
+Residential home - 28 Otway Street
+
+Andrew & Jacqueline
+
+Residential home
+
+Insured value: $687,000
+
+$1,730,000
+
+Total
+
+$1,913,000
+
+
+
+--- Bank Accounts ---
+Bank accounts
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Cash at Bank
+
+Andrew
+
+Loan offset a/c
+
+Rate: 1.00%
+
+Interest reinvested: No
+
+$6,000
+
+Surrender Value of WOL Policies
+
+Andrew & Jacqueline
+
+Savings
+
+Rate: 0.00%
+
+Interest reinvested: No
+
+$97,904
+
+Total
+
+$103,904
+
+ 
+
+
+
+
+
+--- Financial Investments: (empty) ---
+--- Superannuation ---
+Superannuation
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+AustralianSuper - Jacqui
+
+Jacqueline
+
+Accumulation (taxed)
+
+$217,992
+
+MLC Super - Andrew
+
+Andrew
+
+Accumulation (taxed)
+
+$1,376,501
+
+Total
+
+$1,594,493
+
+
+
+--- Pension: (empty) ---
+--- Shares: (empty) ---
+--- Investment Property ---
+Investment property
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Investment Property - 23 Darzee Street, Brassall QLD
+
+Andrew & Jacqueline
+
+Residential property
+
+Year purchased: 2009
+
+Cost base: $433,405
+
+Tax deductible depreciation: $0
+
+CGT: 100.0%
+
+$700,000
+
+Total
+
+$700,000
+
+
+
+--- Loans ---
+Loans
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Home Loan
+
+Andrew & Jacqueline
+
+Home loan
+
+Bank: Westpac Banking Corporation
+
+Loan facility: $100,000
+
+Repay loan: 2051
+
+Payment: Minimum per month (Principal & Interest)
+
+Interest rate: 7.19% (Variable)
+
+Tax deductible percentage: 0.0%
+
+Security: Residential home - 28 Otway Street
+
+-$24,000
+
+Investment Loan
+
+Andrew
+
+Investment loan
+
+Bank: Westpac Banking Corporation
+
+Loan facility: $62,498
+
+Repay loan: 2051
+
+Payment: Minimum per month (Principal & Interest)
+
+Interest rate: 6.53% (Variable)
+
+Tax deductible percentage: 100.0%
+
+Security: Investment Property - 23 Darzee Street, Brassall QLD
+
+-$350,000
+
+Total
+
+-$374,000
+
+
+
+Health insurance
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+44775013
+
+Andrew
+
+Health insurance
+
+$6,372
+
+Total
+
+$6,372
+
+
+
+--- Entity Structure: (empty) ---
+--- Entity Holdings: (empty) ---
+--- Insurance ---
+Life Insurance, TPD, Trauma and Income Protection
+
+The following table shows a summary of the benefits covered.
+
+Policy
+
+Life insured
+
+Policy owner
+
+Features
+
+Cover amount
+
+AMP (Whole of Life) - Andrew
+
+Life cover
+
+Andrew
+
+Andrew
+
+Premium type: Stepped
+
+
+
+$155,569
+
+AustralianSuper (Death and TPD) - Jacqui
+
+Income Protection (per month)
+
+Jacqueline
+
+AustralianSuper - Jacqui
+
+Premium type: Stepped
+
+Type: Agreed value
+
+Waiting period: 60 days / 2 months
+
+Benefit period: 2 Years
+
+
+
+$3,000
+
+Life cover
+
+Jacqueline
+
+AustralianSuper - Jacqui
+
+Premium type: Stepped
+
+
+
+$267,000
+
+Medibank Life Insurance - Jacqui
+
+Life cover
+
+Jacqueline
+
+Jacqui
+
+Premium type: Stepped
+
+
+
+$110,250
+
+
+
+
+######################################################################
+# TEST 77
+######################################################################
+--- Personal Details ---
+Personal details
+
+21 June 1987,28 August 1988
+
+Description
+
+Client
+
+Partner
+
+Full name
+
+Blake Michael Callinan
+
+Carly Callinan
+
+Date of birth
+
+21 June 1987
+
+28 August 1988
+
+Age
+
+38
+
+37
+
+Occupation
+
+Technical Services Manager
+
+Home Duties
+
+
+
+Blake,21 June 1987
+
+Blake,21 June 1987 
+
+
+
+
+
+--- Income ---
+Your income
+
+Description
+
+Owner
+
+Amount
+
+LTIP at 30%
+
+Blake
+
+$0
+
+STIP at 15%
+
+Blake
+
+$60,000
+
+LTIP 2025/26
+
+Blake
+
+$200,000
+
+Income Salary
+
+Blake
+
+$285,600
+
+Family Support
+
+Carly
+
+$74,000
+
+Total
+
+$619,600
+
+
+
+--- Lifestyle Assets ---
+Lifestyle assets
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Car 1
+
+Blake & Carly
+
+Car
+
+$80,000
+
+Car 2
+
+Blake & Carly
+
+Car
+
+$15,000
+
+Residential home
+
+Blake & Carly
+
+Residential home
+
+$2,450,000
+
+Total
+
+$2,545,000
+
+
+
+--- Bank Accounts ---
+Bank accounts
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Default cash a/c Blake
+
+Blake
+
+Everyday cash account
+
+$0
+
+Offset Account
+
+Blake
+
+Loan offset a/c
+
+$1,188,000
+
+Total
+
+$1,188,000
+
+ 
+
+
+
+
+
+--- Financial Investments: (empty) ---
+--- Superannuation ---
+Superannuation
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Blake Callinan - ART Super
+
+Blake
+
+Accumulation (taxed)
+
+$331,080
+
+Carly Callinan - HESTA Super
+
+Carly
+
+Accumulation (taxed)
+
+$178,785
+
+Total
+
+$509,866
+
+
+
+--- Pension: (empty) ---
+--- Shares: (empty) ---
+--- Investment Property: (empty) ---
+--- Loans ---
+Loans
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Home Loan
+
+Blake & Carly
+
+Home loan
+
+Bank: Other
+
+Loan facility: $0
+
+Repay loan: 2054
+
+Payment: Minimum per month (Principal & Interest)
+
+Interest rate: 5.94% (Variable)
+
+Tax deductible percentage: 0.0%
+
+Security: Residential home
+
+-$1,780,000
+
+Total
+
+-$1,780,000
+
+
+
+--- Entity Structure ---
+Entities
+
+Description
+
+Type
+
+Directors/trustees
+
+Shareholders/beneficiaries
+
+Callinan Family Trust
+
+Trust (Discretionary)
+
+BlakeCarly
+
+BlakeCarly
+
+
+
+--- Entity Holdings ---
+Entities
+
+Description
+
+Type
+
+Amount
+
+Callinan Family Trust
+
+Default cash a/c Callinan Family Trust
+
+Everyday cash account
+
+$0
+
+Total
+
+
+
+$0
+
+
+
+--- Insurance ---
+Life Insurance, TPD, Trauma and Income Protection
+
+The following table shows a summary of the benefits covered.
+
+Policy
+
+Life insured
+
+Policy owner
+
+Features
+
+Cover amount
+
+HESTA Super Insurance
+
+Income Protection (per month)
+
+Carly
+
+Carly Callinan - HESTA Super
+
+Premium type: Stepped
+
+Type: Agreed value
+
+Waiting period: 90 days / 3 months
+
+Benefit period: 5 Years
+
+
+
+$1,000
+
+Life cover
+
+Carly
+
+Carly Callinan - HESTA Super
+
+Premium type: Stepped
+
+
+
+$185,600
+
+
+
+
+######################################################################
+# TEST 78
+######################################################################
+--- Personal Details ---
+Personal details
+
+26 November 1965,17 February 1974
+
+Description
+
+Client
+
+Partner
+
+Full name
+
+John Baird Campbell
+
+Nicole Dalby
+
+Date of birth
+
+26 November 1965
+
+17 February 1974
+
+Age
+
+60
+
+52
+
+Occupation
+
+
+
+Florist
+
+
+
+John,26 November 1965
+
+John,26 November 1965 
+
+
+
+
+
+--- Income ---
+Your income
+
+Description
+
+Owner
+
+Amount
+
+Income from UK SIPP
+
+John
+
+$56,400
+
+Nicole - Salary
+
+Nicole
+
+$26,000
+
+Total
+
+$82,400
+
+
+
+--- Lifestyle Assets ---
+Lifestyle assets
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Car
+
+John & Nicole
+
+Car
+
+$25,000
+
+Contents
+
+John & Nicole
+
+Home contents
+
+$250,000
+
+Total
+
+$275,000
+
+
+
+--- Bank Accounts ---
+Bank accounts
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Bank account / Cash
+
+John & Nicole
+
+Everyday cash account
+
+$20,000
+
+Proceeds from UK property sale
+
+John
+
+Everyday cash account
+
+$1,200,000
+
+Total
+
+$1,220,000
+
+
+
+--- Financial Investments ---
+Financial investments
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+UK SIPP
+
+John
+
+Investment portfolio
+
+$1,100,000
+
+Total
+
+$1,100,000
+
+
+
+--- Superannuation ---
+Superannuation
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+IOOF (Expand Extra Super)
+
+Nicole
+
+Accumulation (taxed)
+
+$24,867
+
+Total
+
+$24,867
+
+
+
+--- Pension: (empty) ---
+--- Shares: (empty) ---
+--- Investment Property: (empty) ---
+--- Loans: (empty) ---
+--- Entity Structure: (empty) ---
+--- Entity Holdings: (empty) ---
+--- Insurance: (empty) ---
+
+######################################################################
+# TEST 79
+######################################################################
+--- Personal Details ---
+Personal details
+
+28 May 1952,14 December 1953
+
+Description
+
+Client
+
+Partner
+
+Full name
+
+Brian Mark Chellingworth
+
+Patricia Merle Chellingworth
+
+Date of birth
+
+28 May 1952
+
+14 December 1953
+
+Age
+
+73
+
+72
+
+Occupation
+
+Retired
+
+Retired
+
+
+
+Brian,28 May 1952
+
+Brian,28 May 1952
+
+--- Income ---
+Your income
+
+No information recorded.
+
+--- Lifestyle Assets ---
+Lifestyle assets
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+4 Osterley Retreat, Canning Vale
+
+Brian & Patricia
+
+Residential home
+
+$1,500,000
+
+Cars
+
+Brian & Patricia
+
+Car
+
+$90,000
+
+Total
+
+$1,590,000
+
+
+
+--- Bank Accounts ---
+Bank accounts
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Everyday cash a/c
+
+Brian & Patricia
+
+Everyday cash account
+
+$10,000
+
+Total
+
+$10,000
+
+
+
+--- Financial Investments ---
+Financial investments
+
+No information recorded.
+
+--- Superannuation: (empty) ---
+--- Pension ---
+Pension
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Brian's SMSF Pension
+
+Brian
+
+Account based pension
+
+Centrelink income test: Deemed
+
+$366,123
+
+Patricia's SMSF Pension
+
+Patricia
+
+Account based pension
+
+Centrelink income test: Deemed
+
+$623,398
+
+Total
+
+$989,521
+
+
+
+--- Shares: (empty) ---
+--- Investment Property: (empty) ---
+--- Loans: (empty) ---
+--- Entity Structure ---
+Entities
+
+Description
+
+Type
+
+Directors/trustees
+
+Shareholders/beneficiaries
+
+PCBC Superannuation Fund
+
+SMSF
+
+Quattro Motors Pty Ltd
+
+BrianPatricia
+
+Quattro Motors Pty Ltd
+
+Company (Trading)
+
+BrianPatricia
+
+
+
+
+
+--- Entity Holdings ---
+Entities
+
+Description
+
+Type
+
+Amount
+
+PCBC Superannuation Fund
+
+Default cash a/c PCBC Superannuation Fund
+
+Everyday cash account
+
+$412
+
+PCBC Superfund Ausiex Portfolio
+
+Investment portfolio
+
+$670,124
+
+Cash Management Accelerator 
+
+Savings
+
+$66,223
+
+Macquarie CMA ***5125
+
+Savings
+
+$2,761
+
+Macquarie Term Deposit ***1029
+
+Term deposit
+
+$250,000
+
+Total
+
+
+
+$989,521
+
+Quattro Motors Pty Ltd
+
+Default cash a/c Quattro Motors Pty Ltd
+
+Everyday cash account
+
+$0
+
+Total
+
+
+
+$0
+
+
+
+--- Insurance: (empty) ---
+
+######################################################################
+# TEST 80
+######################################################################
+--- Personal Details ---
+Personal details
+
+6 November 1969,30 June 1975
+
+Description
+
+Client
+
+Partner
+
+Full name
+
+Matthew John Clarke
+
+Nancy Caroline Warwick Clarke
+
+Date of birth
+
+6 November 1969
+
+30 June 1975
+
+Age
+
+56
+
+50
+
+Occupation
+
+Business Owner
+
+Business Owner
+
+
+
+Matthew,6 November 1969
+
+Matthew,6 November 1969 
+
+
+
+
+
+--- Income ---
+Your income
+
+Description
+
+Owner
+
+Amount
+
+Executive
+
+Matthew
+
+$1,946,850
+
+Director
+
+Nancy
+
+$252,076
+
+Total
+
+$2,198,926
+
+
+
+--- Lifestyle Assets ---
+Lifestyle assets
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Residential home - 44 Burt Street Fremantle
+
+Matthew & Nancy
+
+Residential home
+
+Insured value: $4,000,000
+
+$4,000,000
+
+Total
+
+$4,000,000
+
+
+
+--- Bank Accounts ---
+Bank accounts
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Benedict Saver (STG xxx0715)
+
+Nancy
+
+Savings
+
+$85
+
+Burt Street Offset (ANZ xxx3518)
+
+Nancy
+
+Loan offset a/c
+
+$25,289
+
+Daily Life Active (STG xxx5401)
+
+Nancy
+
+Savings
+
+$3,420
+
+Daily Life Direct Debits (STG xxx9060)
+
+Nancy
+
+Savings
+
+$8,140
+
+Ella Saver (STG xxx5026)
+
+Nancy
+
+Savings
+
+$85
+
+Everyday Fun (ING xxx5105)
+
+Nancy
+
+Savings
+
+$36,972
+
+Happy Days Savings (STG xxx0884)
+
+Nancy
+
+Savings
+
+$62,142
+
+Learn & Grow Savings (STG xxx6841)
+
+Nancy
+
+Savings
+
+$141,588
+
+Main Account (STG xxx2723)
+
+Matthew & Nancy
+
+Everyday cash account
+
+Rate: 4.00%
+
+Interest reinvested: No
+
+$452,976
+
+Milly Saver (STG xxx8307)
+
+Nancy
+
+Savings
+
+$85
+
+Point & Shoot (STG xxx4538)
+
+Nancy
+
+Savings
+
+$70,229
+
+Rainy Day Savings Maximiser (ING xxx4684)
+
+Nancy
+
+Savings
+
+Rate: 5.50%
+
+Interest reinvested: No
+
+$175,492
+
+Wise Account
+
+Nancy
+
+Savings
+
+$20,899
+
+Total
+
+$997,402
+
+
+
+--- Financial Investments ---
+Financial investments
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Futurity Education Bond
+
+Nancy
+
+Investment portfolio
+
+$124,371
+
+Total
+
+$124,371
+
+ 
+
+
+
+
+
+--- Superannuation ---
+Superannuation
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Member - Matthew
+
+Matthew
+
+Accumulation (taxed)
+
+Interest: 55%
+
+$781,991
+
+Member - Nancy
+
+Nancy
+
+Accumulation (taxed)
+
+Interest: 45%
+
+$639,810
+
+Total
+
+$1,421,801
+
+
+
+--- Pension: (empty) ---
+--- Shares: (empty) ---
+--- Investment Property ---
+Investment property
+
+No information recorded.
+
+--- Loans ---
+Loans
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Amplify Platinum (STG Credit Card xxx0267)
+
+Nancy
+
+Investment loan
+
+Bank: St. George Bank
+
+Loan facility: $0
+
+Repay loan: 2056
+
+Payment: Minimum per month (Principal & Interest)
+
+Interest rate: 5.00% (Variable)
+
+Tax deductible percentage: 0.0%
+
+-$944
+
+Loan againsts Kewdale property
+
+Matthew & Nancy
+
+Investment loan
+
+Bank: Australia and New Zealand Banking Group Limited (ANZ)
+
+Loan facility: $6,000,000
+
+Repay loan: 2039
+
+Payment: Minimum per month (Principal & Interest)
+
+Interest rate: 8.00% (Variable)
+
+Tax deductible percentage: 100.0%
+
+Security: Unknown
+
+-$6,000,000
+
+Total
+
+-$6,000,944
+
+
+
+Health insurance
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+BUP
+
+Matthew & Nancy
+
+Health insurance
+
+$0
+
+Total
+
+$0
+
+
+
+--- Entity Structure ---
+Entities
+
+Description
+
+Type
+
+Directors/trustees
+
+Shareholders/beneficiaries
+
+Clarke M & N Trust
+
+Trust (Discretionary)
+
+Endgame Investments Pty Ltd
+
+
+
+Endgame Investments Pty Ltd
+
+Company (Trading)
+
+Nancy
+
+Nancy
+
+Jingimia Superannuation Fund
+
+SMSF
+
+MatthewNancy
+
+MatthewNancy
+
+Kewdale Trust
+
+Trust (Discretionary)
+
+
+
+Matt and NancyMiller Family
+
+The Lifting Company
+
+Company (Trading)
+
+
+
+Matthew
+
+
+
+--- Entity Holdings ---
+Entities
+
+Description
+
+Type
+
+Amount
+
+Clarke M & N Trust
+
+Clarke M N Trust (ANZ xxx3704)
+
+Savings
+
+$1,289,457
+
+Total
+
+
+
+$1,289,457
+
+Endgame Investments Pty Ltd
+
+Default cash a/c Endgame Investments Pty Ltd
+
+Everyday cash account
+
+$0
+
+Total
+
+
+
+$0
+
+Jingimia Superannuation Fund
+
+Default cash a/c Jingimia Superannuation Fund
+
+Everyday cash account
+
+$0
+
+Westpac DIY Super Working Account 34 4405
+
+Everyday cash account
+
+$107,250
+
+Macquarie Wrap
+
+Investment portfolio
+
+$1,314,551
+
+Total
+
+
+
+$1,421,801
+
+Kewdale Trust
+
+Kewdale Property
+
+Commercial property
+
+$10,000,000
+
+Default cash a/c Kewdale Trust
+
+Everyday cash account
+
+$0
+
+Total
+
+
+
+$10,000,000
+
+The Lifting Company
+
+Estimated Sale Value
+
+Everyday cash account
+
+$30,000,000
+
+Total
+
+
+
+$30,000,000
+
+
+
+--- Insurance ---
+Life Insurance, TPD, Trauma and Income Protection
+
+The following table shows a summary of the benefits covered.
+
+Policy
+
+Life insured
+
+Policy owner
+
+Features
+
+Cover amount
+
+AIA
+
+Trauma
+
+Matthew
+
+Matthew
+
+Premium type: Stepped
+
+Features: Plus
+
+
+
+$273,384
+
+Income Protection (per month)
+
+Matthew
+
+Matthew
+
+Premium type: Stepped
+
+Type: Agreed value
+
+Waiting period: 90 days / 3 months
+
+Benefit period: To age 65
+
+
+
+$13,669
+
+AIA Protection Plan - Matthew
+
+Life cover
+
+Matthew
+
+SMSF - Member - Matthew (Matthew)
+
+Premium type: Stepped
+
+
+
+$5,788,125
+
+TPD cover
+
+Matthew
+
+SMSF - Member - Matthew (Matthew)
+
+Premium type: Stepped
+
+
+
+$2,894,063
+
+Life Insurance - Nancy
+
+Life cover
+
+Nancy
+
+SMSF - Member - Nancy (Matthew)
+
+Premium type: Stepped
+
+
+
+$1,736,438
+
+TPD cover
+
+Nancy
+
+SMSF - Member - Nancy (Matthew)
+
+Premium type: Stepped
+
+
+
+$1,157,625
+
+
+
+
+######################################################################
+# TEST 81
+######################################################################
+--- Personal Details ---
+Personal details
+
+,
+
+Description
+
+Client
+
+Partner
+
+Full name
+
+Vaughn Cooper
+
+Alyson Cooper
+
+Date of birth
+
+
+
+
+
+Age
+
+
+
+
+
+
+
+Vaughn,
+
+Vaughn,
+
+--- Income ---
+Your income
+
+Description
+
+Owner
+
+Amount
+
+Additional Shift
+
+Vaughn
+
+$41,000
+
+Salary
+
+Vaughn
+
+$109,600
+
+Salary
+
+Alyson
+
+$103,000
+
+Total
+
+$253,600
+
+
+
+One off expenses
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Milan/Venice cruise
+
+Vaughn & Alyson
+
+One-off expenditure
+
+$16,000
+
+Total
+
+$16,000
+
+
+
+--- Lifestyle Assets ---
+Lifestyle assets
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Residential home
+
+Vaughn & Alyson
+
+Residential home
+
+$1,000,000
+
+Total
+
+$1,000,000
+
+
+
+--- Bank Accounts ---
+Bank accounts
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Everyday cash a/c
+
+Vaughn & Alyson
+
+Everyday cash account
+
+$1
+
+Inheritance (not yet received)
+
+Alyson
+
+Savings
+
+$50,000
+
+Total
+
+$50,001
+
+
+
+--- Financial Investments: (empty) ---
+--- Superannuation ---
+Superannuation
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Hesta
+
+Alyson
+
+Accumulation (taxed)
+
+$232,529
+
+Mercer
+
+Vaughn
+
+Accumulation (taxed)
+
+$1,075,246
+
+Total
+
+$1,307,775
+
+
+
+--- Pension: (empty) ---
+--- Shares ---
+Shares
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Wesfarmers shares
+
+Vaughn
+
+Unlisted
+
+Reinvested: No
+
+CGT applies: Yes (100.0%)
+
+$50,000
+
+Total
+
+$50,000
+
+
+
+--- Investment Property: (empty) ---
+--- Loans ---
+Loans
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Home loan
+
+Vaughn & Alyson
+
+Home loan
+
+Bank: Other
+
+Loan facility: $340,000
+
+Repay loan: 2056
+
+Payment: Minimum per month (Principal & Interest)
+
+Interest rate: 5.00% (Variable)
+
+Tax deductible percentage: 0.0%
+
+Security: Residential home
+
+-$300,000
+
+Total
+
+-$300,000
+
+
+
+--- Entity Structure: (empty) ---
+--- Entity Holdings: (empty) ---
+--- Insurance: (empty) ---
+
+######################################################################
+# TEST 82
+######################################################################
+--- Personal Details ---
+Personal details
+
+11 August 1984,26 September 1984
+
+Description
+
+Client
+
+Partner
+
+Full name
+
+Christopher William Dix
+
+Amy Lauren Dix
+
+Date of birth
+
+11 August 1984
+
+26 September 1984
+
+Age
+
+41
+
+41
+
+Occupation
+
+Outdoor Ed Teacher
+
+Management Consultant
+
+
+
+Christopher,11 August 1984
+
+Christopher,11 August 1984 
+
+
+
+
+
+--- Income ---
+Your income
+
+Description
+
+Owner
+
+Amount
+
+Teacher
+
+Christopher
+
+$120,480
+
+Management Consultant
+
+Amy
+
+$279,769
+
+Management Consultant - Annual Bonus
+
+Amy
+
+$97,356
+
+Total
+
+$497,605
+
+
+
+--- Lifestyle Assets ---
+Lifestyle assets
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Car - Hyundai i30
+
+Christopher & Amy
+
+Car
+
+Insured value: $15,000
+
+$15,000
+
+Car - Jeep
+
+Christopher & Amy
+
+Car
+
+Insured value: $35,000
+
+$35,000
+
+Total
+
+$50,000
+
+
+
+--- Bank Accounts ---
+Bank accounts
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Charles ***4043
+
+Christopher & Amy
+
+Savings
+
+$200
+
+Isabella ***3938
+
+Christopher
+
+Savings
+
+$250
+
+Main Transaction Account ***3920
+
+Christopher & Amy
+
+Everyday cash account
+
+$3,832
+
+New Offset Account ***4019
+
+Christopher & Amy
+
+Loan offset a/c
+
+$13,464
+
+Platinum Transaction Account ***8932
+
+Christopher & Amy
+
+Savings
+
+$377
+
+Savings account ***4027
+
+Christopher & Amy
+
+Savings
+
+$7,207
+
+Smart Access
+
+Amy
+
+Everyday cash account
+
+$7,936
+
+Total
+
+$33,265
+
+
+
+--- Financial Investments ---
+Financial investments
+
+No information recorded. 
+
+
+
+
+
+--- Superannuation ---
+Superannuation
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+AustralianSuper - Amy
+
+Amy
+
+Accumulation (taxed)
+
+$291,981
+
+AustralianSuper - Chris
+
+Christopher
+
+Accumulation (taxed)
+
+$295,353
+
+South32 Plum - Amy
+
+Amy
+
+Accumulation (taxed)
+
+$25,078
+
+Total
+
+$612,412
+
+
+
+--- Pension: (empty) ---
+--- Shares ---
+Shares
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+ENP - Entroneuro  
+
+Amy
+
+Listed on ASX
+
+Reinvested: No
+
+CGT applies: Yes (100.0%)
+
+Units: 500000
+
+Cost base: $10,000
+
+$17,000
+
+HMD - HERAMED LIMITED
+
+Amy
+
+Listed on ASX
+
+Reinvested: Yes
+
+CGT applies: Yes (100.0%)
+
+Units: 36000
+
+$1,440
+
+S32 - South32 Limited
+
+Amy
+
+Listed on ASX
+
+Reinvested: Yes
+
+CGT applies: Yes (100.0%)
+
+Units: 35568
+
+$161,479
+
+TRI - Trivarx  
+
+Amy
+
+Listed on ASX
+
+Reinvested: No
+
+CGT applies: Yes (100.0%)
+
+Units: 1875000
+
+Cost base: $15,000
+
+$45,000
+
+Total
+
+$224,919
+
+
+
+--- Investment Property ---
+Investment property
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Residential Home - 70 Queenscliffe Road
+
+Christopher & Amy
+
+Residential property
+
+Cost base: $0
+
+Net rental income: $0
+
+Tax deductible depreciation: $0
+
+CGT: 100.0%
+
+$2,060,000
+
+Total
+
+$2,060,000
+
+
+
+--- Loans ---
+Loans
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Macquarie Platinum
+
+Christopher
+
+Personal (unsecured)
+
+Bank: Macquarie Bank Limited
+
+Loan facility: $0
+
+Repay loan: 2054
+
+Payment: $0 per month (Principal & Interest)
+
+Interest rate: 5.00% (Variable)
+
+Tax deductible percentage: 0.0%
+
+-$8,878
+
+Mastercard
+
+Christopher & Amy
+
+Personal (unsecured)
+
+Bank: Macquarie Bank Limited
+
+Loan facility: $10,000
+
+Repay loan: 2054
+
+Payment: $0 per month (Principal & Interest)
+
+Interest rate: 5.00% (Variable)
+
+Tax deductible percentage: 0.0%
+
+-$5,418
+
+New Home Loan 013714019
+
+Christopher & Amy
+
+Home loan
+
+Bank: Macquarie Bank Limited
+
+Loan facility: $975,210
+
+Repay loan: 2052
+
+Payment: $5,500 per month (Principal & Interest)
+
+Interest rate: 5.94% (Variable)
+
+Tax deductible percentage: 0.0%
+
+-$872,337
+
+Total
+
+-$886,634
+
+
+
+Health insurance
+
+Description
+
+Owner
+
+Details
+
+Amount
+
+Private Health H08053688
+
+Christopher & Amy
+
+Health insurance
+
+$1,787
+
+Total
+
+$1,787
+
+
+
+--- Entity Structure: (empty) ---
+--- Entity Holdings ---
+Entities
+
+No information recorded.
+
+--- Insurance ---
+Life Insurance, TPD, Trauma and Income Protection
+
+The following table shows a summary of the benefits covered.
+
+Policy
+
+Life insured
+
+Policy owner
+
+Features
+
+Cover amount
+
+Flexible Linking Plus (Trauma)
+
+Trauma
+
+Christopher
+
+Christopher
+
+Premium type: Stepped
+
+Features: Plus
+
+Trauma reinstatement: Yes
+
+
+
+
+
+Trauma
+
+Christopher
+
+Christopher
+
+Premium type: Level to age 65
+
+Features: Plus
+
+
+
+$208,666
+
+Income Protection
+
+Income Protection (per month)
+
+Christopher
+
+Christopher
+
+Premium type: Stepped
+
+Type: Indemnity value
+
+Waiting period: 30 days / 1 month
+
+Benefit period: To age 65
+
+
+
+$6,269
+
+Term Life as Superannuation (Death and TPD)
+
+Life cover
+
+Christopher
+
+Mercer Superannuation (Australia) Limited
+
+Premium type: Stepped
+
+
+
+$1,262,590
+
+TPD cover
+
+Christopher
+
+Mercer Superannuation (Australia) Limited
+
+Premium type: Stepped
+
+TPD definition: Any
+
+
+
+
+
+TPD cover
+
+Christopher
+
+Mercer Superannuation (Australia) Limited
+
+Premium type: Stepped
+
+TPD definition: Any
+
+
+
+$848,588
+
+Death and TPD
+
+Life cover
+
+Amy
+
+South32 Plum - Amy
+
+Premium type: Stepped
+
+
+
+$62,000
+
+TPD cover
+
+Amy
+
+South32 Plum - Amy
+
+Premium type: Stepped
+
+TPD definition: Any
+
+
+
+$62,200
+
+Flexible Linking Plus (Trauma)
+
+Trauma
+
+Amy
+
+Amy
+
+Premium type: Stepped
+
+Features: Plus
+
+Trauma reinstatement: Yes
+
+
+
+
+
+Trauma
+
+Amy
+
+Amy
+
+Premium type: Level to age 65
+
+Features: Plus
+
+
+
+$208,666
+
+Income Protection
+
+Income Protection (per month)
+
+Amy
+
+Amy
+
+Premium type: Stepped
+
+Type: Indemnity value
+
+Waiting period: 30 days / 1 month
+
+Benefit period: To age 65
+
+
+
+$15,581
+
+Term Life as Superannuation (Death and TPD)
+
+Life cover
+
+Amy
+
+Mercer Superannuation (Australia) Limited
+
+Premium type: Stepped
+
+
+
+$1,909,627
+
+TPD cover
+
+Amy
+
+Mercer Superannuation (Australia) Limited
+
+Premium type: Stepped
+
+TPD definition: Any
+
+
+
+$1,483,207
+
+TPD cover
+
+Amy
+
+Mercer Superannuation (Australia) Limited
+
+Premium type: Stepped
+
+TPD definition: Any
+
+
+
+
+
+
+

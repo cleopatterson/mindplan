@@ -7,11 +7,15 @@ import { Dashboard } from './components/Dashboard';
 import { ExportModal, type ExportOptions } from './components/export/ExportModal';
 import type { MindMapHandle } from './components/mindmap/MindMap';
 import { LogoFull } from './components/Logo';
-import { Download, Upload, Loader2, Sun, Moon, LogOut, MessageSquarePlus } from 'lucide-react';
-import { useRef, useState, useCallback } from 'react';
+import { Network, TrendingUp, Download, Upload, Loader2, Sun, Moon, LogOut, MessageSquarePlus } from 'lucide-react';
+import { useRef, useState, useCallback, lazy, Suspense } from 'react';
 import { usePdfExport } from './hooks/usePdfExport';
 import { ThemeContext, type Theme } from './contexts/ThemeContext';
 import { FeedbackPanel } from './components/feedback/FeedbackPanel';
+
+const ProjectionView = lazy(() => import('./components/projection/ProjectionView').then((m) => ({ default: m.ProjectionView })));
+
+type ViewMode = 'mindmap' | 'projection';
 
 export default function App() {
   const { user, loading: authLoading, signIn, signOut, resetPassword, getIdToken } = useAuth();
@@ -33,8 +37,10 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(() =>
     (localStorage.getItem('mindplan-theme') as Theme) ?? 'dark',
   );
+  const [viewMode, setViewMode] = useState<ViewMode>('mindmap');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [projectionSettingsOpen, setProjectionSettingsOpen] = useState(false);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const toggleTheme = useCallback(() => {
     setTheme((prev) => {
@@ -93,7 +99,7 @@ export default function App() {
       <div className={`h-screen flex flex-col overflow-hidden select-none transition-colors duration-300
         ${isDark ? 'bg-[#0f0f1a]' : 'bg-gray-100'}`}
       >
-        <header className={`shrink-0 border-b px-5 py-3 flex items-center justify-between transition-colors duration-300
+        <header className={`shrink-0 border-b px-5 py-3 grid grid-cols-[1fr_auto_1fr] items-center transition-colors duration-300
           ${isDark ? 'border-white/10' : 'border-gray-200 bg-white'}`}
         >
           {/* Left — logo */}
@@ -104,8 +110,40 @@ export default function App() {
             >Legacy Wealth Blueprint</span>
           </div>
 
+          {/* Centre — view toggle */}
+          <div className="flex justify-center">
+            {appState === 'dashboard' && (
+              <div className={`flex rounded-lg border p-0.5 ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-100'}`}>
+                <button
+                  onClick={() => setViewMode('mindmap')}
+                  className={`cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all
+                    ${viewMode === 'mindmap'
+                      ? isDark ? 'bg-white/10 text-white/90 shadow-sm' : 'bg-white text-gray-900 shadow-sm'
+                      : isDark ? 'text-white/40 hover:text-white/60' : 'text-gray-400 hover:text-gray-600'
+                    }`}
+                  title="Mind Map view"
+                >
+                  <Network className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Map</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('projection')}
+                  className={`cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all
+                    ${viewMode === 'projection'
+                      ? isDark ? 'bg-white/10 text-white/90 shadow-sm' : 'bg-white text-gray-900 shadow-sm'
+                      : isDark ? 'text-white/40 hover:text-white/60' : 'text-gray-400 hover:text-gray-600'
+                    }`}
+                  title="Projection view"
+                >
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Projection</span>
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Right — actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 justify-end">
             <button
               onClick={() => setShowFeedback(true)}
               className={`cursor-pointer p-2 rounded-lg transition-colors
@@ -123,15 +161,17 @@ export default function App() {
               <LogOut className="w-4 h-4" />
             </button>
             {appState === 'dashboard' && (
+              <button
+                onClick={toggleTheme}
+                className={`cursor-pointer p-2 rounded-lg transition-colors
+                  ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/5' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+            )}
+            {appState === 'dashboard' && (
               <>
-                <button
-                  onClick={toggleTheme}
-                  className={`cursor-pointer p-2 rounded-lg transition-colors
-                    ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/5' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-                  title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-                >
-                  {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </button>
                 <input
                   ref={uploadInputRef}
                   type="file"
@@ -141,6 +181,7 @@ export default function App() {
                     const file = e.target.files?.[0];
                     if (file) {
                       reset();
+                      // Small delay to allow state reset before uploading
                       setTimeout(() => uploadFile(file), 50);
                     }
                     e.target.value = '';
@@ -178,7 +219,7 @@ export default function App() {
           {(appState === 'parsing' || appState === 'completing') && (
             <ParseProgress complete={appState === 'completing'} />
           )}
-          {appState === 'dashboard' && data && (
+          {appState === 'dashboard' && data && viewMode === 'mindmap' && (
             <Dashboard
               data={data}
               mapRef={mapRef}
@@ -203,6 +244,16 @@ export default function App() {
               newNodeId={newNodeId}
               onClearNewNodeId={clearNewNodeId}
             />
+          )}
+          {appState === 'dashboard' && data && viewMode === 'projection' && (
+            <Suspense fallback={<Loader2 className="w-6 h-6 text-white/30 animate-spin" />}>
+              <ProjectionView
+                data={data}
+                getIdToken={getIdToken}
+                settingsOpen={projectionSettingsOpen}
+                onToggleSettings={() => setProjectionSettingsOpen((p) => !p)}
+              />
+            </Suspense>
           )}
         </main>
 

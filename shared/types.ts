@@ -131,6 +131,90 @@ export interface DataGap {
   nodeId?: string;             // graph node ID this gap refers to (set by validator)
 }
 
+// ── Projection types ──
+
+export interface ProjectionSettings {
+  horizonYears: number;              // e.g. 30
+  inflationRate: number;             // e.g. 2.5
+  salaryGrowthRate: number;          // e.g. 3.0
+  superContributionRate: number;     // employer SG rate, e.g. 11.5
+  clients: ClientProjectionSettings[];
+  assetOverrides: AssetReturnOverride[];
+  liabilityOverrides: LiabilityOverride[];
+}
+
+export interface ClientProjectionSettings {
+  clientId: string;
+  retirementAge: number;             // e.g. 65
+}
+
+export interface AssetReturnOverride {
+  assetId: string;
+  growthRate: number;                // annual %, e.g. 7.0
+  reason?: string;                   // "Rental yield 4.2% from details"
+}
+
+export interface LiabilityOverride {
+  liabilityId: string;
+  interestRate: number;              // annual %, e.g. 6.2
+  remainingTermYears: number;        // e.g. 25
+  reason?: string;
+}
+
+export interface ProjectionYearData {
+  year: number;
+  property: number;
+  shares: number;
+  super: number;
+  cash: number;
+  vehicle: number;
+  other: number;
+  liabilities: number;              // negative value
+  netWorth: number;
+  income: number;
+}
+
+export interface ProjectionMilestone {
+  year: number;
+  label: string;
+}
+
+export interface ProjectionAssetDetail {
+  name: string;
+  type: string;
+  startValue: number;
+  endValue: number;
+  growthRate: number;
+}
+
+export interface ProjectionLiabilityDetail {
+  name: string;
+  type: string;
+  startBalance: number;
+  endBalance: number;
+  interestRate: number;
+  termYears: number;
+  annualPayment: number;
+  paidOffYear: number | null;
+}
+
+export interface ProjectionResult {
+  yearData: ProjectionYearData[];
+  milestones: ProjectionMilestone[];
+  netWorthAtRetirement: number | null;
+  superAtRetirement: number | null;
+  yearsUntilDebtFree: number | null;
+  assetDetails: ProjectionAssetDetail[];
+  liabilityDetails: ProjectionLiabilityDetail[];
+  retirementYear: number | null;
+}
+
+export interface ProjectionSettingsResponse {
+  success: boolean;
+  settings?: ProjectionSettings;
+  error?: string;
+}
+
 // ── Insight types ──
 
 export interface Insight {

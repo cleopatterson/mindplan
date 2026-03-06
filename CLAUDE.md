@@ -7,8 +7,8 @@ MindPlan is a financial structure visualiser. It parses financial planning docum
 ## Tech Stack
 
 - **Monorepo**: npm workspaces (`shared/`, `server/`, `client/`)
-- **Server**: Express 5, TypeScript, tsx (dev), Anthropic SDK, Zod, multer, pdf-parse, mammoth
-- **Client**: React 19, Vite, ReactFlow (@xyflow/react), dagre (@dagrejs/dagre), Tailwind CSS, lucide-react
+- **Server**: Express 5, TypeScript, tsx (dev), Anthropic SDK, Firebase Admin, Zod, multer, pdf-parse, mammoth
+- **Client**: React 19, Vite, ReactFlow (@xyflow/react), dagre (@dagrejs/dagre), Tailwind CSS, lucide-react, Firebase Auth
 - **Shared**: TypeScript types only (no runtime code)
 - **Deployment**: Railway (Nixpacks)
 
@@ -27,9 +27,18 @@ cd server && npx tsc --noEmit
 ```
 
 Environment variables (`.env` at root):
-- `ANTHROPIC_API_KEY` — **required**
+- `ANTHROPIC_API_KEY` — required for Claude API parsing
 - `CLAUDE_MODEL` — override Claude model (default: `claude-sonnet-4-5-20250929`)
+- `LLM_PROVIDER` — `local` (fast deterministic) or `claude` (default: claude)
 - `PORT` — server port (default: 3001)
+- `FIREBASE_PROJECT_ID` — Firebase project ID
+- `FIREBASE_CLIENT_EMAIL` — Firebase service account email
+- `FIREBASE_PRIVATE_KEY` — Firebase service account private key (multiline in Railway, `\n`-escaped in `.env`)
+
+Client environment variables (`client/.env`):
+- `VITE_FIREBASE_API_KEY` — Firebase web API key
+- `VITE_FIREBASE_AUTH_DOMAIN` — Firebase auth domain
+- `VITE_FIREBASE_PROJECT_ID` — Firebase project ID
 
 ## Architecture Decisions
 
@@ -129,6 +138,52 @@ Key parser patterns:
 - SMSF member balance entries are deduped against personal super (pattern-matched names)
 - Fuzzy entity name matching (suffix-based fallback) for entity holdings → entity structure joins
 - Test: `npx tsx test/test-local-batch.ts` — 69/73 pass rate against Claude gold standard
+
+### Authentication
+- Firebase Auth (email/password, invite-only — no self-registration)
+- Users created manually in Firebase Console (console.firebase.google.com)
+- Client: `client/src/firebase.ts` (app init), `client/src/hooks/useAuth.ts` (auth state hook)
+- Server: `server/src/middleware/auth.ts` (token verification middleware, lazy-initialized)
+- `verifyAuth` middleware on `/api/parse` and `/api/insights`; health check + static files are public
+- Login flow: LandingPage (marketing) → LoginPage → LandingPage (personalized with upload)
+- Lazy Firebase Admin init required — env vars aren't available at import time (dotenv loads after ES imports)
+
+### Projection View (Experimental)
+Time-based financial projection visualized as a Recharts stacked area chart. Toggled via Map/Projection segmented control in the header. **Not committed to production — experimental feature.**
+
+#### Architecture
+- **Client-side projection engine**: Pure `calculateProjection(plan, settings) → ProjectionResult` — per-year iteration with asset growth, P&I liability amortization, super contributions, retirement detection
+- **Claude AI smart settings**: `POST /api/projection-settings` analyzes `details` text fields for embedded rates, yields, loan terms. Auto-fires on projection view mount. Uses its own Anthropic client — **independent of `LLM_PROVIDER`** (so `LLM_PROVIDER=local` still works for the mind map parser)
+- **Pre-tax only**: No CGT, super tax, or marginal rates modelled. Disclaimer shown in settings panel.
+
+#### Key Files
+- `shared/types.ts` — `ProjectionSettings`, `ProjectionResult`, `ProjectionYearData`, `ProjectionMilestone`, `ProjectionAssetDetail`, `ProjectionLiabilityDetail`, `ProjectionSettingsResponse`
+- `client/src/utils/projectionDefaults.ts` — Default growth rates by asset type × risk profile, `getDefaultSettings()`, `resolveGrowthRate()`, `resolveLiabilityTerms()`
+- `client/src/utils/projectionEngine.ts` — Pure `calculateProjection()` function
+- `client/src/components/projection/ProjectionView.tsx` — Container (lazy-loaded via `React.lazy`)
+- `client/src/components/projection/ProjectionChart.tsx` — Recharts `ComposedChart` with stacked areas + net worth line + milestones
+- `client/src/components/projection/ProjectionSummaryStrip.tsx` — 4 clickable metric cards (net worth, super, debt-free, final)
+- `client/src/components/projection/ProjectionSettingsPanel.tsx` — Editable accordion: Global, Client, Asset Returns (per-asset), Liabilities (per-liability)
+- `client/src/components/projection/ProjectionDetailPanel.tsx` — Detail breakdowns per summary card
+- `server/src/routes/projection.ts` — POST endpoint with own Anthropic client
+- `server/src/schema/projectionSettings.ts` — Zod validation schema
+- `server/src/prompts/generateProjectionSettings.ts` — Claude system prompt
+
+#### Default Growth Rates
+| Asset Type | Conservative | Balanced | Growth | High Growth |
+|-----------|-------------|---------|--------|------------|
+| property | 5.0% | 5.5% | 6.0% | 6.0% |
+| shares/managed_fund | 4.0% | 7.0% | 8.5% | 10.0% |
+| cash | 1.5% | 1.5% | 1.5% | 1.5% |
+| super/pension | 4.0% | 7.0% | 8.5% | 10.0% |
+| vehicle | -10% | -10% | -10% | -10% |
+
+#### Conventions
+- Horizon: `Math.max(90 - youngestAge, 5)` years (life expectancy model, not retirement-based)
+- AI overrides merge into settings on arrival — shown inline with "AI" badges, fully editable
+- Duplicate retirement milestones grouped: "Both retire at 67"
+- Insurance assets excluded from projections
+- Settings gear in chart area top-right, detail panel reuses same `w-96` animated right panel
 
 ### Feedback System
 - Firestore-based (collection: `feedback`) — no server endpoint needed

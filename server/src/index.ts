@@ -10,6 +10,7 @@ import cors from 'cors';
 import { verifyAuth } from './middleware/auth.js';
 import { parseRouter } from './routes/parse.js';
 import { insightsRouter } from './routes/insights.js';
+import { projectionRouter } from './routes/projection.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001');
@@ -22,8 +23,10 @@ app.use(express.json({ limit: '1mb' }));
 // API routes (auth-protected)
 app.use('/api/parse', verifyAuth);
 app.use('/api/insights', verifyAuth);
+app.use('/api/projection-settings', verifyAuth);
 app.use('/api', parseRouter);
 app.use('/api', insightsRouter);
+app.use('/api', projectionRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {
