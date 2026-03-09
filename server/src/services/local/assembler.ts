@@ -5,7 +5,7 @@
 import type {
   FinancialPlan, Client, Entity, Asset, Liability,
   EstatePlanItem, FamilyMember, Grandchild, Goal,
-  Relationship, DataGap,
+  Relationship, Expense, DataGap,
 } from 'shared/types';
 import type { Sections } from './splitSections.js';
 import { parseHeader } from './sections/header.js';
@@ -23,6 +23,7 @@ import { parseRelationships, inferRelationshipType } from './sections/relationsh
 import { parseDependants, parseAdultChildren, ageFromDob } from './sections/dependants.js';
 import { parseEstatePlanning, parseWillsEpaEpg } from './sections/estatePlanning.js';
 import { parseRiskProfiles } from './sections/riskProfile.js';
+import { parseExpenses } from './sections/expenses.js';
 import {
   resolveOwnerIds, splitConcatenatedNames, firstName, normalizeName,
 } from './utils.js';
@@ -35,6 +36,7 @@ let grandchildCounter = 0;
 let goalCounter = 0;
 let relCounter = 0;
 let estateCounter = 0;
+let expenseCounter = 0;
 
 function resetCounters() {
   assetCounter = 0;
@@ -45,6 +47,7 @@ function resetCounters() {
   goalCounter = 0;
   relCounter = 0;
   estateCounter = 0;
+  expenseCounter = 0;
 }
 
 function nextAssetId(): string { return `asset-${++assetCounter}`; }
@@ -55,6 +58,7 @@ function nextGrandchildId(): string { return `grandchild-${++grandchildCounter}`
 function nextGoalId(): string { return `goal-${++goalCounter}`; }
 function nextRelId(): string { return `rel-${++relCounter}`; }
 function nextEstateId(): string { return `estate-${++estateCounter}`; }
+function nextExpenseId(): string { return `expense-${++expenseCounter}`; }
 
 export function assemble(sections: Sections): FinancialPlan {
   resetCounters();
@@ -525,6 +529,16 @@ export function assemble(sections: Sections): FinancialPlan {
     }
   }
 
+  // 13. Parse regular expenses
+  const expenseItems = parseExpenses(sections.regularExpenses);
+  const expenses: Expense[] = expenseItems.map((e) => ({
+    id: nextExpenseId(),
+    name: e.description,
+    amount: e.amount,
+    ownerIds: resolveOwnerIds(e.owner, clients),
+    details: e.details,
+  }));
+
   return {
     clients,
     entities,
@@ -535,6 +549,7 @@ export function assemble(sections: Sections): FinancialPlan {
     objectives,
     goals,
     relationships,
+    expenses,
     dataGaps: [],
   };
 }

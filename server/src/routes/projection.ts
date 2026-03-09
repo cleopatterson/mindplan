@@ -4,7 +4,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { FinancialPlanSchema } from '../schema/financialPlan.js';
 import { ProjectionSettingsSchema } from '../schema/projectionSettings.js';
 import { PROJECTION_SETTINGS_SYSTEM_PROMPT } from '../prompts/generateProjectionSettings.js';
-import type { ProjectionSettingsResponse, FinancialPlan } from 'shared/types';
+import type { ProjectionSettingsResponse, ProjectionSettings, FinancialPlan } from 'shared/types';
 
 export const projectionRouter = Router();
 
@@ -74,7 +74,23 @@ projectionRouter.post('/projection-settings', async (req, res) => {
 
     console.log(`⏱ [projection] Settings generated: ${(performance.now() - t0).toFixed(0)}ms | ${result.data.assetOverrides.length} asset overrides, ${result.data.liabilityOverrides.length} liability overrides`);
 
-    res.json({ success: true, settings: result.data } satisfies ProjectionSettingsResponse);
+    const settings: ProjectionSettings = {
+      ...result.data,
+      superContributionsTaxRate: result.data.superContributionsTaxRate ?? 15,
+      superEarningsTaxRate: result.data.superEarningsTaxRate ?? 15,
+      superPreservationAge: result.data.superPreservationAge ?? 60,
+      pprAssetIds: result.data.pprAssetIds ?? [],
+      retirementRiskProfile: result.data.retirementRiskProfile ?? null,
+      concessionalCap: result.data.concessionalCap ?? 30000,
+      div293Threshold: result.data.div293Threshold ?? 250000,
+      enableAgePension: result.data.enableAgePension ?? true,
+      frankingCreditRate: result.data.frankingCreditRate ?? 30,
+      clients: result.data.clients.map((c) => ({
+        ...c,
+        salarySacrificeAmount: c.salarySacrificeAmount ?? 0,
+      })),
+    };
+    res.json({ success: true, settings } satisfies ProjectionSettingsResponse);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     console.error(`Projection settings error (after ${(performance.now() - t0).toFixed(0)}ms):`, message);

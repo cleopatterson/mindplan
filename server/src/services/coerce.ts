@@ -85,6 +85,7 @@ export function coercePlan(raw: unknown): void {
   ensureDefault(plan, 'estatePlanning', []);
   ensureDefault(plan, 'familyMembers', []);
   ensureDefault(plan, 'objectives', []);
+  ensureDefault(plan, 'expenses', []);
   ensureDefault(plan, 'dataGaps', []);
 
   // Clients

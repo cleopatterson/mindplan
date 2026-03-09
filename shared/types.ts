@@ -11,6 +11,7 @@ export interface FinancialPlan {
   objectives: string[];
   goals: Goal[];
   relationships: Relationship[];
+  expenses: Expense[];
   dataGaps: DataGap[];
   familyLabel?: string;  // optional override for the centre tile name
 }
@@ -124,6 +125,14 @@ export interface Relationship {
   notes: string | null;
 }
 
+export interface Expense {
+  id: string;
+  name: string;
+  amount: number | null;         // annual amount in AUD
+  ownerIds: string[];            // client IDs
+  details: string | null;
+}
+
 export interface DataGap {
   entityId: string | null;
   field: string;
@@ -138,19 +147,46 @@ export interface ProjectionSettings {
   inflationRate: number;             // e.g. 2.5
   salaryGrowthRate: number;          // e.g. 3.0
   superContributionRate: number;     // employer SG rate, e.g. 11.5
+  superContributionsTaxRate: number; // tax on SG contributions, e.g. 15
+  superEarningsTaxRate: number;      // tax on accumulation earnings, e.g. 15 (0 for pension)
+  superPreservationAge: number;      // age super can be accessed, e.g. 60
+  pprAssetIds: string[];             // asset IDs tagged as primary residence (excluded from drawdown/income)
+  retirementRiskProfile: RiskProfile | null; // risk profile to shift to at retirement (null = no shift)
+  concessionalCap: number;           // max concessional super contributions p.a., e.g. 30000
+  div293Threshold: number;           // income threshold for Div 293 extra 15% tax, e.g. 250000
+  enableAgePension: boolean;         // model simplified Age Pension income post-67
+  frankingCreditRate: number;        // company tax rate for franking credits, e.g. 30
   clients: ClientProjectionSettings[];
   assetOverrides: AssetReturnOverride[];
   liabilityOverrides: LiabilityOverride[];
+  ongoingExpenses: OngoingExpense[];
+  lumpSumExpenses: LumpSumExpense[];
+}
+
+export interface OngoingExpense {
+  id: string;
+  name: string;
+  annualAmount: number;              // e.g. 50000
+  indexedToInflation: boolean;       // whether amount grows with inflation
+}
+
+export interface LumpSumExpense {
+  id: string;
+  name: string;
+  amount: number;                    // e.g. 100000
+  targetYear: number;                // e.g. 2027
 }
 
 export interface ClientProjectionSettings {
   clientId: string;
   retirementAge: number;             // e.g. 65
+  salarySacrificeAmount: number;     // annual pre-tax salary sacrifice to super, e.g. 10000
 }
 
 export interface AssetReturnOverride {
   assetId: string;
-  growthRate: number;                // annual %, e.g. 7.0
+  growthRate: number;                // TOTAL annual return %, e.g. 7.0 (income + capital)
+  incomeRate?: number;               // income portion %, e.g. 3.0 (dividends, rent, interest)
   reason?: string;                   // "Rental yield 4.2% from details"
 }
 
@@ -171,7 +207,9 @@ export interface ProjectionYearData {
   other: number;
   liabilities: number;              // negative value
   netWorth: number;
-  income: number;
+  income: number;                    // employment income
+  assetIncome: number;               // investment income (dividends, rent, interest)
+  expenses: number;                  // total expenses for this year
 }
 
 export interface ProjectionMilestone {

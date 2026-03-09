@@ -29,6 +29,9 @@ const CATEGORY_LABELS: Record<string, string> = {
   vehicle: 'Vehicles',
   other: 'Other',
   liabilities: 'Liabilities',
+  expenses: 'Expenses',
+  income: 'Income',
+  assetIncome: 'Asset Income',
 };
 
 function compactCurrency(value: number): string {
@@ -145,6 +148,18 @@ export function ProjectionChart({ result }: Props) {
             dot={false}
             strokeDasharray="6 3"
           />
+
+          {/* Expenses line */}
+          {result.yearData.some((d) => d.expenses > 0) && (
+            <Line
+              type="monotone"
+              dataKey="expenses"
+              stroke={isDark ? '#fb923c' : '#ea580c'}
+              strokeWidth={1.5}
+              dot={false}
+              strokeDasharray="4 2"
+            />
+          )}
 
           {/* Zero line */}
           <ReferenceLine y={0} stroke={textColor} strokeWidth={1} />

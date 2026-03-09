@@ -490,6 +490,19 @@ function applyFieldUpdate(prev: FinancialPlan, nodeId: string, field: string, va
     return { ...prev, relationships };
   }
 
+  // Expenses
+  const expIdx = (prev.expenses ?? []).findIndex((e) => e.id === nodeId);
+  if (expIdx !== -1) {
+    const expenses = prev.expenses.map((e, i) => {
+      if (i !== expIdx) return e;
+      if (field === 'name') return { ...e, name: value };
+      if (field === 'amount') return { ...e, amount: value ? parseFloat(value.replace(/[,$]/g, '')) : null };
+      if (field === 'details') return { ...e, details: value || null };
+      return e;
+    });
+    return { ...prev, expenses };
+  }
+
   return prev;
 }
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import type { FinancialPlan, Client, Entity, Asset, Liability, EstatePlanItem, FamilyMember, Grandchild, Goal, Relationship } from 'shared/types';
+import type { FinancialPlan, Client, Entity, Asset, Liability, Expense, EstatePlanItem, FamilyMember, Grandchild, Goal, Relationship } from 'shared/types';
 import { formatAUD, totalAssets, totalLiabilities, entityEquity } from '../../utils/calculations';
 import {
   Check, X, Pencil, User, Building2, Landmark, CreditCard,
@@ -76,6 +76,13 @@ export function DetailPanel({ data, nodeId, onUpdateField, autoFocusName, onAuto
     const grandchild = member.children?.find((gc) => gc.id === nodeId);
     if (grandchild) return <GrandchildDetail grandchild={grandchild} parent={member} data={data} nodeId={nodeId} onUpdate={onUpdateField} autoFocusName={af} />;
   }
+
+  // Expenses group
+  if (nodeId === 'expenses-group') return <ExpensesGroupDetail data={data} />;
+
+  // Individual expenses
+  const expense = data.expenses?.find((e) => e.id === nodeId);
+  if (expense) return <ExpenseDetail expense={expense} data={data} nodeId={nodeId} onUpdate={onUpdateField} />;
 
   // Goals group
   if (nodeId === 'goals-group') return <GoalsGroupDetail data={data} />;
@@ -1068,6 +1075,80 @@ function SelectField({
           </option>
         ))}
       </select>
+    </div>
+  );
+}
+
+// ── Expenses Group Detail ──
+
+function ExpensesGroupDetail({ data }: { data: FinancialPlan }) {
+  const expenses = data.expenses ?? [];
+  const total = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const clientNameById = new Map(data.clients.map((c) => [c.id, c.name.split(' ')[0]]));
+
+  return (
+    <div className="space-y-3">
+      <HeroBanner
+        icon={CreditCard}
+        label="Expenses"
+        sublabel={total > 0 ? `${formatAUD(total)}/yr` : `${expenses.length} items`}
+        gradient="bg-gradient-to-br from-orange-500/20 via-orange-600/10 to-orange-900/20"
+        iconColor="text-orange-400"
+      />
+
+      <div className="flex flex-wrap gap-1.5">
+        <InsightPill color="orange">{expenses.length} {expenses.length === 1 ? 'expense' : 'expenses'}</InsightPill>
+        {total > 0 && <InsightPill color="white">{formatAUD(total)}/yr total</InsightPill>}
+      </div>
+
+      {expenses.map((exp) => {
+        const ownerNames = exp.ownerIds.map((id) => clientNameById.get(id) ?? id);
+        return (
+          <div key={exp.id} className="rounded-lg bg-white/[0.02] border border-white/5 p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <CreditCard className="w-3 h-3 text-orange-400/50" />
+              <span className="text-xs text-white/80 font-medium">{exp.name}</span>
+            </div>
+            <div className="text-[10px] text-white/40 pl-5">
+              {exp.amount != null ? `${formatAUD(exp.amount)}/yr` : 'Unknown amount'}
+              {ownerNames.length > 0 ? ` · ${ownerNames.join(' & ')}` : ''}
+              {exp.details ? ` · ${exp.details}` : ''}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Expense Detail ──
+
+function ExpenseDetail({ expense, data, nodeId, onUpdate }: { expense: Expense; data: FinancialPlan; nodeId: string; onUpdate: (id: string, field: string, value: string) => void }) {
+  const clientNameById = new Map(data.clients.map((c) => [c.id, c.name.split(' ')[0]]));
+  const ownerNames = expense.ownerIds.map((id) => clientNameById.get(id) ?? id);
+
+  return (
+    <div className="space-y-3">
+      <HeroBanner
+        icon={CreditCard}
+        label={expense.name}
+        sublabel={expense.amount != null ? `${formatAUD(expense.amount)}/yr` : 'Expense'}
+        gradient="bg-gradient-to-br from-orange-500/20 via-orange-600/10 to-orange-900/20"
+        iconColor="text-orange-400"
+      />
+
+      <div className="flex flex-wrap gap-1.5">
+        <InsightPill color="orange">Expense</InsightPill>
+        {ownerNames.length > 0 && <InsightPill color="white">{ownerNames.join(' & ')}</InsightPill>}
+      </div>
+
+      <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        <EditableField label="Name" value={expense.name} placeholder="e.g. Living expenses" onSave={(v) => onUpdate(nodeId, 'name', v)} />
+        <div className="border-t border-white/5 my-2" />
+        <EditableField label="Amount (annual)" value={expense.amount?.toString() ?? ''} placeholder="e.g. 50000" onSave={(v) => onUpdate(nodeId, 'amount', v)} />
+        <div className="border-t border-white/5 my-2" />
+        <EditableField label="Details" value={expense.details ?? ''} placeholder="Add details..." onSave={(v) => onUpdate(nodeId, 'details', v)} />
+      </div>
     </div>
   );
 }
