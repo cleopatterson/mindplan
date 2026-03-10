@@ -41,6 +41,7 @@ import { RelationshipsGroupNode } from './nodes/RelationshipsGroupNode';
 import { RelationshipNode } from './nodes/RelationshipNode';
 import { AssetGroupNode } from './nodes/AssetGroupNode';
 import { GoalCategoryGroupNode } from './nodes/GoalCategoryGroupNode';
+import { ExpensesGroupNode } from './nodes/ExpensesGroupNode';
 
 const nodeTypes: NodeTypes = {
   familyNode: FamilyNode,
@@ -59,6 +60,8 @@ const nodeTypes: NodeTypes = {
   relationshipNode: RelationshipNode,
   assetGroupNode: AssetGroupNode,
   goalCategoryGroupNode: GoalCategoryGroupNode,
+  expensesGroupNode: ExpensesGroupNode,
+  expenseNode: LiabilityNode,
 };
 
 interface MindMapProps {
@@ -145,7 +148,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
     // Collect all collapsible group node IDs
     const groupNodeIds = new Set<string>();
     for (const node of rawNodes) {
-      if (node.data.nodeType === 'assetGroup' || node.data.nodeType === 'goalCategoryGroup') groupNodeIds.add(node.id);
+      if (node.data.nodeType === 'assetGroup' || node.data.nodeType === 'goalCategoryGroup' || node.data.nodeType === 'expensesGroup') groupNodeIds.add(node.id);
     }
 
     // Find children of collapsed groups (edges from collapsed group → child)
@@ -160,7 +163,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
     const filteredNodes = rawNodes
       .filter((n) => !hiddenNodeIds.has(n.id))
       .map((n) => {
-        if (n.data.nodeType === 'assetGroup' || n.data.nodeType === 'goalCategoryGroup') {
+        if (n.data.nodeType === 'assetGroup' || n.data.nodeType === 'goalCategoryGroup' || n.data.nodeType === 'expensesGroup') {
           return { ...n, data: { ...n.data, isExpanded: expandedGroupIds.has(n.id) } };
         }
         return n;
@@ -229,7 +232,25 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
 
   useLayoutEffect(() => {
     setNodes(revealedNodes);
-    setEdges(allEdges);
+    // Preserve edge object identity for unchanged edges to prevent ReactFlow
+    // from unmounting/remounting edge SVG paths (which causes a visible flash).
+    setEdges((prev) => {
+      if (prev.length === 0) return allEdges;
+      const prevById = new Map(prev.map((e) => [e.id, e]));
+      let changed = prev.length !== allEdges.length;
+      const merged = allEdges.map((e) => {
+        const old = prevById.get(e.id);
+        if (old && old.source === e.source && old.target === e.target &&
+            (old as any).sourcePosition === (e as any).sourcePosition &&
+            (old as any).targetPosition === (e as any).targetPosition &&
+            old.className === e.className) {
+          return old; // keep same reference
+        }
+        changed = true;
+        return e;
+      });
+      return changed ? merged : prev;
+    });
 
     // Compensate viewport so the toggled group node stays in the same screen position
     const anchor = pendingAnchorRef.current;
@@ -272,7 +293,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
       const parentEdge = rawEdges.find((e) => e.target === nodeId);
       if (parentEdge) {
         const parentNode = rawNodes.find((n) => n.id === parentEdge.source);
-        if ((parentNode?.data.nodeType === 'assetGroup' || parentNode?.data.nodeType === 'goalCategoryGroup') && !expandedGroupIds.has(parentEdge.source)) {
+        if ((parentNode?.data.nodeType === 'assetGroup' || parentNode?.data.nodeType === 'goalCategoryGroup' || parentNode?.data.nodeType === 'expensesGroup') && !expandedGroupIds.has(parentEdge.source)) {
           // Expand the group — the next render cycle will include our node in layoutedNodes
           setExpandedGroupIds((prev) => {
             const next = new Set(prev);
@@ -423,7 +444,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
     (event, node) => {
       // Collapsible group nodes toggle expand/collapse instead of selecting
       const nt = (node.data as NodeData).nodeType;
-      if (nt === 'assetGroup' || nt === 'goalCategoryGroup') {
+      if (nt === 'assetGroup' || nt === 'goalCategoryGroup' || nt === 'expensesGroup') {
         // Capture the node's current position + viewport so we can anchor after re-layout
         pendingAnchorRef.current = {
           nodeId: node.id,

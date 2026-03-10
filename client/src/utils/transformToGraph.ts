@@ -1,4 +1,4 @@
-import type { FinancialPlan, Entity, Asset, Liability, Client, EstatePlanItem, FamilyMember, Grandchild, Goal, Relationship } from 'shared/types';
+import type { FinancialPlan, Entity, Asset, Liability, Expense, Client, EstatePlanItem, FamilyMember, Grandchild, Goal, Relationship } from 'shared/types';
 import type { Node, Edge } from '@xyflow/react';
 import { formatAUD } from './calculations';
 
@@ -8,7 +8,7 @@ export interface NodeData extends Record<string, unknown> {
   label: string;
   sublabel?: string;
   value?: number | null;
-  nodeType: 'family' | 'client' | 'entity' | 'asset' | 'liability' | 'assetGroup' | 'estateGroup' | 'estateClient' | 'estateItem' | 'familyGroup' | 'familyMember' | 'goalsGroup' | 'goalCategoryGroup' | 'goal' | 'relationshipsGroup' | 'relationship';
+  nodeType: 'family' | 'client' | 'entity' | 'asset' | 'liability' | 'assetGroup' | 'expensesGroup' | 'expense' | 'estateGroup' | 'estateClient' | 'estateItem' | 'familyGroup' | 'familyMember' | 'goalsGroup' | 'goalCategoryGroup' | 'goal' | 'relationshipsGroup' | 'relationship';
   entityType?: Entity['type'];
   assetType?: Asset['type'];
   liabilityType?: Liability['type'];
@@ -24,7 +24,7 @@ export interface NodeData extends Record<string, unknown> {
   isExpanded?: boolean;
   parentOwnerId?: string;
   side: Side;
-  raw?: Client | Entity | Asset | Liability | EstatePlanItem | FamilyMember | Grandchild | Goal | Relationship;
+  raw?: Client | Entity | Asset | Liability | Expense | EstatePlanItem | FamilyMember | Grandchild | Goal | Relationship;
 }
 
 export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]; edges: Edge[] } {
@@ -136,6 +136,84 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
         target: liability.id,
         type: 'default',
         data: { isCrossLink: true },
+      });
+    }
+  }
+
+  // LEFT SIDE — expenses group (shared, hangs off first client, cross-linked to others)
+  if (plan.expenses?.length > 0) {
+    const expGroupId = 'expenses-group';
+    const totalAmount = plan.expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const sublabelParts = [`${plan.expenses.length} item${plan.expenses.length > 1 ? 's' : ''}`];
+    if (totalAmount > 0) sublabelParts.push(`${formatCompactAUD(totalAmount)}/yr`);
+
+    // Determine primary owner: first client that appears in any expense's ownerIds, else first client
+    const allExpenseOwnerIds = new Set(plan.expenses.flatMap((e) => resolveOwners(e.ownerIds)));
+    const primaryExpenseOwner = plan.clients.find((c) => allExpenseOwnerIds.has(c.id))?.id ?? defaultOwnerId;
+
+    nodes.push({
+      id: expGroupId,
+      type: 'expensesGroupNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'Expenses',
+        sublabel: sublabelParts.join(' · '),
+        nodeType: 'expensesGroup',
+        isExpanded: false,
+        isJoint: allExpenseOwnerIds.size > 1,
+        ownerNames: allExpenseOwnerIds.size > 1
+          ? [...allExpenseOwnerIds].map((id) => clientNameById.get(id) ?? id)
+          : undefined,
+        side: 'left',
+      },
+    });
+
+    // Primary edge to first client
+    if (primaryExpenseOwner) {
+      edges.push({
+        id: `${primaryExpenseOwner}-${expGroupId}`,
+        source: primaryExpenseOwner,
+        target: expGroupId,
+      });
+
+      // Cross-link edges to additional clients
+      for (const ownerId of allExpenseOwnerIds) {
+        if (ownerId !== primaryExpenseOwner) {
+          edges.push({
+            id: `link-${ownerId}-${expGroupId}`,
+            source: ownerId,
+            target: expGroupId,
+            type: 'default',
+            data: { isCrossLink: true },
+          });
+        }
+      }
+    }
+
+    for (const expense of plan.expenses) {
+      const owners = resolveOwners(expense.ownerIds);
+      const ownerNames = owners.map((id) => clientNameById.get(id) ?? id);
+      const isJoint = owners.length > 1;
+
+      nodes.push({
+        id: expense.id,
+        type: 'expenseNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: expense.name,
+          sublabel: expense.amount != null ? `${formatAUD(expense.amount)}/yr` : undefined,
+          value: expense.amount,
+          nodeType: 'expense',
+          isJoint,
+          ownerNames: isJoint ? ownerNames : undefined,
+          side: 'left',
+          raw: expense,
+        },
+      });
+      edges.push({
+        id: `${expGroupId}-${expense.id}`,
+        source: expGroupId,
+        target: expense.id,
       });
     }
   }

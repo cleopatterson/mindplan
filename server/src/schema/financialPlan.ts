@@ -91,6 +91,14 @@ export const RelationshipSchema = z.object({
   notes: z.nullable(z.string()).describe('Additional notes about the relationship'),
 });
 
+export const ExpenseSchema = z.object({
+  id: z.string().describe('Unique ID, e.g. "expense-1"'),
+  name: z.string().describe('Expense name, e.g. "Living expenses"'),
+  amount: z.nullable(z.number()).describe('Annual amount in AUD, null if unknown'),
+  ownerIds: z.array(z.string()).default([]).describe('Client IDs responsible for this expense. e.g. ["client-1","client-2"] if joint.'),
+  details: z.nullable(z.string()).describe('Additional details'),
+});
+
 export const DataGapSchema = z.object({
   entityId: z.nullable(z.string()).describe('Related entity ID, or null for personal gaps'),
   field: z.string().describe('Field name that is missing'),
@@ -108,5 +116,6 @@ export const FinancialPlanSchema = z.object({
   objectives: z.array(z.string()).describe('Financial objectives mentioned in the document'),
   goals: z.array(GoalSchema).default([]).describe('Structured goals and objectives with category, timeframe, and target value. Empty array if none mentioned.'),
   relationships: z.array(RelationshipSchema).default([]).describe('Professional advisers and relationships — accountants, stockbrokers, solicitors, insurance advisers, mortgage brokers. Empty array if none mentioned.'),
+  expenses: z.array(ExpenseSchema).default([]).describe('Regular ongoing expenses — living costs, travel, discretionary spending. Empty array if none mentioned.'),
   dataGaps: z.array(DataGapSchema).describe('Information that appears missing or unclear'),
 });

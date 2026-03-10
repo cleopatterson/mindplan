@@ -20,6 +20,8 @@ const NODE_WIDTH: Record<NodeData['nodeType'], number> = {
   relationshipsGroup: 180,
   relationship: 200,
   assetGroup: 200,
+  expensesGroup: 200,
+  expense: 230,
 };
 
 const NODE_HEIGHT: Record<NodeData['nodeType'], number> = {
@@ -39,6 +41,8 @@ const NODE_HEIGHT: Record<NodeData['nodeType'], number> = {
   relationshipsGroup: 56,
   relationship: 50,
   assetGroup: 56,
+  expensesGroup: 56,
+  expense: 50,
 };
 
 /**
