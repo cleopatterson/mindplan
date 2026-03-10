@@ -69,6 +69,15 @@ export function Dashboard({
   }, [data]);
   const hasGaps = enrichedGaps.length > 0;
 
+  // Set of node IDs that have gaps (for showing badges on nodes)
+  const gapNodeIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const gap of enrichedGaps) {
+      if (gap.nodeId) ids.add(gap.nodeId);
+    }
+    return ids;
+  }, [enrichedGaps]);
+
   // The most recently selected node drives the detail panel
   const primaryNodeId = selectedNodeIds.size > 0 ? [...selectedNodeIds].pop()! : null;
 
@@ -105,13 +114,22 @@ export function Dashboard({
     onClearHighlight();
   }, [onSelectNode, onClearHighlight]);
 
-  const openGaps = useCallback(() => {
-    setShowGaps(true);
-    setShowInsights(false);
-    setRightPanelOpen(true);
-    setActiveCard(null);
-    onSelectNode(null, false);
-  }, [onSelectNode]);
+  const toggleGaps = useCallback(() => {
+    setShowGaps((prev) => {
+      if (prev) {
+        // Closing gaps panel
+        setRightPanelOpen(false);
+        onClearHighlight();
+        return false;
+      }
+      // Opening gaps panel
+      setShowInsights(false);
+      setRightPanelOpen(true);
+      setActiveCard(null);
+      onSelectNode(null, false);
+      return true;
+    });
+  }, [onSelectNode, onClearHighlight]);
 
   const openInsights = useCallback(() => {
     setShowInsights(true);
@@ -148,6 +166,7 @@ export function Dashboard({
               onSelectNode={handleSelectNode}
               highlightedNodeIds={highlightedNodeIds}
               hoveredNodeIds={hoveredNodeIds}
+              gapNodeIds={gapNodeIds}
               userLinks={userLinks}
               onAddLink={onAddLink}
               onRemoveLink={onRemoveLink}
@@ -159,7 +178,7 @@ export function Dashboard({
           <div className="absolute top-3 left-3 z-20 flex flex-col gap-2">
             {hasGaps && (
               <button
-                onClick={openGaps}
+                onClick={toggleGaps}
                 className={`gaps-badge cursor-pointer flex items-center gap-2 px-3 py-2
                   backdrop-blur-md border rounded-lg
                   text-sm font-medium transition-all

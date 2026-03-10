@@ -70,6 +70,7 @@ interface MindMapProps {
   onSelectNode: (id: string | null, additive: boolean) => void;
   highlightedNodeIds: Set<string>;
   hoveredNodeIds: Set<string>;
+  gapNodeIds: Set<string>;
   userLinks: Edge[];
   onAddLink: (edge: Edge) => void;
   onRemoveLink: (edgeId: string) => void;
@@ -80,6 +81,8 @@ export interface MindMapHandle {
   fitView: (opts?: { padding?: number }) => void;
   focusNode: (nodeId: string) => void;
   getContentBounds: () => { width: number; height: number };
+  getViewport: () => { x: number; y: number; zoom: number };
+  restoreViewport: (vp: { x: number; y: number; zoom: number }) => void;
 }
 
 export const MindMap = forwardRef<MindMapHandle, MindMapProps>(function MindMap(props, ref) {
@@ -109,7 +112,7 @@ const CONNECTION_LINE_STYLE: React.CSSProperties = {
 };
 
 const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInner(
-  { data, selectedNodeIds, onSelectNode, highlightedNodeIds, hoveredNodeIds, userLinks, onAddLink, onRemoveLink, onCreateChildNode },
+  { data, selectedNodeIds, onSelectNode, highlightedNodeIds, hoveredNodeIds, gapNodeIds, userLinks, onAddLink, onRemoveLink, onCreateChildNode },
   ref,
 ) {
   const theme = useTheme();
@@ -133,13 +136,16 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
   // Reveal animation — staggered pop-in on initial data load only
   const { applyReveal } = useRevealAnimation();
 
+
   // Reset collapsed state when data identity changes (new upload)
   // Note: reveal resets naturally on remount (component unmounts between uploads)
   const dataRef = useRef(data);
+  const initialFitDone = useRef(false);
   useEffect(() => {
     if (data !== dataRef.current) {
       dataRef.current = data;
       setExpandedGroupIds(new Set());
+      initialFitDone.current = false; // new data needs a new fit
     }
   }, [data]);
 
@@ -159,13 +165,15 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
       }
     }
 
-    // Filter nodes: hide children, stamp isExpanded on groups
+    // Filter nodes: hide children, stamp isExpanded on groups, stamp hasGap
     const filteredNodes = rawNodes
       .filter((n) => !hiddenNodeIds.has(n.id))
       .map((n) => {
+        const hasGap = gapNodeIds.size > 0 && gapNodeIds.has(n.id);
         if (n.data.nodeType === 'assetGroup' || n.data.nodeType === 'goalCategoryGroup' || n.data.nodeType === 'expensesGroup') {
-          return { ...n, data: { ...n.data, isExpanded: expandedGroupIds.has(n.id) } };
+          return { ...n, data: { ...n.data, isExpanded: expandedGroupIds.has(n.id), hasGap } };
         }
+        if (hasGap) return { ...n, data: { ...n.data, hasGap } };
         return n;
       });
 
@@ -175,7 +183,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
     );
 
     return { nodes: filteredNodes, edges: filteredEdges };
-  }, [rawNodes, rawEdges, expandedGroupIds]);
+  }, [rawNodes, rawEdges, expandedGroupIds, gapNodeIds]);
 
   const { nodes: layoutedNodes, edges: layoutedEdges } = useGraphLayout(visibleNodes, visibleEdges);
 
@@ -213,7 +221,9 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
       }
       return { width: maxX - minX, height: maxY - minY };
     },
-  }), [fitView, setCenter, getNodes]);
+    getViewport,
+    restoreViewport: (vp) => setViewport(vp, { duration: 0 }),
+  }), [fitView, setCenter, getNodes, getViewport, setViewport]);
 
   // Viewport anchor — stabilize position when expanding/collapsing groups
   const pendingAnchorRef = useRef<{
@@ -231,9 +241,19 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
   } | null>(null);
 
   useLayoutEffect(() => {
-    setNodes(revealedNodes);
-    // Preserve edge object identity for unchanged edges to prevent ReactFlow
-    // from unmounting/remounting edge SVG paths (which causes a visible flash).
+    // Preserve ReactFlow's measured dimensions on existing nodes so edge
+    // routing doesn't break while ReactFlow re-measures. Only new nodes
+    // (from expanding a group) need fresh measurement.
+    setNodes((prev) => {
+      if (prev.length === 0) return revealedNodes;
+      const prevById = new Map(prev.map((n) => [n.id, n]));
+      return revealedNodes.map((n) => {
+        const old = prevById.get(n.id);
+        if (old?.measured) return { ...n, measured: old.measured };
+        return n;
+      });
+    });
+
     setEdges((prev) => {
       if (prev.length === 0) return allEdges;
       const prevById = new Map(prev.map((e) => [e.id, e]));
@@ -242,9 +262,8 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
         const old = prevById.get(e.id);
         if (old && old.source === e.source && old.target === e.target &&
             (old as any).sourcePosition === (e as any).sourcePosition &&
-            (old as any).targetPosition === (e as any).targetPosition &&
-            old.className === e.className) {
-          return old; // keep same reference
+            (old as any).targetPosition === (e as any).targetPosition) {
+          return old;
         }
         changed = true;
         return e;
@@ -271,6 +290,15 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
       }
     }
   }, [revealedNodes, allEdges, setViewport]);
+
+  // One-time fitView on initial layout (replaces the ReactFlow `fitView` prop
+  // which was re-fitting on every node change and causing the zoom-jump bug)
+  useEffect(() => {
+    if (!initialFitDone.current && revealedNodes.length > 0) {
+      initialFitDone.current = true;
+      requestAnimationFrame(() => fitView({ padding: 0.15, duration: 0 }));
+    }
+  }, [revealedNodes, fitView]);
 
   // Auto-expand collapsed groups that contain a newly created node,
   // then select the node once it appears in the layout.
@@ -582,8 +610,6 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
         connectionLineStyle={CONNECTION_LINE_STYLE}
         defaultEdgeOptions={edgeOptions}
         proOptions={{ hideAttribution: true }}
-        fitView
-        fitViewOptions={{ padding: 0.15 }}
         minZoom={0.2}
         maxZoom={2}
         colorMode={isDark ? 'dark' : 'light'}

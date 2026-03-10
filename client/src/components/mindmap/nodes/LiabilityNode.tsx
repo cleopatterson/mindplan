@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Home, CreditCard, HandCoins, Receipt } from 'lucide-react';
+import { Home, CreditCard, HandCoins, Receipt, AlertTriangle } from 'lucide-react';
 import type { NodeData } from '../../../utils/transformToGraph';
 import type { Liability } from 'shared/types';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -26,7 +26,7 @@ export const LiabilityNode = memo(function LiabilityNode({ data }: { data: NodeD
   return (
     <div
       className={`
-        cursor-pointer flex items-center gap-2.5 px-3 py-2 rounded-lg backdrop-blur w-[230px] text-sm
+        cursor-pointer relative flex items-center gap-2.5 px-3 py-2 rounded-lg backdrop-blur w-[230px] text-sm
         transition-colors border
         ${isDark
           ? 'bg-red-500/20 border-red-400/40 text-red-200 hover:bg-red-500/30'
@@ -52,6 +52,11 @@ export const LiabilityNode = memo(function LiabilityNode({ data }: { data: NodeD
         </div>
       </div>
       {!isLeft && iconBox}
+      {data.hasGap && (
+        <div className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-4.5 h-4.5 rounded-full bg-amber-500 shadow-sm shadow-amber-500/30">
+          <AlertTriangle className="w-2.5 h-2.5 text-white" />
+        </div>
+      )}
     </div>
   );
 });

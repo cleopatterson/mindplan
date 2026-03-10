@@ -38,6 +38,8 @@ export function usePdfExport() {
     ) => {
       if (!mapElement) return;
       setExporting(true);
+      // Save current viewport so we can restore it after capture
+      const savedViewport = mindMap?.getViewport();
 
       try {
         // 1. Determine tree shape for dynamic orientation
@@ -46,6 +48,7 @@ export function usePdfExport() {
         const orientation = options.includeMap && treeRatio >= 1.0 ? 'landscape' as const : 'portrait' as const;
 
         let dataUrl = '';
+
         if (options.includeMap) {
           // 2. Switch to light mode
           mapElement.setAttribute('data-pdf-light', '');
@@ -63,23 +66,16 @@ export function usePdfExport() {
           const captureW = orientation === 'landscape' ? 2970 : 2100;
           const captureH = orientation === 'landscape' ? 2100 : 2970;
 
-          const cover = document.createElement('div');
-          cover.style.cssText = `
-            position: fixed; inset: 0; z-index: 99998;
-            background: #0f0f1a; display: flex; align-items: center; justify-content: center;
-            color: rgba(255,255,255,0.5); font-size: 14px; font-family: system-ui;
-          `;
-          cover.textContent = 'Generating PDF...';
-          document.body.appendChild(cover);
-
+          // Move map offscreen for capture — fully invisible to user
+          // (the export modal at z-50 shields the UI during generation)
           const origStyle = mapElement.style.cssText;
           mapElement.style.cssText = `
             position: fixed !important;
             width: ${captureW}px !important;
             height: ${captureH}px !important;
-            top: 0px !important;
+            top: -${captureH + 100}px !important;
             left: 0px !important;
-            z-index: 99999 !important;
+            z-index: 1 !important;
             background: #ffffff;
           `;
 
@@ -97,7 +93,11 @@ export function usePdfExport() {
 
           mapElement.style.cssText = origStyle;
           mapElement.removeAttribute('data-pdf-light');
-          cover.remove();
+          // Restore viewport to where the user was before export
+          if (savedViewport) {
+            await new Promise((r) => setTimeout(r, 50));
+            mindMap?.restoreViewport(savedViewport);
+          }
           await new Promise((r) => setTimeout(r, 100));
         }
 
@@ -208,9 +208,10 @@ export function usePdfExport() {
           );
         }
 
-        const safeName = options.preparedFor
-          ? `${options.preparedFor.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-')}-structure.pdf`
-          : 'financial-structure.pdf';
+        // Build filename from family label + title (e.g. "Smith-Family-Legacy-Wealth-Blueprint.pdf")
+        const familyLabel = deriveFamilyLabel(data);
+        const titleSlug = (options.title || 'Legacy Wealth Blueprint').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-');
+        const safeName = `${familyLabel.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-')}-${titleSlug}.pdf`;
         pdf.save(safeName);
       } finally {
         setExporting(false);
@@ -218,12 +219,12 @@ export function usePdfExport() {
         if (mapElement) {
           mapElement.removeAttribute('data-pdf-light');
           // If styles still show the capture sizing, restore to normal
-          if (mapElement.style.zIndex === '99999') {
+          if (mapElement.style.zIndex === '1') {
             mapElement.style.cssText = '';
           }
         }
-        // Remove cover overlay if still present
-        document.querySelector('[style*="z-index: 99998"]')?.remove();
+        // Restore viewport in case it wasn't restored above (e.g. capture failed)
+        if (savedViewport) mindMap?.restoreViewport(savedViewport);
       }
     },
     [],
@@ -1223,4 +1224,17 @@ function drawPersonBox(
     pdf.setTextColor(120);
     pdf.text(subtitle, x + pad, y + h * 0.6, { maxWidth: w - pad * 2 });
   }
+}
+
+/** Derive the family label from plan data (same logic as transformToGraph). */
+function deriveFamilyLabel(data: FinancialPlan): string {
+  if (data.familyLabel) return data.familyLabel;
+  const surnames = data.clients.map((c) => c.name.split(' ').pop()).filter(Boolean);
+  const uniqueSurnames = [...new Set(surnames)];
+  const isSingleWordNames = data.clients.every((c) => !c.name.includes(' '));
+  return isSingleWordNames
+    ? data.clients.map((c) => c.name).join(' & ')
+    : uniqueSurnames.length === 1
+      ? `${uniqueSurnames[0]} Family`
+      : data.clients.map((c) => c.name.split(' ')[0]).join(' & ');
 }

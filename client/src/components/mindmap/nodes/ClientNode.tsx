@@ -1,13 +1,13 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { User } from 'lucide-react';
+import { User, AlertTriangle } from 'lucide-react';
 import type { NodeData } from '../../../utils/transformToGraph';
 
 export const ClientNode = memo(function ClientNode({ data }: { data: NodeData }) {
   return (
     <div
       className={`
-        cursor-pointer flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-blue-500/90 backdrop-blur text-white w-[200px]
+        cursor-pointer relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-blue-500/90 backdrop-blur text-white w-[200px]
         shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 transition-shadow
       `}
     >
@@ -20,6 +20,11 @@ export const ClientNode = memo(function ClientNode({ data }: { data: NodeData })
         {data.sublabel && <div className="text-xs text-blue-100 mt-0.5">{data.sublabel}</div>}
       </div>
       <Handle type="source" position={Position.Left} className="!bg-blue-300" />
+      {data.hasGap && (
+        <div className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-4.5 h-4.5 rounded-full bg-amber-500 shadow-sm shadow-amber-500/30">
+          <AlertTriangle className="w-2.5 h-2.5 text-white" />
+        </div>
+      )}
     </div>
   );
 });

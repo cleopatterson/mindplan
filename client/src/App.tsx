@@ -50,10 +50,17 @@ export default function App() {
     });
   }, []);
 
+  const [exportDone, setExportDone] = useState(false);
   const handleExport = (options: ExportOptions) => {
     if (!data) return;
     exportPdf(mapRef.current, mindMapRef.current, data, options)
-      .then(() => setShowExportModal(false))
+      .then(() => {
+        setExportDone(true);
+        setTimeout(() => {
+          setShowExportModal(false);
+          setExportDone(false);
+        }, 1500);
+      })
       .catch((err) => console.error('Export failed:', err));
   };
 
@@ -147,7 +154,7 @@ export default function App() {
             <button
               onClick={() => setShowFeedback(true)}
               className={`cursor-pointer p-2 rounded-lg transition-colors
-                ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/5' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
               title="Send feedback"
             >
               <MessageSquarePlus className="w-4 h-4" />
@@ -155,7 +162,7 @@ export default function App() {
             <button
               onClick={() => setShowLogoutConfirm(true)}
               className={`cursor-pointer p-2 rounded-lg transition-colors
-                ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/5' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
               title="Sign out"
             >
               <LogOut className="w-4 h-4" />
@@ -164,7 +171,7 @@ export default function App() {
               <button
                 onClick={toggleTheme}
                 className={`cursor-pointer p-2 rounded-lg transition-colors
-                  ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/5' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                  ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
                 title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
               >
                 {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -190,7 +197,7 @@ export default function App() {
                 <button
                   onClick={() => uploadInputRef.current?.click()}
                   className={`cursor-pointer p-2 rounded-lg transition-colors
-                    ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/5' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                    ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
                   title="Upload new document"
                 >
                   <Upload className="w-4 h-4" />
@@ -263,6 +270,7 @@ export default function App() {
             data={data}
             mapElement={mapRef.current}
             exporting={exporting}
+            exportDone={exportDone}
             onExport={handleExport}
             onClose={() => setShowExportModal(false)}
           />
