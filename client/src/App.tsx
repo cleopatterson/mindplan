@@ -110,9 +110,9 @@ export default function App() {
             >Legacy Wealth Blueprint</span>
           </div>
 
-          {/* Centre — view toggle */}
+          {/* Centre — view toggle (projection gated by VITE_ENABLE_PROJECTION) */}
           <div className="flex justify-center">
-            {appState === 'dashboard' && (
+            {appState === 'dashboard' && import.meta.env.VITE_ENABLE_PROJECTION && (
               <div className={`flex rounded-lg border p-0.5 ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-100'}`}>
                 <button
                   onClick={() => setViewMode('mindmap')}
