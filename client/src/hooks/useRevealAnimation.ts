@@ -23,12 +23,13 @@ export function useRevealAnimation() {
   const revealedDataRef = useRef(false);
   const cleanupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Clean up timer on unmount — also reset state so Strict Mode re-mount works
+  // Clean up timer on unmount (don't reset revealedDataRef — Strict Mode's
+  // simulated unmount/remount preserves refs, so resetting here would cause
+  // the reveal animation to re-fire on the next state change like group expand)
   useEffect(() => {
     return () => {
       if (cleanupTimerRef.current) clearTimeout(cleanupTimerRef.current);
       cleanupTimerRef.current = null;
-      revealedDataRef.current = false;
     };
   }, []);
 
@@ -42,6 +43,9 @@ export function useRevealAnimation() {
         if (cleanupTimerRef.current) {
           clearTimeout(cleanupTimerRef.current);
           cleanupTimerRef.current = null;
+          // Flush DOM cleanup immediately since new nodes are coming
+          document.querySelectorAll('.reveal-node').forEach((el) => el.classList.remove('reveal-node'));
+          document.querySelectorAll('.reveal-edge').forEach((el) => el.classList.remove('reveal-edge'));
         }
         return { nodes, edges };
       }

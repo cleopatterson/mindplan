@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, FileDown, Loader2, Target, Handshake } from 'lucide-react';
+import { X, FileDown, Loader2, Target, Handshake, CheckCircle } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import type { FinancialPlan } from 'shared/types';
 import { netWorth, totalAssets, totalLiabilities, formatAUD } from '../../utils/calculations';
@@ -22,11 +22,12 @@ interface ExportModalProps {
   data: FinancialPlan;
   mapElement: HTMLElement | null;
   exporting: boolean;
+  exportDone: boolean;
   onExport: (options: ExportOptions) => void;
   onClose: () => void;
 }
 
-export function ExportModal({ data, mapElement, exporting, onExport, onClose }: ExportModalProps) {
+export function ExportModal({ data, mapElement, exporting, exportDone, onExport, onClose }: ExportModalProps) {
   const clientNames = data.clients.map((c) => c.name).join(' & ');
   const hasGaps = data.dataGaps.length > 0;
 
@@ -310,26 +311,34 @@ export function ExportModal({ data, mapElement, exporting, onExport, onClose }: 
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10">
-          <button
-            onClick={onClose}
-            className="cursor-pointer px-4 py-2 text-sm text-white/40 hover:text-white/60 transition-colors"
-          >
-            Cancel
-          </button>
+          {!exportDone && (
+            <button
+              onClick={onClose}
+              disabled={exporting}
+              className="px-4 py-2 text-sm text-white/40 hover:text-white/60 disabled:opacity-30 transition-colors"
+            >
+              Cancel
+            </button>
+          )}
           <button
             onClick={handleExport}
-            disabled={exporting || pageCount === 0}
-            className="cursor-pointer flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium text-white
-              bg-gradient-to-r from-blue-600 to-purple-600
-              hover:from-blue-500 hover:to-purple-500
-              disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-purple-500/20"
+            disabled={exporting || exportDone || pageCount === 0}
+            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium text-white
+              transition-all shadow-lg
+              ${exportDone
+                ? 'bg-emerald-600 shadow-emerald-500/20'
+                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 shadow-purple-500/20'
+              }
+              disabled:opacity-50 disabled:cursor-not-allowed`}
           >
-            {exporting ? (
+            {exportDone ? (
+              <CheckCircle className="w-4 h-4" />
+            ) : exporting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <FileDown className="w-4 h-4" />
             )}
-            {exporting ? 'Generating...' : 'Generate PDF'}
+            {exportDone ? 'PDF saved!' : exporting ? 'Generating...' : 'Generate PDF'}
           </button>
         </div>
       </div>

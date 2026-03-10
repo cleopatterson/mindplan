@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Restore pointer cursor on interactive elements (Tailwind preflight resets it) */
+button:not(:disabled),
+[role="button"],
+summary {
+  cursor: pointer;
+}
+
 @media print {
   @page { size: landscape; }
 }

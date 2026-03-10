@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Home, TrendingUp, Banknote, Shield, Car, ShieldCheck, Wallet, Briefcase, Landmark } from 'lucide-react';
+import { Home, TrendingUp, Banknote, Shield, Car, ShieldCheck, Wallet, Briefcase, Landmark, AlertTriangle } from 'lucide-react';
 import type { NodeData } from '../../../utils/transformToGraph';
 import type { Asset } from 'shared/types';
 
@@ -29,7 +29,7 @@ export const AssetNode = memo(function AssetNode({ data }: { data: NodeData }) {
   return (
     <div
       className={`
-        cursor-pointer flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/10 backdrop-blur border border-white/20
+        cursor-pointer relative flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/10 backdrop-blur border border-white/20
         text-white/90 w-[230px] text-sm
         hover:bg-white/15 transition-colors
       `}
@@ -52,6 +52,11 @@ export const AssetNode = memo(function AssetNode({ data }: { data: NodeData }) {
         </div>
       </div>
       {!isLeft && iconBox}
+      {data.hasGap && (
+        <div className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-4.5 h-4.5 rounded-full bg-amber-500 shadow-sm shadow-amber-500/30">
+          <AlertTriangle className="w-2.5 h-2.5 text-white" />
+        </div>
+      )}
     </div>
   );
 });

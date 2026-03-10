@@ -15,6 +15,7 @@ export interface NodeData extends Record<string, unknown> {
   estateItemType?: EstatePlanItem['type'];
   familyRelationship?: FamilyMember['relationship'] | Grandchild['relationship'];
   hasIssue?: boolean;
+  hasGap?: boolean;
   isJoint?: boolean;
   ownerNames?: string[];
   trusteeName?: string | null;

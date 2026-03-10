@@ -39,6 +39,7 @@ Client environment variables (`client/.env`):
 - `VITE_FIREBASE_API_KEY` — Firebase web API key
 - `VITE_FIREBASE_AUTH_DOMAIN` — Firebase auth domain
 - `VITE_FIREBASE_PROJECT_ID` — Firebase project ID
+- `VITE_ENABLE_PROJECTION` — set to `true` to show the Map/Projection toggle (omit to hide). Not set on Railway.
 
 ## Architecture Decisions
 
@@ -73,6 +74,9 @@ Upload → text extraction → **Claude API path**: pre-API scrubbing → Claude
 - Insurance assets are excluded from gap detection (cover amount is not an asset value)
 - Deduplication uses `nodeId::field` key (not description strings)
 - Client-side `resolveGap()` uses `nodeId` for precise field targeting across all node types
+- **Gap badges on nodes**: `gapNodeIds` Set passed from Dashboard → MindMap → stamped as `hasGap` on node data → amber AlertTriangle badge rendered on AssetNode, LiabilityNode, ClientNode
+- **Gaps panel toggle**: click gaps badge to open, click again to close (toggleGaps in Dashboard)
+- **GapsChecklist styling**: normal font color (not red), exclamation badges, separator lines, generous spacing, theme-aware
 
 ### Asset Groups (Collapsible)
 - Assets are grouped by raw `asset.type` when 2+ share the same type under a parent
@@ -84,11 +88,20 @@ Upload → text extraction → **Claude API path**: pre-API scrubbing → Claude
 - Drag-to-create from a collapsed group auto-expands it
 - Hidden children of collapsed groups are filtered between `transformToGraph` and `useGraphLayout`
 - Layout sync uses `useLayoutEffect` (not `useEffect`) to prevent edge flicker on expand/collapse
+- Edge identity preservation: `setEdges` functional updater reuses old edge references when source/target/position/className unchanged, preventing ReactFlow SVG unmount/remount flash
 
 ### Asset Types
 - `super` = accumulation phase, `pension` = drawdown/retirement phase (Account Based Pension, TTR)
 - Both grouped under "Super" in summary bar (`ASSET_GROUP` in `calculations.ts`)
 - Both excluded from `personalAssetsForCalc()` when SMSF has underlying assets (dedup)
+
+### Expenses (Mind Map)
+- Parsed from "Regular expenses" section (stops at first "Total" row to exclude "One off expenses")
+- Displayed as a collapsible group node hanging off the first client, with cross-links to other clients
+- Group node (`expensesGroup`): slate-styled like asset category groups, shows count + total/yr
+- Individual expense nodes (`expense`): reuse `LiabilityNode` component (red styling)
+- `ExpensesGroupNode.tsx` — collapsible group with receipt icon
+- 62/73 test files contain expenses data
 
 ### Summary Bar
 - Asset allocation groups `managed_fund` + `shares` together as "Shares", `pension` + `super` as "Super"
@@ -129,6 +142,7 @@ Deterministic parser for Plutosoft "Client Fact Find" `.docx` documents. No API 
   - `entityStructure.ts` — entity names, types, directors/trustees
   - `entityHoldings.ts` — entity assets and liabilities (shares, property, cash, loans)
   - `estatePlanning.ts` — wills, EPA, EPG, super nominations
+  - `expenses.ts` — regular expenses (4-column table: Description, Owner, Details, Amount)
   - `goals.ts`, `dependants.ts`, `relationships.ts` — goals, family, professional relationships
 
 Key parser patterns:
@@ -149,7 +163,7 @@ Key parser patterns:
 - Lazy Firebase Admin init required — env vars aren't available at import time (dotenv loads after ES imports)
 
 ### Projection View (Experimental)
-Time-based financial projection visualized as a Recharts stacked area chart. Toggled via Map/Projection segmented control in the header. **Not committed to production — experimental feature.**
+Time-based financial projection visualized as a Recharts stacked area chart. Toggled via Map/Projection segmented control in the header. **Gated by `VITE_ENABLE_PROJECTION` env var** — set in local `client/.env` (gitignored), not set on Railway. Code stays in codebase (harmless, lazy-loaded) but UI toggle is hidden in production.
 
 #### Architecture
 - **Client-side projection engine**: Pure `calculateProjection(plan, settings) → ProjectionResult` — per-year iteration with asset growth, P&I liability amortization, super contributions, retirement detection
@@ -185,6 +199,21 @@ Time-based financial projection visualized as a Recharts stacked area chart. Tog
 - Insurance assets excluded from projections
 - Settings gear in chart area top-right, detail panel reuses same `w-96` animated right panel
 
+### Reveal Animation
+- DFS-order staggered node/edge appearance on initial load only (not on group expand/collapse)
+- Opacity-only keyframe (no `transform: scale()` — was causing ReactFlow handle position miscalculation)
+- Cleanup uses DOM-only class removal (not React state) to avoid triggering edge re-render
+- **Critical**: `revealedDataRef` must NOT be reset in useEffect cleanup — React Strict Mode's simulated unmount/remount preserves refs, so resetting causes reveal to re-fire on next state change (edge flash bug). Real unmounts create fresh hook instances.
+- `setNodes` in useLayoutEffect preserves `old.measured` on existing nodes to prevent ReactFlow re-measuring all nodes (which causes edges to temporarily lose connection points)
+- `fitView` prop removed from `<ReactFlow>` — it re-fitted on every node change. Replaced with one-time `fitView()` on initial mount via `initialFitDone` ref
+
+### PDF Export
+- `usePdfExport.ts` — captures map as JPEG, builds multi-page jsPDF document
+- Map capture moves element offscreen (`top: -captureH`) at `z-index: 1` (behind modal at z-50) so user sees modal "Generating..." state throughout
+- Viewport saved before capture, restored after — `MindMapHandle.getViewport()`/`restoreViewport()`
+- Filename derived from family label + title (e.g. `Smith-Family-Legacy-Wealth-Blueprint.pdf`)
+- Success flow: Generate → spinner → green "PDF saved!" (1.5s) → modal auto-closes
+
 ### Feedback System
 - Firestore-based (collection: `feedback`) — no server endpoint needed
 - `client/src/components/feedback/FeedbackPanel.tsx` — submit + history panel
@@ -205,3 +234,5 @@ Time-based financial projection visualized as a Recharts stacked area chart. Tog
 - Performance timing logs use `⏱` prefix (server and client)
 - The app uses `select-none` globally to prevent text selection on shift-click
 - Zod validation uses `safeParse` (not `parse`) for clean error messages
+- Global `button:not(:disabled) { cursor: pointer }` in `index.css` (Tailwind preflight resets it) — no need for `cursor-pointer` on buttons
+- Header icon buttons use `hover:bg-white/10` (dark) / `hover:bg-gray-100` (light) for visible hover feedback
