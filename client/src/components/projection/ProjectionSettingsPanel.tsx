@@ -151,10 +151,10 @@ export function ProjectionSettingsPanel({ plan, settings, onUpdate }: Props) {
 
   const riskProfile = plan.clients[0]?.riskProfile ?? 'balanced';
 
-  // Collect all non-insurance assets with their resolved rates
+  // Collect all assets with their resolved rates
   const allAssets: (Asset & { owner: string })[] = [
-    ...plan.personalAssets.filter((a) => a.type !== 'insurance').map((a) => ({ ...a, owner: 'Personal' })),
-    ...plan.entities.flatMap((e) => e.assets.filter((a) => a.type !== 'insurance').map((a) => ({ ...a, owner: e.name }))),
+    ...plan.personalAssets.map((a) => ({ ...a, owner: 'Personal' })),
+    ...plan.entities.flatMap((e) => e.assets.map((a) => ({ ...a, owner: e.name }))),
   ];
 
   const togglePPR = (assetId: string) => {

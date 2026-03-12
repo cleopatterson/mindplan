@@ -18,7 +18,7 @@ const ASSET_TYPE_MAP: Record<string, string> = {
   'share': 'shares',
   'equity': 'shares',
   'superannuation': 'super',
-  'life insurance': 'insurance',
+  'life insurance': 'other',
   'motor vehicle': 'vehicle',
   'car': 'vehicle',
 };
@@ -31,7 +31,7 @@ const LIABILITY_TYPE_MAP: Record<string, string> = {
   'credit': 'credit_card',
 };
 
-const VALID_ASSET_TYPES = new Set(['property', 'shares', 'cash', 'managed_fund', 'super', 'pension', 'insurance', 'vehicle', 'other']);
+const VALID_ASSET_TYPES = new Set(['property', 'shares', 'cash', 'managed_fund', 'super', 'pension', 'vehicle', 'other']);
 const VALID_LIABILITY_TYPES = new Set(['mortgage', 'loan', 'credit_card', 'other']);
 const VALID_ENTITY_TYPES = new Set(['trust', 'smsf', 'company', 'partnership']);
 const VALID_ESTATE_TYPES = new Set(['will', 'poa', 'guardianship', 'super_nomination']);
@@ -181,6 +181,9 @@ export function coercePlan(raw: unknown): void {
       coerceEnum(r, 'type', { 'financial adviser': 'financial_adviser', 'insurance adviser': 'insurance_adviser', 'mortgage broker': 'mortgage_broker' }, VALID_ADVISER_TYPES);
     }
   }
+
+  // Insurance covers
+  ensureDefault(plan, 'insurance', []);
 
   // Objectives (sometimes objects instead of strings)
   coerceObjectives(plan);

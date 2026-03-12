@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const AssetSchema = z.object({
   id: z.string().describe('Unique ID, e.g. "asset-1"'),
   name: z.string().describe('Asset name, e.g. "123 Smith St, Bondi"'),
-  type: z.enum(['property', 'shares', 'cash', 'managed_fund', 'super', 'pension', 'insurance', 'vehicle', 'other']),
+  type: z.enum(['property', 'shares', 'cash', 'managed_fund', 'super', 'pension', 'vehicle', 'other']),
   value: z.nullable(z.number()).describe('Current value in AUD, null if unknown'),
   ownerIds: z.array(z.string()).default([]).describe('Client IDs who own this asset. For personal assets: e.g. ["client-1","client-2"] if joint, ["client-1"] if sole. Empty for entity assets.'),
   details: z.nullable(z.string()).describe('Additional details'),
@@ -99,6 +99,16 @@ export const ExpenseSchema = z.object({
   details: z.nullable(z.string()).describe('Additional details'),
 });
 
+export const InsuranceCoverSchema = z.object({
+  id: z.string().describe('Unique ID, e.g. "insurance-1"'),
+  clientId: z.string().describe('Client ID of the insured person'),
+  type: z.enum(['life', 'tpd', 'trauma', 'income_protection']).describe('Cover type'),
+  coverAmount: z.nullable(z.number()).describe('Cover amount in AUD, null if unknown'),
+  policyName: z.nullable(z.string()).describe('Policy name, e.g. "AustralianSuper - Vince"'),
+  isInsideSuper: z.boolean().describe('True if held inside a superannuation fund'),
+  details: z.nullable(z.string()).describe('Features like premium type, waiting period, benefit period'),
+});
+
 export const DataGapSchema = z.object({
   entityId: z.nullable(z.string()).describe('Related entity ID, or null for personal gaps'),
   field: z.string().describe('Field name that is missing'),
@@ -117,5 +127,6 @@ export const FinancialPlanSchema = z.object({
   goals: z.array(GoalSchema).default([]).describe('Structured goals and objectives with category, timeframe, and target value. Empty array if none mentioned.'),
   relationships: z.array(RelationshipSchema).default([]).describe('Professional advisers and relationships — accountants, stockbrokers, solicitors, insurance advisers, mortgage brokers. Empty array if none mentioned.'),
   expenses: z.array(ExpenseSchema).default([]).describe('Regular ongoing expenses — living costs, travel, discretionary spending. Empty array if none mentioned.'),
+  insurance: z.array(InsuranceCoverSchema).default([]).describe('Insurance covers — life, TPD, trauma, income protection. Each individual cover type is a separate entry. Empty array if none mentioned.'),
   dataGaps: z.array(DataGapSchema).describe('Information that appears missing or unclear'),
 });

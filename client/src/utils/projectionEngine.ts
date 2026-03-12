@@ -76,11 +76,11 @@ export function calculateProjection(
   const currentYear = new Date().getFullYear();
   const riskProfile = plan.clients[0]?.riskProfile ?? null;
 
-  // Gather all assets (personal + entity), excluding insurance
+  // Gather all assets (personal + entity)
   const allAssets: Asset[] = [
     ...personalAssetsForCalc(plan),
     ...plan.entities.flatMap((e) => e.assets),
-  ].filter((a) => a.type !== 'insurance');
+  ];
 
   const pprIds = new Set(settings.pprAssetIds ?? []);
 

@@ -42,6 +42,9 @@ import { RelationshipNode } from './nodes/RelationshipNode';
 import { AssetGroupNode } from './nodes/AssetGroupNode';
 import { GoalCategoryGroupNode } from './nodes/GoalCategoryGroupNode';
 import { ExpensesGroupNode } from './nodes/ExpensesGroupNode';
+import { InsuranceGroupNode } from './nodes/InsuranceGroupNode';
+import { InsuranceClientNode } from './nodes/InsuranceClientNode';
+import { InsuranceCoverNode } from './nodes/InsuranceCoverNode';
 
 const nodeTypes: NodeTypes = {
   familyNode: FamilyNode,
@@ -62,6 +65,9 @@ const nodeTypes: NodeTypes = {
   goalCategoryGroupNode: GoalCategoryGroupNode,
   expensesGroupNode: ExpensesGroupNode,
   expenseNode: LiabilityNode,
+  insuranceGroupNode: InsuranceGroupNode,
+  insuranceClientNode: InsuranceClientNode,
+  insuranceCoverNode: InsuranceCoverNode,
 };
 
 interface MindMapProps {

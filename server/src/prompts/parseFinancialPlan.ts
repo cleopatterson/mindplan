@@ -4,7 +4,7 @@ export const PARSE_SYSTEM_PROMPT = `You are an expert Australian financial plann
 Australian financial plans typically involve:
 - **Clients**: Individuals or couples. Look for names, ages, occupations, income, super balances.
 - **Entities**: Trusts (family/discretionary/unit), SMSFs, companies, partnerships. Each has linked clients as trustees, directors, appointers, or beneficiaries.
-- **Assets**: Property, shares, managed funds, cash, superannuation, insurance policies, vehicles.
+- **Assets**: Property, shares, managed funds, cash, superannuation, vehicles.
 - **Liabilities**: Mortgages, personal loans, credit cards.
 - **Objectives**: Retirement goals, wealth building, estate planning, tax optimisation.
 - **Estate Planning**: Wills, powers of attorney, guardianship, superannuation death benefit nominations.
@@ -76,5 +76,15 @@ Australian financial plans typically involve:
    - contactName: The individual contact person name
    - notes: Any additional details about the relationship
    - clientIds: Which client IDs the adviser is linked to (empty array if linked to all/unclear)
+
+16. Extract insurance covers as INDIVIDUAL cover types, not whole policies:
+   - Each cover type (life, TPD, trauma, income protection) within a policy becomes a separate insurance entry.
+   - type: 'life', 'tpd', 'trauma', or 'income_protection'
+   - clientId: The client ID of the insured person
+   - coverAmount: The cover amount for that specific cover type
+   - policyName: The policy/product name (e.g. "AustralianSuper - Vince", "AIA Protection Plan")
+   - isInsideSuper: true if the policy is held within a super fund (look for super fund names in the policy owner field)
+   - details: Features like premium type, waiting period, benefit period
+   - Do NOT put insurance in personalAssets — insurance is extracted separately in the insurance array.
 
 Be thorough but accurate. If something is ambiguous, flag it as a data gap rather than guessing.`;

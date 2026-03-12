@@ -28,6 +28,7 @@ interface Metrics {
   familyCountMatch: boolean;
   relationshipCountMatch: boolean;
   estateCountMatch: boolean;
+  insuranceCountMatch: boolean;
   totalAssetValueDiff: number; // percentage diff
   totalLiabilityDiff: number;
   superBalanceMatch: boolean;
@@ -68,9 +69,10 @@ async function runBatch() {
       const entityCountMatch = plan.entities.length === gd.entities.length;
       if (!entityCountMatch) issues.push(`entities: ${plan.entities.length} vs ${gd.entities.length}`);
 
-      // Personal asset count
-      const personalAssetCountMatch = plan.personalAssets.length === gd.personalAssets.length;
-      if (!personalAssetCountMatch) issues.push(`personalAssets: ${plan.personalAssets.length} vs ${gd.personalAssets.length}`);
+      // Personal asset count (exclude insurance from gold standard — local parser separates them)
+      const goldNonInsuranceAssets = (gd.personalAssets || []).filter((a: any) => a.type !== 'insurance');
+      const personalAssetCountMatch = plan.personalAssets.length === goldNonInsuranceAssets.length;
+      if (!personalAssetCountMatch) issues.push(`personalAssets: ${plan.personalAssets.length} vs ${goldNonInsuranceAssets.length}`);
 
       // Liability count
       const liabilityCountMatch = plan.personalLiabilities.length === gd.personalLiabilities.length;
@@ -88,6 +90,10 @@ async function runBatch() {
 
       // Estate count
       const estateCountMatch = plan.estatePlanning.length === gd.estatePlanning.length;
+
+      // Insurance count (local parser → insurance[], gold standard → personalAssets with type=insurance)
+      const goldInsuranceCount = (gd.personalAssets || []).filter((a: any) => a.type === 'insurance').length;
+      const insuranceCountMatch = (plan.insurance || []).length === goldInsuranceCount;
 
       // Total asset value comparison
       const localAssetTotal = sumAssetValues(plan);
@@ -141,6 +147,7 @@ async function runBatch() {
         familyCountMatch,
         relationshipCountMatch,
         estateCountMatch,
+        insuranceCountMatch,
         totalAssetValueDiff,
         totalLiabilityDiff,
         superBalanceMatch,
@@ -162,6 +169,7 @@ async function runBatch() {
         familyCountMatch: false,
         relationshipCountMatch: false,
         estateCountMatch: false,
+        insuranceCountMatch: false,
         totalAssetValueDiff: 100,
         totalLiabilityDiff: 100,
         superBalanceMatch: false,
@@ -195,6 +203,7 @@ async function runBatch() {
   console.log(`Family count match:    ${countMatch('familyCountMatch')}/${total} (${(countMatch('familyCountMatch')/total*100).toFixed(0)}%)`);
   console.log(`Relationship match:    ${countMatch('relationshipCountMatch')}/${total} (${(countMatch('relationshipCountMatch')/total*100).toFixed(0)}%)`);
   console.log(`Estate count match:    ${countMatch('estateCountMatch')}/${total} (${(countMatch('estateCountMatch')/total*100).toFixed(0)}%)`);
+  console.log(`Insurance count match: ${countMatch('insuranceCountMatch')}/${total} (${(countMatch('insuranceCountMatch')/total*100).toFixed(0)}%)`);
   console.log(`Super balance match:   ${countMatch('superBalanceMatch')}/${total} (${(countMatch('superBalanceMatch')/total*100).toFixed(0)}%)`);
   console.log(`Age match:             ${countMatch('ageMatch')}/${total} (${(countMatch('ageMatch')/total*100).toFixed(0)}%)`);
   console.log(`Income match:          ${countMatch('incomeMatch')}/${total} (${(countMatch('incomeMatch')/total*100).toFixed(0)}%)`);
@@ -216,11 +225,12 @@ async function runBatch() {
 function sumAssetValues(plan: any): number {
   let total = 0;
   for (const a of plan.personalAssets || []) {
-    if (a.value && a.type !== 'insurance') total += a.value;
+    if (a.type === 'insurance') continue; // insurance separated out
+    if (a.value) total += a.value;
   }
   for (const e of plan.entities || []) {
     for (const a of e.assets || []) {
-      if (a.value && a.type !== 'insurance') total += a.value;
+      if (a.value) total += a.value;
     }
   }
   return total;

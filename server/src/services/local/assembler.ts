@@ -5,7 +5,7 @@
 import type {
   FinancialPlan, Client, Entity, Asset, Liability,
   EstatePlanItem, FamilyMember, Grandchild, Goal,
-  Relationship, Expense, DataGap,
+  Relationship, Expense, DataGap, InsuranceCover,
 } from 'shared/types';
 import type { Sections } from './splitSections.js';
 import { parseHeader } from './sections/header.js';
@@ -37,6 +37,7 @@ let goalCounter = 0;
 let relCounter = 0;
 let estateCounter = 0;
 let expenseCounter = 0;
+let insuranceCounter = 0;
 
 function resetCounters() {
   assetCounter = 0;
@@ -48,6 +49,7 @@ function resetCounters() {
   relCounter = 0;
   estateCounter = 0;
   expenseCounter = 0;
+  insuranceCounter = 0;
 }
 
 function nextAssetId(): string { return `asset-${++assetCounter}`; }
@@ -59,6 +61,7 @@ function nextGoalId(): string { return `goal-${++goalCounter}`; }
 function nextRelId(): string { return `rel-${++relCounter}`; }
 function nextEstateId(): string { return `estate-${++estateCounter}`; }
 function nextExpenseId(): string { return `expense-${++expenseCounter}`; }
+function nextInsuranceId(): string { return `insurance-${++insuranceCounter}`; }
 
 export function assemble(sections: Sections): FinancialPlan {
   resetCounters();
@@ -220,17 +223,38 @@ export function assemble(sections: Sections): FinancialPlan {
     // Pension does NOT count toward client.superBalance (only accumulation phase does)
   }
 
-  // Insurance policies — cover amount is not an asset value, store in details for display
-  const insuranceItems = parseInsurance(sections.insurance);
-  for (const item of insuranceItems) {
-    personalAssets.push({
-      id: nextAssetId(),
-      name: item.name,
-      type: 'insurance',
-      value: null,
-      ownerIds: resolveOwnerIds(item.insuredPerson, clients),
-      details: item.coverAmount ? `Cover: $${item.coverAmount.toLocaleString()}` : null,
-    });
+  // Insurance covers — parsed as individual cover types per policy
+  const parsedInsurance = parseInsurance(sections.insurance);
+  const SUPER_KEYWORDS = /super|smsf|member/i;
+  const rawInsurance: InsuranceCover[] = parsedInsurance.map((item) => {
+    const clientIds = resolveOwnerIds(item.insuredPerson, clients);
+    const isInsideSuper = SUPER_KEYWORDS.test(item.owner) || SUPER_KEYWORDS.test(item.policyName);
+    return {
+      id: nextInsuranceId(),
+      clientId: clientIds[0] || clients[0]?.id || 'client-1',
+      type: item.coverType,
+      coverAmount: item.coverAmount,
+      policyName: item.policyName || null,
+      isInsideSuper,
+      details: item.details || null,
+    };
+  });
+
+  // Deduplicate: same (coverType, policyName, clientId) → keep entry with non-null coverAmount
+  const insurance: InsuranceCover[] = [];
+  const seen = new Map<string, number>(); // key → index in insurance[]
+  for (const cover of rawInsurance) {
+    const key = `${cover.type}::${cover.policyName}::${cover.clientId}`;
+    const existingIdx = seen.get(key);
+    if (existingIdx !== undefined) {
+      // Prefer the entry with a cover amount
+      if (cover.coverAmount !== null && insurance[existingIdx].coverAmount === null) {
+        insurance[existingIdx] = cover;
+      }
+    } else {
+      seen.set(key, insurance.length);
+      insurance.push(cover);
+    }
   }
 
   for (const client of clients) {
@@ -550,6 +574,7 @@ export function assemble(sections: Sections): FinancialPlan {
     goals,
     relationships,
     expenses,
+    insurance,
     dataGaps: [],
   };
 }

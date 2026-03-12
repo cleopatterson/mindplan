@@ -1,4 +1,4 @@
-import type { FinancialPlan, Entity, Asset, Liability, Expense, Client, EstatePlanItem, FamilyMember, Grandchild, Goal, Relationship } from 'shared/types';
+import type { FinancialPlan, Entity, Asset, Liability, Expense, Client, EstatePlanItem, FamilyMember, Grandchild, Goal, Relationship, InsuranceCover } from 'shared/types';
 import type { Node, Edge } from '@xyflow/react';
 import { formatAUD } from './calculations';
 
@@ -8,7 +8,7 @@ export interface NodeData extends Record<string, unknown> {
   label: string;
   sublabel?: string;
   value?: number | null;
-  nodeType: 'family' | 'client' | 'entity' | 'asset' | 'liability' | 'assetGroup' | 'expensesGroup' | 'expense' | 'estateGroup' | 'estateClient' | 'estateItem' | 'familyGroup' | 'familyMember' | 'goalsGroup' | 'goalCategoryGroup' | 'goal' | 'relationshipsGroup' | 'relationship';
+  nodeType: 'family' | 'client' | 'entity' | 'asset' | 'liability' | 'assetGroup' | 'expensesGroup' | 'expense' | 'estateGroup' | 'estateClient' | 'estateItem' | 'familyGroup' | 'familyMember' | 'goalsGroup' | 'goalCategoryGroup' | 'goal' | 'relationshipsGroup' | 'relationship' | 'insuranceGroup' | 'insuranceClient' | 'insuranceCover';
   entityType?: Entity['type'];
   assetType?: Asset['type'];
   liabilityType?: Liability['type'];
@@ -22,10 +22,11 @@ export interface NodeData extends Record<string, unknown> {
   assetGroupCategory?: string;
   assetGroupType?: string;
   goalGroupCategory?: string;
+  insuranceCoverType?: string;
   isExpanded?: boolean;
   parentOwnerId?: string;
   side: Side;
-  raw?: Client | Entity | Asset | Liability | Expense | EstatePlanItem | FamilyMember | Grandchild | Goal | Relationship;
+  raw?: Client | Entity | Asset | Liability | Expense | EstatePlanItem | FamilyMember | Grandchild | Goal | Relationship | InsuranceCover;
 }
 
 export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]; edges: Edge[] } {
@@ -310,6 +311,85 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
     }
   }
 
+  // RIGHT SIDE — insurance group → per-client → individual covers
+  if (plan.insurance?.length > 0) {
+    const insGroupId = 'insurance-group';
+
+    // Group by client
+    const byClient = new Map<string, typeof plan.insurance>();
+    for (const cover of plan.insurance) {
+      const list = byClient.get(cover.clientId) ?? [];
+      list.push(cover);
+      byClient.set(cover.clientId, list);
+    }
+
+    nodes.push({
+      id: insGroupId,
+      type: 'insuranceGroupNode',
+      position: { x: 0, y: 0 },
+      data: {
+        label: 'Insurance',
+        sublabel: `${plan.insurance.length} ${plan.insurance.length === 1 ? 'cover' : 'covers'}`,
+        nodeType: 'insuranceGroup',
+        side: 'right',
+      },
+    });
+    edges.push({
+      id: `${familyId}-${insGroupId}`,
+      source: familyId,
+      target: insGroupId,
+      sourceHandle: 'right',
+    });
+
+    for (const [clientId, clientCovers] of byClient) {
+      const client = plan.clients.find((c) => c.id === clientId);
+      const clientName = client?.name ?? clientId;
+      const insClientId = `insurance-client-${clientId}`;
+
+      nodes.push({
+        id: insClientId,
+        type: 'insuranceClientNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: clientName,
+          sublabel: `${clientCovers.length} ${clientCovers.length === 1 ? 'cover' : 'covers'}`,
+          nodeType: 'insuranceClient',
+          side: 'right',
+        },
+      });
+      edges.push({
+        id: `${insGroupId}-${insClientId}`,
+        source: insGroupId,
+        target: insClientId,
+      });
+
+      for (const cover of clientCovers) {
+        const typeLabel = INSURANCE_COVER_DISPLAY[cover.type] ?? cover.type;
+        const sublabel = cover.coverAmount != null ? formatAUD(cover.coverAmount) : undefined;
+
+        nodes.push({
+          id: cover.id,
+          type: 'insuranceCoverNode',
+          position: { x: 0, y: 0 },
+          data: {
+            label: typeLabel,
+            sublabel,
+            value: cover.coverAmount,
+            nodeType: 'insuranceCover',
+            insuranceCoverType: cover.type,
+            side: 'right',
+            raw: cover,
+          },
+        });
+        edges.push({
+          id: `${insClientId}-${cover.id}`,
+          source: insClientId,
+          target: cover.id,
+        });
+      }
+    }
+  }
+
   // RIGHT SIDE — family group + children + grandchildren (two-level hierarchy)
   if (plan.familyMembers?.length > 0) {
     const familyGroupId = 'family-group';
@@ -589,6 +669,14 @@ export const GOAL_CATEGORY_DISPLAY: Record<string, string> = {
   other: 'Other',
 };
 
+/** Insurance cover type → display label */
+const INSURANCE_COVER_DISPLAY: Record<string, string> = {
+  life: 'Life Cover',
+  tpd: 'TPD Cover',
+  trauma: 'Trauma Cover',
+  income_protection: 'Income Protection',
+};
+
 /** Raw asset type → display label for group nodes */
 export const ASSET_TYPE_DISPLAY: Record<string, string> = {
   property: 'Property',
@@ -597,7 +685,6 @@ export const ASSET_TYPE_DISPLAY: Record<string, string> = {
   managed_fund: 'Managed Funds',
   super: 'Super',
   pension: 'Pension',
-  insurance: 'Insurance',
   vehicle: 'Vehicle',
   other: 'Other',
 };

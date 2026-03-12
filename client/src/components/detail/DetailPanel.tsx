@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import type { FinancialPlan, Client, Entity, Asset, Liability, Expense, EstatePlanItem, FamilyMember, Grandchild, Goal, Relationship } from 'shared/types';
+import type { FinancialPlan, Client, Entity, Asset, Liability, Expense, EstatePlanItem, FamilyMember, Grandchild, Goal, Relationship, InsuranceCover } from 'shared/types';
 import { formatAUD, totalAssets, totalLiabilities, entityEquity } from '../../utils/calculations';
 import {
   Check, X, Pencil, User, Building2, Landmark, CreditCard,
   Briefcase, ScrollText, Users, Baby, Target, Handshake,
+  Shield, Heart, ShieldCheck, Zap, Wallet,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { HeroBanner, InsightPill, assetTypeConfig } from './shared';
@@ -97,6 +98,21 @@ export function DetailPanel({ data, nodeId, onUpdateField, autoFocusName, onAuto
   // Individual relationships
   const relationship = data.relationships?.find((r) => r.id === nodeId);
   if (relationship) return <RelationshipDetail relationship={relationship} data={data} nodeId={nodeId} onUpdate={onUpdateField} autoFocusName={af} />;
+
+  // Insurance group
+  if (nodeId === 'insurance-group') return <InsuranceGroupDetail data={data} />;
+
+  // Insurance per-client node (e.g. "insurance-client-client-1")
+  if (nodeId.startsWith('insurance-client-')) {
+    const clientId = nodeId.replace('insurance-client-', '');
+    const clientCovers = data.insurance?.filter((c) => c.clientId === clientId) ?? [];
+    const clientName = data.clients.find((c) => c.id === clientId)?.name ?? clientId;
+    if (clientCovers.length > 0) return <InsuranceClientDetail clientName={clientName} covers={clientCovers} />;
+  }
+
+  // Individual insurance covers
+  const insuranceCover = data.insurance?.find((c) => c.id === nodeId);
+  if (insuranceCover) return <InsuranceCoverDetail cover={insuranceCover} data={data} />;
 
   return null;
 }
@@ -320,7 +336,6 @@ const assetTypeOptions = [
   { value: 'managed_fund', label: 'Managed Fund' },
   { value: 'super', label: 'Super' },
   { value: 'pension', label: 'Pension' },
-  { value: 'insurance', label: 'Insurance' },
   { value: 'vehicle', label: 'Vehicle' },
   { value: 'other', label: 'Other' },
 ];
@@ -878,6 +893,138 @@ const relTypeOptions = [
   { value: 'mortgage_broker', label: 'Mortgage Broker' },
   { value: 'other', label: 'Other' },
 ];
+
+// ── Insurance Details ──
+
+const COVER_TYPE_LABELS: Record<string, string> = {
+  life: 'Life Cover',
+  tpd: 'TPD Cover',
+  trauma: 'Trauma Cover',
+  income_protection: 'Income Protection',
+};
+
+const COVER_TYPE_ICONS: Record<string, typeof Heart> = {
+  life: Heart,
+  tpd: ShieldCheck,
+  trauma: Zap,
+  income_protection: Wallet,
+};
+
+function InsuranceGroupDetail({ data }: { data: FinancialPlan }) {
+  const covers = data.insurance ?? [];
+  const byType = new Map<string, number>();
+  for (const c of covers) {
+    byType.set(c.type, (byType.get(c.type) ?? 0) + 1);
+  }
+
+  return (
+    <div className="space-y-3">
+      <HeroBanner
+        icon={Shield}
+        label="Insurance"
+        sublabel={`${covers.length} ${covers.length === 1 ? 'cover' : 'covers'}`}
+        gradient="bg-gradient-to-br from-cyan-500/20 via-cyan-600/10 to-cyan-900/20"
+        iconColor="text-cyan-400"
+      />
+
+      <div className="flex flex-wrap gap-1.5">
+        {[...byType.entries()].map(([type, count]) => (
+          <InsightPill key={type} color="cyan">{count} {COVER_TYPE_LABELS[type] ?? type}</InsightPill>
+        ))}
+      </div>
+
+      <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        {covers.map((c, i) => (
+          <div key={c.id}>
+            {i > 0 && <div className="border-t border-white/5 my-2" />}
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-white/40">{COVER_TYPE_LABELS[c.type] ?? c.type}</span>
+              {c.coverAmount != null && <span className="text-xs text-white/60">{formatAUD(c.coverAmount)}</span>}
+            </div>
+            {c.policyName && <div className="text-xs text-white/30 mt-0.5">{c.policyName}</div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InsuranceClientDetail({ clientName, covers }: { clientName: string; covers: InsuranceCover[] }) {
+  return (
+    <div className="space-y-3">
+      <HeroBanner
+        icon={Shield}
+        label={clientName}
+        sublabel={`${covers.length} ${covers.length === 1 ? 'cover' : 'covers'}`}
+        gradient="bg-gradient-to-br from-cyan-500/20 via-cyan-600/10 to-cyan-900/20"
+        iconColor="text-cyan-400"
+      />
+
+      <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        {covers.map((c, i) => (
+          <div key={c.id}>
+            {i > 0 && <div className="border-t border-white/5 my-2" />}
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-white/40">{COVER_TYPE_LABELS[c.type] ?? c.type}</span>
+              {c.coverAmount != null && <span className="text-xs text-white/60">{formatAUD(c.coverAmount)}</span>}
+            </div>
+            {c.policyName && <div className="text-xs text-white/30 mt-0.5">{c.policyName}</div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InsuranceCoverDetail({ cover, data }: { cover: InsuranceCover; data: FinancialPlan }) {
+  const Icon = COVER_TYPE_ICONS[cover.type] ?? Shield;
+  const client = data.clients.find((c) => c.id === cover.clientId);
+
+  return (
+    <div className="space-y-3">
+      <HeroBanner
+        icon={Icon}
+        label={COVER_TYPE_LABELS[cover.type] ?? cover.type}
+        sublabel={cover.policyName ?? 'Insurance Cover'}
+        gradient="bg-gradient-to-br from-cyan-500/20 via-cyan-600/10 to-cyan-900/20"
+        iconColor="text-cyan-400"
+      />
+
+      <div className="flex flex-wrap gap-1.5">
+        {cover.coverAmount != null && <InsightPill color="cyan">{formatAUD(cover.coverAmount)}</InsightPill>}
+        {cover.isInsideSuper && <InsightPill color="orange">Inside Super</InsightPill>}
+        {client && <InsightPill color="blue">{client.name}</InsightPill>}
+      </div>
+
+      <div className="space-y-1 rounded-lg bg-white/[0.02] border border-white/5 p-3">
+        <ReadOnlyField label="Cover Type" value={COVER_TYPE_LABELS[cover.type] ?? cover.type} />
+        <div className="border-t border-white/5 my-2" />
+        <ReadOnlyField label="Cover Amount" value={cover.coverAmount != null ? formatAUD(cover.coverAmount) : 'Not specified'} />
+        <div className="border-t border-white/5 my-2" />
+        <ReadOnlyField label="Policy" value={cover.policyName ?? 'Not specified'} />
+        <div className="border-t border-white/5 my-2" />
+        <ReadOnlyField label="Insured" value={client?.name ?? 'Unknown'} />
+        <div className="border-t border-white/5 my-2" />
+        <ReadOnlyField label="Held in Super" value={cover.isInsideSuper ? 'Yes' : 'No'} />
+        {cover.details && (
+          <>
+            <div className="border-t border-white/5 my-2" />
+            <ReadOnlyField label="Details" value={cover.details} />
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReadOnlyField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between py-1">
+      <span className="text-xs text-white/40">{label}</span>
+      <span className="text-sm text-white/80">{value}</span>
+    </div>
+  );
+}
 
 // ── Family Root Detail (centre tile) ──
 

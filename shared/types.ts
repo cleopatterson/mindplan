@@ -12,9 +12,22 @@ export interface FinancialPlan {
   goals: Goal[];
   relationships: Relationship[];
   expenses: Expense[];
+  insurance: InsuranceCover[];
   dataGaps: DataGap[];
   familyLabel?: string;  // optional override for the centre tile name
 }
+
+export interface InsuranceCover {
+  id: string;
+  clientId: string;
+  type: InsuranceCoverType;
+  coverAmount: number | null;
+  policyName: string | null;
+  isInsideSuper: boolean;
+  details: string | null;
+}
+
+export type InsuranceCoverType = 'life' | 'tpd' | 'trauma' | 'income_protection';
 
 export interface Client {
   id: string;
@@ -59,7 +72,6 @@ export type AssetType =
   | 'managed_fund'
   | 'super'
   | 'pension'
-  | 'insurance'
   | 'vehicle'
   | 'other';
 
