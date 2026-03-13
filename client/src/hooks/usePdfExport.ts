@@ -66,16 +66,17 @@ export function usePdfExport() {
           const captureW = orientation === 'landscape' ? 2970 : 2100;
           const captureH = orientation === 'landscape' ? 2100 : 2970;
 
-          // Move map offscreen for capture — fully invisible to user
-          // (the export modal at z-50 shields the UI during generation)
+          // Position map on-screen but behind the export modal (z-50) so it's
+          // invisible to the user while still fully rendered by the browser.
+          // Offscreen positioning (negative top) caused blank captures in some browsers.
           const origStyle = mapElement.style.cssText;
           mapElement.style.cssText = `
             position: fixed !important;
             width: ${captureW}px !important;
             height: ${captureH}px !important;
-            top: -${captureH + 100}px !important;
+            top: 0px !important;
             left: 0px !important;
-            z-index: 1 !important;
+            z-index: 40 !important;
             background: #ffffff;
           `;
 
@@ -219,7 +220,7 @@ export function usePdfExport() {
         if (mapElement) {
           mapElement.removeAttribute('data-pdf-light');
           // If styles still show the capture sizing, restore to normal
-          if (mapElement.style.zIndex === '1') {
+          if (mapElement.style.zIndex === '40') {
             mapElement.style.cssText = '';
           }
         }
