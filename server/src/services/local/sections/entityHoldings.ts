@@ -74,7 +74,15 @@ export function parseEntityHoldings(text: string | null): EntityHoldingGroup[] {
     const nextCell = i + 1 < dataCells.length ? dataCells[i + 1] : '';
     const isAssetType = isKnownAssetType(nextCell);
 
-    if (isAssetType && !justSeenTotal) {
+    // Fallback: if next cell isn't a known type but the cell two ahead is a dollar
+    // amount, this is likely an asset row with an unrecognised type (e.g. "Vineyard").
+    // Treat it as an asset with type 'other' rather than misinterpreting as an entity name.
+    const amountLookahead = i + 2 < dataCells.length ? dataCells[i + 2] : '';
+    const looksLikeAssetRow = !isAssetType && !justSeenTotal && currentEntity &&
+      nextCell.length > 0 && nextCell.length <= 45 &&
+      !/^[\-\(]?\$/.test(nextCell) && /^[\-\(]?\$/.test(amountLookahead);
+
+    if ((isAssetType || looksLikeAssetRow) && !justSeenTotal) {
       // This is an asset row: description, type, amount [, net income]
       const amountCell = i + 2 < dataCells.length ? dataCells[i + 2] : '';
       const amount = /^[\-\(]?\$/.test(amountCell) ? parseDollar(amountCell) : null;
@@ -150,14 +158,18 @@ function isKnownAssetType(s: string): boolean {
     /residential\s*(property|unit|home)/i.test(s) ||
     /commercial\s*property/i.test(s) ||
     /holiday\s*home/i.test(s) ||
+    /apartment/i.test(s) ||
     /\bland\b/i.test(s) ||
     /^business\b/i.test(s) ||
     /listed\s*on\s*asx/i.test(s) ||
     /listed\s*\(other/i.test(s) ||
     /unlisted/i.test(s) ||
     /property/i.test(s) ||
-    t === 'car' ||
-    t === 'boat' ||
+    /\bcar\b/i.test(s) ||
+    /\bboat\b/i.test(s) ||
+    /\bcaravan\b/i.test(s) ||
+    /contents|furniture|jewellery|personal\s*effects/i.test(s) ||
+    /^other$/i.test(s) ||
     isLiabilityType(s);
 }
 
