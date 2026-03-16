@@ -39,7 +39,7 @@ Client environment variables (`client/.env`):
 - `VITE_FIREBASE_API_KEY` — Firebase web API key
 - `VITE_FIREBASE_AUTH_DOMAIN` — Firebase auth domain
 - `VITE_FIREBASE_PROJECT_ID` — Firebase project ID
-- `VITE_ENABLE_PROJECTION` — set to `true` to show the Map/Projection toggle (omit to hide). Not set on Railway.
+- `VITE_ENABLE_PROJECTION` — set to `true` to show the Map/Cashflow/Projection toggle (V2 gate, omit to hide). Not set on Railway.
 
 ## Architecture Decisions
 
@@ -163,7 +163,7 @@ Key parser patterns:
 - Lazy Firebase Admin init required — env vars aren't available at import time (dotenv loads after ES imports)
 
 ### Projection View (Experimental)
-Time-based financial projection visualized as a Recharts stacked area chart. Toggled via Map/Projection segmented control in the header. **Gated by `VITE_ENABLE_PROJECTION` env var** — set in local `client/.env` (gitignored), not set on Railway. Code stays in codebase (harmless, lazy-loaded) but UI toggle is hidden in production.
+Time-based financial projection visualized as a Recharts stacked area chart. Toggled via Map/Cashflow/Projection segmented control in the header. **Gated by `VITE_ENABLE_PROJECTION` env var** — set in local `client/.env` (gitignored), not set on Railway. Code stays in codebase (harmless, lazy-loaded) but UI toggle is hidden in production.
 
 #### Architecture
 - **Client-side projection engine**: Pure `calculateProjection(plan, settings) → ProjectionResult` — per-year iteration with asset growth, P&I liability amortization, super contributions, retirement detection
@@ -198,6 +198,32 @@ Time-based financial projection visualized as a Recharts stacked area chart. Tog
 - Duplicate retirement milestones grouped: "Both retire at 67"
 - Insurance assets excluded from projections
 - Settings gear in chart area top-right, detail panel reuses same `w-96` animated right panel
+
+### Cashflow View
+d3-sankey diagram showing annual income vs spending. Toggled via header segmented control (between Map and Projection). **Gated by `VITE_ENABLE_PROJECTION`** (shared V2 gate). Pure client-side — no server changes needed.
+
+#### Layout
+- **Column 0 (Inflows)**: One node per client with `income > 0`
+- **Column 1 (Pass-through)**: Single "Household Cashflow" node aggregating all income
+- **Column 2 (Outflows)**: Grouped expenses (keyword-categorised), liability repayments (P&I calc), surplus/deficit node
+
+#### Expense Categories
+Deterministic keyword matching on `expense.name`: Housing, Transport, Insurance & Health, Lifestyle, Education, Other
+
+#### Key Files
+- `client/src/hooks/useCashflowData.ts` — `buildCashflowData()` transforms `FinancialPlan` → Sankey nodes/links + summary totals
+- `client/src/components/cashflow/CashflowView.tsx` — d3-sankey SVG with filled bezier link paths, staggered entrance animation, node glow filters, summary strip at bottom
+
+#### Visual Design (inspired by dorothy-sankey.html prototype)
+- Filled bezier link paths (not stroked) — custom `linkFillPath()` using d3-sankey's center-of-band y0/y1 ± half width
+- Node glow effects via SVG feGaussianBlur filters (dark mode only)
+- Staggered entrance animation: nodes grow in (0→50%), then links fade in (40%→100%), ~1.8s total
+- Household node label positioned above (not beside)
+- Uppercase column headers with letter-spacing
+- Layout height capped at 420px to prevent giant bars filling viewport
+- Summary strip at bottom (matches mind map convention): Total Income | Total Outflows | Surplus/Deficit
+- Surplus node green, deficit node red
+- Monospace font for value labels
 
 ### Reveal Animation
 - DFS-order staggered node/edge appearance on initial load only (not on group expand/collapse)

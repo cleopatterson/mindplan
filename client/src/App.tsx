@@ -7,15 +7,16 @@ import { Dashboard } from './components/Dashboard';
 import { ExportModal, type ExportOptions } from './components/export/ExportModal';
 import type { MindMapHandle } from './components/mindmap/MindMap';
 import { LogoFull } from './components/Logo';
-import { Network, TrendingUp, Download, Upload, Loader2, Sun, Moon, LogOut, MessageSquarePlus } from 'lucide-react';
+import { Network, TrendingUp, ArrowLeftRight, Download, Upload, Loader2, Sun, Moon, LogOut, MessageSquarePlus } from 'lucide-react';
 import { useRef, useState, useCallback, lazy, Suspense } from 'react';
 import { usePdfExport } from './hooks/usePdfExport';
 import { ThemeContext, type Theme } from './contexts/ThemeContext';
 import { FeedbackPanel } from './components/feedback/FeedbackPanel';
 
 const ProjectionView = lazy(() => import('./components/projection/ProjectionView').then((m) => ({ default: m.ProjectionView })));
+const CashflowView = lazy(() => import('./components/cashflow/CashflowView').then((m) => ({ default: m.CashflowView })));
 
-type ViewMode = 'mindmap' | 'projection';
+type ViewMode = 'mindmap' | 'projection' | 'cashflow';
 
 export default function App() {
   const { user, loading: authLoading, signIn, signOut, resetPassword, getIdToken } = useAuth();
@@ -132,6 +133,18 @@ export default function App() {
                 >
                   <Network className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Map</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('cashflow')}
+                  className={`cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all
+                    ${viewMode === 'cashflow'
+                      ? isDark ? 'bg-white/10 text-white/90 shadow-sm' : 'bg-white text-gray-900 shadow-sm'
+                      : isDark ? 'text-white/40 hover:text-white/60' : 'text-gray-400 hover:text-gray-600'
+                    }`}
+                  title="Cashflow view"
+                >
+                  <ArrowLeftRight className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Cashflow</span>
                 </button>
                 <button
                   onClick={() => setViewMode('projection')}
@@ -260,6 +273,11 @@ export default function App() {
                 settingsOpen={projectionSettingsOpen}
                 onToggleSettings={() => setProjectionSettingsOpen((p) => !p)}
               />
+            </Suspense>
+          )}
+          {appState === 'dashboard' && data && viewMode === 'cashflow' && (
+            <Suspense fallback={<Loader2 className="w-6 h-6 text-white/30 animate-spin" />}>
+              <CashflowView data={data} mapRef={mapRef} />
             </Suspense>
           )}
         </main>
