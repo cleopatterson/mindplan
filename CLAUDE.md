@@ -151,6 +151,7 @@ Key parser patterns:
 - Insurance assets have `value: null` in gap detection and unvalued stats (cover ≠ asset value)
 - SMSF member balance entries are deduped against personal super (pattern-matched names)
 - Fuzzy entity name matching (suffix-based fallback) for entity holdings → entity structure joins
+- Entity holdings `isKnownAssetType()` is the gatekeeper — unrecognised types fall back to dollar-amount lookahead heuristic (if cell+2 is `$amount`, treat as asset with type `other`). This prevents unknown type keywords (e.g. "Vineyard", "Warehouse") from being misinterpreted as entity name headers.
 - Test: `npx tsx test/test-local-batch.ts` — 69/73 pass rate against Claude gold standard
 
 ### Authentication
