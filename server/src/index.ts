@@ -33,6 +33,12 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'healthy' });
 });
 
+// Usage dashboard (standalone page)
+const dashboardHtml = path.join(__dirname, '../src/dashboard/index.html');
+app.get('/dashboard', (_req, res) => {
+  res.sendFile(dashboardHtml);
+});
+
 // In production, serve the built client
 const clientDist = path.join(__dirname, '../../client/dist');
 app.use(express.static(clientDist));

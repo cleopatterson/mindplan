@@ -7,6 +7,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { auth } from '../firebase';
+import { logUsageEvent } from '../services/usageTracking';
 
 export interface AuthState {
   user: User | null;
@@ -30,10 +31,13 @@ export function useAuth(): AuthState {
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    logUsageEvent(cred.user.uid, cred.user.email ?? email, 'login');
   }, []);
 
   const signOut = useCallback(async () => {
+    const u = auth.currentUser;
+    if (u) logUsageEvent(u.uid, u.email ?? '', 'logout');
     await firebaseSignOut(auth);
   }, []);
 

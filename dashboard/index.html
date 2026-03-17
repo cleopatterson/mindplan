@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MindPlan — Usage Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.5.0/firebase-auth.js';
+    import { getFirestore, collection, query, orderBy, where, onSnapshot, Timestamp } from 'https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js';
+
+    const ADMIN_UID = '7Ldd1nNF7vcDpjxpjaOe5xx1Nrh2';
+    const app = initializeApp({
+      apiKey: 'AIzaSyBi5aoQP7L7nQo-Gb4rc6iRotRDS_ha7g0',
+      authDomain: 'mindplan-1ac46.firebaseapp.com',
+      projectId: 'mindplan-1ac46',
+    });
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const loginScreen = document.getElementById('login-screen');
+    const dashboardScreen = document.getElementById('dashboard-screen');
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userEmailEl = document.getElementById('user-email');
+
+    let allEvents = [];
+    let dateFilter = '7d';
+    let userFilter = 'all';
+    let typeFilter = 'all';
+    let currentTab = 'overview';
+    let sessionFilterLabel = '';
+    let sessionFilterFn = null;
+    let selectedSessionId = null;
+    let sessionSortKey = 'start';
+    let sessionSortAsc = false;
+    let unsubFirestore = null;
+
+    // Chart instances
+    let activityChart = null;
+    let breakdownChart = null;
+    let parseTimeChart = null;
+    let userChart = null;
+
+    // Chart.js global defaults
+    Chart.defaults.color = 'rgba(255,255,255,0.4)';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    Chart.defaults.font.size = 11;
+    Chart.defaults.plugins.legend.labels.boxWidth = 12;
+    Chart.defaults.plugins.legend.labels.padding = 16;
+
+    // Auth
+    onAuthStateChanged(auth, (user) => {
+      if (user && user.uid === ADMIN_UID) {
+        loginScreen.classList.add('hidden');
+        dashboardScreen.classList.remove('hidden');
+        userEmailEl.textContent = user.email;
+        subscribeToEvents();
+      } else {
+        loginScreen.classList.remove('hidden');
+        dashboardScreen.classList.add('hidden');
+        if (unsubFirestore) { unsubFirestore(); unsubFirestore = null; }
+        if (user && user.uid !== ADMIN_UID) {
+          loginError.textContent = 'Access denied — admin only';
+          signOut(auth);
+        }
+      }
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginError.textContent = '';
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const btn = loginForm.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (err) {
+        loginError.textContent = err.message.replace('Firebase: ', '');
+        btn.disabled = false;
+        btn.textContent = 'Sign in';
+      }
+    });
+
+    logoutBtn.addEventListener('click', () => signOut(auth));
+
+    // ── Tab switching ──
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('[data-tab-btn]').forEach(b => {
+        b.classList.toggle('tab-active', b.dataset.tabBtn === tab);
+      });
+      document.getElementById('tab-overview').classList.toggle('hidden', tab !== 'overview');
+      document.getElementById('tab-sessions').classList.toggle('hidden', tab !== 'sessions');
+      if (tab === 'sessions') { selectedSessionId = null; renderSessions(); }
+    }
+    document.querySelectorAll('[data-tab-btn]').forEach(b => {
+      b.addEventListener('click', () => switchTab(b.dataset.tabBtn));
+    });
+
+    // ── Drill-through ──
+
+    function drillToSessions(label, filterFn) {
+      sessionFilterLabel = label;
+      sessionFilterFn = filterFn;
+      switchTab('sessions');
+    }
+
+    function clearSessionFilter() {
+      sessionFilterLabel = '';
+      sessionFilterFn = null;
+      renderSessions();
+    }
+
+    // Make functions available to onclick handlers
+    window.drillToSessions = drillToSessions;
+    window.clearSessionFilter = clearSessionFilter;
+    window.switchTab = switchTab;
+
+    // ── Firestore ──
+
+    function subscribeToEvents() {
+      if (unsubFirestore) unsubFirestore();
+      const eventsRef = collection(db, 'usage_events');
+      let q;
+      if (dateFilter === 'all') {
+        q = query(eventsRef, orderBy('timestamp', 'desc'));
+      } else {
+        const cutoff = new Date();
+        if (dateFilter === '24h') cutoff.setHours(cutoff.getHours() - 24);
+        else if (dateFilter === '7d') cutoff.setDate(cutoff.getDate() - 7);
+        else cutoff.setDate(cutoff.getDate() - 30);
+        q = query(eventsRef, where('timestamp', '>=', Timestamp.fromDate(cutoff)), orderBy('timestamp', 'desc'));
+      }
+      unsubFirestore = onSnapshot(q, (snap) => {
+        allEvents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        render();
+      });
+    }
+
+    document.querySelectorAll('[data-date-filter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        dateFilter = btn.dataset.dateFilter;
+        document.querySelectorAll('[data-date-filter]').forEach(b => b.classList.remove('active-filter'));
+        btn.classList.add('active-filter');
+        subscribeToEvents();
+      });
+    });
+
+    document.getElementById('user-filter').addEventListener('change', (e) => { userFilter = e.target.value; render(); });
+    document.getElementById('type-filter').addEventListener('change', (e) => { typeFilter = e.target.value; render(); });
+
+    // ── Constants ──
+
+    const EVENT_LABELS = {
+      login: 'Login', logout: 'Logout', parse_start: 'Parse started',
+      parse_success: 'Parse success', parse_error: 'Parse error',
+      pdf_export: 'PDF export', view_change: 'View change',
+    };
+    const EVENT_PILL = {
+      login: 'bg-blue-500/20 text-blue-300',
+      logout: 'bg-gray-500/20 text-gray-400',
+      parse_start: 'bg-yellow-500/20 text-yellow-300',
+      parse_success: 'bg-emerald-500/20 text-emerald-300',
+      parse_error: 'bg-red-500/20 text-red-300',
+      pdf_export: 'bg-purple-500/20 text-purple-300',
+      view_change: 'bg-cyan-500/20 text-cyan-300',
+    };
+    const CHART_COLORS = {
+      login: '#60a5fa', logout: '#9ca3af', parse_start: '#fbbf24',
+      parse_success: '#34d399', parse_error: '#f87171',
+      pdf_export: '#a78bfa', view_change: '#22d3ee',
+    };
+
+    // ── Helpers ──
+
+    function formatMeta(evt) {
+      const m = evt.metadata;
+      if (!m) return '';
+      switch (evt.eventType) {
+        case 'parse_start': return m.fileName ? `${m.fileName} (${(m.fileSize / 1024).toFixed(0)} KB)` : '';
+        case 'parse_success': return `${(m.parseTimeMs / 1000).toFixed(1)}s, ${m.clientCount} clients`;
+        case 'parse_error': return m.error || '';
+        case 'view_change': return m.viewMode || '';
+        default: return '';
+      }
+    }
+    function timeAgo(ts) {
+      const diff = Date.now() - ts.toDate().getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'just now';
+      if (mins < 60) return `${mins}m ago`;
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `${hours}h ago`;
+      return `${Math.floor(hours / 24)}d ago`;
+    }
+    function formatDate(ts) {
+      return ts.toDate().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    }
+    function formatTime(ts) {
+      return ts.toDate().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    function dayKey(ts) {
+      return ts.toDate().toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+    }
+    function el(tag, classes, text) {
+      const e = document.createElement(tag);
+      if (classes) e.className = classes;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    }
+    function duration(events) {
+      if (events.length < 2) return '\u2014';
+      const first = events[events.length - 1].timestamp.toMillis();
+      const last = events[0].timestamp.toMillis();
+      const secs = Math.round((last - first) / 1000);
+      if (secs < 60) return `${secs}s`;
+      return `${Math.floor(secs / 60)}m ${secs % 60}s`;
+    }
+
+    // ── Build session list from events ──
+
+    function buildSessions(events) {
+      const map = new Map();
+      events.forEach(e => {
+        if (!map.has(e.sessionId)) map.set(e.sessionId, []);
+        map.get(e.sessionId).push(e);
+      });
+      return Array.from(map.entries()).map(([id, evts]) => {
+        const parses = evts.filter(e => e.eventType === 'parse_success').length;
+        const errors = evts.filter(e => e.eventType === 'parse_error').length;
+        const exports = evts.filter(e => e.eventType === 'pdf_export').length;
+        return {
+          id,
+          events: evts,
+          userEmail: evts[0].userEmail,
+          userId: evts[0].userId,
+          start: evts[evts.length - 1].timestamp,
+          eventCount: evts.length,
+          parses,
+          errors,
+          exports,
+        };
+      });
+    }
+
+    // ── Charts ──
+
+    function renderActivityChart(events) {
+      const canvas = document.getElementById('activity-chart');
+      const ctx = canvas.getContext('2d');
+      const days = new Map();
+      events.forEach(e => {
+        const dk = dayKey(e.timestamp);
+        if (!days.has(dk)) days.set(dk, { parses: 0, errors: 0, logins: 0, exports: 0 });
+        const d = days.get(dk);
+        if (e.eventType === 'parse_success') d.parses++;
+        else if (e.eventType === 'parse_error') d.errors++;
+        else if (e.eventType === 'login') d.logins++;
+        else if (e.eventType === 'pdf_export') d.exports++;
+      });
+      const labels = [...days.keys()].reverse();
+      const data = {
+        labels,
+        datasets: [
+          { label: 'Parses', data: labels.map(l => days.get(l).parses), backgroundColor: '#34d39980', borderColor: '#34d399', borderWidth: 1, borderRadius: 4 },
+          { label: 'Exports', data: labels.map(l => days.get(l).exports), backgroundColor: '#a78bfa80', borderColor: '#a78bfa', borderWidth: 1, borderRadius: 4 },
+          { label: 'Logins', data: labels.map(l => days.get(l).logins), backgroundColor: '#60a5fa80', borderColor: '#60a5fa', borderWidth: 1, borderRadius: 4 },
+          { label: 'Errors', data: labels.map(l => days.get(l).errors), backgroundColor: '#f8717180', borderColor: '#f87171', borderWidth: 1, borderRadius: 4 },
+        ],
+      };
+      if (activityChart) { activityChart.data = data; activityChart.options.onClick = clickHandler; activityChart.update(); return; }
+      const clickHandler = (evt, elements) => {
+        if (!elements.length) return;
+        const idx = elements[0].index;
+        const day = labels[idx];
+        drillToSessions(`Day: ${day}`, s => dayKey(s.start) === day);
+      };
+      activityChart = new Chart(ctx, {
+        type: 'bar', data,
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          onClick: clickHandler,
+          plugins: { legend: { position: 'bottom' } },
+          scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } } },
+        },
+      });
+    }
+
+    function renderBreakdownChart(events) {
+      const canvas = document.getElementById('breakdown-chart');
+      const ctx = canvas.getContext('2d');
+      const counts = {};
+      events.forEach(e => { counts[e.eventType] = (counts[e.eventType] || 0) + 1; });
+      const types = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+      const data = {
+        labels: types.map(t => EVENT_LABELS[t] || t),
+        datasets: [{ data: types.map(t => counts[t]), backgroundColor: types.map(t => (CHART_COLORS[t] || '#666') + '99'), borderColor: types.map(t => CHART_COLORS[t] || '#666'), borderWidth: 2, hoverOffset: 6 }],
+      };
+      const clickHandler = (evt, elements) => {
+        if (!elements.length) return;
+        const type = types[elements[0].index];
+        drillToSessions(`Type: ${EVENT_LABELS[type]}`, s => s.events.some(e => e.eventType === type));
+      };
+      if (breakdownChart) { breakdownChart.data = data; breakdownChart.options.onClick = clickHandler; breakdownChart.update(); return; }
+      breakdownChart = new Chart(ctx, {
+        type: 'doughnut', data,
+        options: { responsive: true, maintainAspectRatio: false, cutout: '65%', onClick: clickHandler, plugins: { legend: { position: 'bottom' } } },
+      });
+    }
+
+    function renderParseTimeChart(events) {
+      const canvas = document.getElementById('parse-time-chart');
+      const ctx = canvas.getContext('2d');
+      const parses = events.filter(e => e.eventType === 'parse_success' && e.metadata?.parseTimeMs).reverse();
+      const labels = parses.map(e => dayKey(e.timestamp));
+      const times = parses.map(e => (e.metadata.parseTimeMs / 1000).toFixed(1));
+      const data = {
+        labels, datasets: [{ label: 'Parse time (s)', data: times, borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.1)', fill: true, tension: 0.3, pointRadius: 4, pointHoverRadius: 6, pointBackgroundColor: '#60a5fa', pointBorderColor: '#0f0f1a', pointBorderWidth: 2 }],
+      };
+      if (parseTimeChart) { parseTimeChart.data = data; parseTimeChart.update(); return; }
+      parseTimeChart = new Chart(ctx, {
+        type: 'line', data,
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { callback: v => v + 's' } } } },
+      });
+    }
+
+    function renderUserChart(events) {
+      const canvas = document.getElementById('user-chart');
+      const ctx = canvas.getContext('2d');
+      const userCounts = new Map();
+      events.forEach(e => {
+        if (e.eventType !== 'parse_success') return;
+        userCounts.set(e.userEmail || 'Unknown', (userCounts.get(e.userEmail) || 0) + 1);
+      });
+      const sorted = [...userCounts.entries()].sort((a, b) => b[1] - a[1]);
+      const colors = ['#34d399', '#60a5fa', '#a78bfa', '#fbbf24', '#f87171', '#22d3ee'];
+      const data = {
+        labels: sorted.map(([e]) => e.split('@')[0]),
+        datasets: [{ data: sorted.map(([, c]) => c), backgroundColor: sorted.map((_, i) => colors[i % colors.length] + '99'), borderColor: sorted.map((_, i) => colors[i % colors.length]), borderWidth: 2, borderRadius: 6, barPercentage: 0.6 }],
+      };
+      const clickHandler = (evt, elements) => {
+        if (!elements.length) return;
+        const email = sorted[elements[0].index][0];
+        drillToSessions(`User: ${email.split('@')[0]}`, s => s.userEmail === email);
+      };
+      if (userChart) { userChart.data = data; userChart.options.onClick = clickHandler; userChart.update(); return; }
+      userChart = new Chart(ctx, {
+        type: 'bar', data,
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, onClick: clickHandler, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { display: false } }, y: { grid: { display: false } } } },
+      });
+    }
+
+    // ── Sessions tab render ──
+
+    function renderSessions() {
+      const container = document.getElementById('sessions-content');
+      container.replaceChildren();
+
+      const filtered = allEvents.filter(e => {
+        if (userFilter !== 'all' && e.userId !== userFilter) return false;
+        if (typeFilter !== 'all' && e.eventType !== typeFilter) return false;
+        return true;
+      });
+
+      let sessions = buildSessions(filtered);
+      if (sessionFilterFn) sessions = sessions.filter(sessionFilterFn);
+
+      // Sort
+      sessions.sort((a, b) => {
+        let va, vb;
+        switch (sessionSortKey) {
+          case 'user': va = a.userEmail; vb = b.userEmail; break;
+          case 'events': va = a.eventCount; vb = b.eventCount; break;
+          case 'parses': va = a.parses; vb = b.parses; break;
+          case 'errors': va = a.errors; vb = b.errors; break;
+          default: va = a.start.toMillis(); vb = b.start.toMillis();
+        }
+        if (typeof va === 'string') return sessionSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+        return sessionSortAsc ? va - vb : vb - va;
+      });
+
+      // Filter badge
+      const badge = document.getElementById('session-filter-badge');
+      badge.replaceChildren();
+      if (sessionFilterLabel) {
+        badge.appendChild(el('span', 'text-[11px] px-2 py-1 rounded-md bg-blue-500/20 text-blue-300 font-medium', sessionFilterLabel));
+        const clearBtn = el('button', 'text-[10px] text-white/30 hover:text-white/60 ml-1 cursor-pointer', '\u2715 clear');
+        clearBtn.addEventListener('click', clearSessionFilter);
+        badge.appendChild(clearBtn);
+      }
+      document.getElementById('session-count').textContent = `${sessions.length} sessions`;
+
+      if (sessions.length === 0) {
+        container.appendChild(el('p', 'text-center text-white/20 py-12 text-sm', 'No sessions found'));
+        return;
+      }
+
+      // Table
+      const table = el('table', 'w-full text-xs');
+      const thead = el('thead');
+      const hrow = el('tr', 'bg-white/[0.03]');
+      const cols = [
+        { key: 'start', label: 'Time', align: 'text-left' },
+        { key: 'user', label: 'User', align: 'text-left' },
+        { key: 'events', label: 'Events', align: 'text-center' },
+        { key: 'parses', label: 'Parses', align: 'text-center' },
+        { key: 'errors', label: 'Errors', align: 'text-center' },
+        { key: 'duration', label: 'Duration', align: 'text-right' },
+      ];
+      cols.forEach(col => {
+        const th = el('th', `px-4 py-2.5 font-medium text-white/40 cursor-pointer hover:text-white/60 transition-colors ${col.align}`);
+        th.textContent = col.label + (sessionSortKey === col.key ? (sessionSortAsc ? ' \u25B2' : ' \u25BC') : '');
+        if (col.key !== 'duration') {
+          th.addEventListener('click', () => {
+            if (sessionSortKey === col.key) sessionSortAsc = !sessionSortAsc;
+            else { sessionSortKey = col.key; sessionSortAsc = false; }
+            renderSessions();
+          });
+        }
+        hrow.appendChild(th);
+      });
+      thead.appendChild(hrow);
+      table.appendChild(thead);
+
+      const tbody = el('tbody');
+      sessions.forEach(session => {
+        const isSelected = selectedSessionId === session.id;
+
+        // Main row
+        const tr = el('tr', `border-t border-white/5 cursor-pointer transition-colors ${isSelected ? 'bg-white/[0.05]' : 'hover:bg-white/[0.02]'}`);
+        tr.addEventListener('click', () => { selectedSessionId = isSelected ? null : session.id; renderSessions(); });
+
+        tr.appendChild(el('td', 'px-4 py-3 text-white/50', formatDate(session.start)));
+        tr.appendChild(el('td', 'px-4 py-3 text-white/70', session.userEmail));
+        tr.appendChild(el('td', 'px-4 py-3 text-center text-white/40', String(session.eventCount)));
+
+        const parseTd = el('td', 'px-4 py-3 text-center');
+        if (session.parses > 0) parseTd.appendChild(el('span', 'px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-medium', String(session.parses)));
+        else parseTd.appendChild(el('span', 'text-white/20', '0'));
+        tr.appendChild(parseTd);
+
+        const errTd = el('td', 'px-4 py-3 text-center');
+        if (session.errors > 0) errTd.appendChild(el('span', 'px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 font-medium', String(session.errors)));
+        else errTd.appendChild(el('span', 'text-white/20', '0'));
+        tr.appendChild(errTd);
+
+        tr.appendChild(el('td', 'px-4 py-3 text-right text-white/30 font-mono', duration(session.events)));
+        tbody.appendChild(tr);
+
+        // Detail row (expanded)
+        if (isSelected) {
+          const detailTr = el('tr', 'bg-white/[0.03]');
+          const detailTd = el('td', 'px-4 py-4');
+          detailTd.colSpan = 6;
+
+          // Session summary cards
+          const cards = el('div', 'flex gap-3 mb-4');
+          const addCard = (label, value, color) => {
+            const card = el('div', 'rounded-lg bg-white/[0.03] border border-white/5 px-3 py-2 min-w-[100px]');
+            card.appendChild(el('div', `text-[10px] uppercase tracking-wider font-medium ${color}`, label));
+            card.appendChild(el('div', 'text-sm font-semibold text-white/80 mt-0.5', value));
+            cards.appendChild(card);
+          };
+          addCard('Session ID', session.id.substring(0, 8), 'text-white/30');
+          addCard('Duration', duration(session.events), 'text-blue-400');
+          addCard('Events', String(session.eventCount), 'text-purple-400');
+          addCard('Parses', String(session.parses), 'text-emerald-400');
+          if (session.errors > 0) addCard('Errors', String(session.errors), 'text-red-400');
+          if (session.exports > 0) addCard('Exports', String(session.exports), 'text-cyan-400');
+          detailTd.appendChild(cards);
+
+          // Event timeline
+          const timeline = el('div', 'space-y-0.5');
+          const heading = el('div', 'text-[10px] uppercase tracking-wider font-medium text-white/30 mb-2', 'Event Timeline');
+          timeline.appendChild(heading);
+
+          [...session.events].reverse().forEach(evt => {
+            const row = el('div', 'flex items-center gap-3 py-2 px-3 rounded-md hover:bg-white/[0.02] transition-colors');
+
+            // Time
+            row.appendChild(el('span', 'text-[11px] shrink-0 text-white/20 font-mono w-[70px]', formatTime(evt.timestamp)));
+
+            // Event badge
+            row.appendChild(el('span', `text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${EVENT_PILL[evt.eventType] || ''}`, EVENT_LABELS[evt.eventType] || evt.eventType));
+
+            // Metadata
+            const meta = formatMeta(evt);
+            if (meta) {
+              const metaEl = el('span', 'text-[11px] text-white/30 truncate', meta);
+              metaEl.title = meta;
+              row.appendChild(metaEl);
+            }
+
+            timeline.appendChild(row);
+          });
+
+          detailTd.appendChild(timeline);
+          detailTr.appendChild(detailTd);
+          tbody.appendChild(detailTr);
+        }
+      });
+      table.appendChild(tbody);
+
+      const wrapper = el('div', 'rounded-xl border border-white/10 overflow-hidden');
+      wrapper.appendChild(table);
+      container.appendChild(wrapper);
+    }
+
+    // ── Main render (overview tab) ──
+
+    function render() {
+      const filtered = allEvents.filter(e => {
+        if (userFilter !== 'all' && e.userId !== userFilter) return false;
+        if (typeFilter !== 'all' && e.eventType !== typeFilter) return false;
+        return true;
+      });
+
+      // User stats
+      const userMap = new Map();
+      allEvents.forEach(e => {
+        if (!userMap.has(e.userId)) userMap.set(e.userId, { email: e.userEmail, parses: 0, errors: 0, exports: 0, lastActive: null });
+        const s = userMap.get(e.userId);
+        if (e.eventType === 'parse_success') s.parses++;
+        if (e.eventType === 'parse_error') s.errors++;
+        if (e.eventType === 'pdf_export') s.exports++;
+        if (!s.lastActive || e.timestamp.toMillis() > s.lastActive.toMillis()) s.lastActive = e.timestamp;
+      });
+
+      // Populate user filter dropdown
+      const uf = document.getElementById('user-filter');
+      const currentVal = uf.value;
+      uf.replaceChildren();
+      const allOpt = el('option', null, 'All users');
+      allOpt.value = 'all';
+      uf.appendChild(allOpt);
+      userMap.forEach((v, k) => { const opt = el('option', null, v.email); opt.value = k; uf.appendChild(opt); });
+      uf.value = currentVal;
+
+      // KPIs
+      const parses = allEvents.filter(e => e.eventType === 'parse_success');
+      const errors = allEvents.filter(e => e.eventType === 'parse_error');
+      const avgTime = parses.length > 0
+        ? Math.round(parses.reduce((s, e) => s + (e.metadata?.parseTimeMs || 0), 0) / parses.length)
+        : 0;
+      const sessions = new Set(allEvents.map(e => e.sessionId)).size;
+      const exports = allEvents.filter(e => e.eventType === 'pdf_export').length;
+
+      document.getElementById('kpi-parses').textContent = parses.length;
+      document.getElementById('kpi-errors').textContent = errors.length;
+      document.getElementById('kpi-avg-time').textContent = avgTime > 0 ? `${(avgTime / 1000).toFixed(1)}s` : '\u2014';
+      document.getElementById('kpi-sessions').textContent = sessions;
+      document.getElementById('kpi-exports').textContent = exports;
+      document.getElementById('event-count').textContent = `${filtered.length} events`;
+
+      // Charts (only if on overview tab)
+      if (currentTab === 'overview') {
+        renderActivityChart(filtered);
+        renderBreakdownChart(filtered);
+        renderParseTimeChart(filtered);
+        renderUserChart(filtered);
+      }
+
+      // Users table
+      const tbody = document.getElementById('users-tbody');
+      tbody.replaceChildren();
+      if (userMap.size === 0) {
+        const tr = el('tr');
+        const td = el('td', 'px-4 py-8 text-center text-white/20', 'No usage data yet');
+        td.colSpan = 5;
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      } else {
+        userMap.forEach((s, uid) => {
+          const tr = el('tr', 'border-t border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer');
+          tr.addEventListener('click', () => drillToSessions(`User: ${s.email.split('@')[0]}`, sess => sess.userId === uid));
+          tr.appendChild(el('td', 'px-4 py-2.5 text-white/70', s.email));
+          tr.appendChild(el('td', 'px-4 py-2.5 text-center text-white/50', String(s.parses)));
+          tr.appendChild(el('td', 'px-4 py-2.5 text-center text-white/50', String(s.exports)));
+          tr.appendChild(el('td', `px-4 py-2.5 text-center ${s.errors > 0 ? 'text-red-400 font-medium' : 'text-white/30'}`, String(s.errors)));
+          tr.appendChild(el('td', 'px-4 py-2.5 text-right text-white/30', s.lastActive ? timeAgo(s.lastActive) : '\u2014'));
+          tbody.appendChild(tr);
+        });
+      }
+
+      // If on sessions tab, re-render that too
+      if (currentTab === 'sessions') renderSessions();
+    }
+  </script>
+  <style>
+    body { background: #0f0f1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .active-filter { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
+    .tab-active { color: rgba(255,255,255,0.9) !important; border-bottom-color: #60a5fa !important; }
+    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='rgba(255,255,255,0.3)' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; }
+    select option { background: #1a1a2e; color: #ccc; }
+    .chart-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; }
+    .kpi-clickable { cursor: pointer; transition: all 0.15s; }
+    .kpi-clickable:hover { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.04); }
+  </style>
+</head>
+<body class="min-h-screen text-white/80">
+  <!-- Login -->
+  <div id="login-screen" class="flex items-center justify-center min-h-screen">
+    <form id="login-form" class="bg-[#1a1a2e] border border-white/10 rounded-xl p-8 w-full max-w-sm shadow-2xl">
+      <h1 class="text-xl font-bold text-white/90 mb-1">MindPlan Dashboard</h1>
+      <p class="text-sm text-white/30 mb-6">Admin access only</p>
+      <input id="email" type="email" placeholder="Email" required autofocus
+        class="w-full mb-3 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+      <input id="password" type="password" placeholder="Password" required
+        class="w-full mb-4 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80 placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-blue-500/50" />
+      <button type="submit"
+        class="w-full py-2.5 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 transition-all cursor-pointer disabled:opacity-50">
+        Sign in
+      </button>
+      <p id="login-error" class="mt-3 text-xs text-red-400"></p>
+    </form>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard-screen" class="hidden max-w-[1400px] mx-auto">
+    <!-- Header -->
+    <header class="border-b border-white/10 px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-8">
+        <div>
+          <h1 class="text-lg font-bold text-white/90">MindPlan Usage</h1>
+          <p class="text-xs text-white/30">Real-time analytics</p>
+        </div>
+        <!-- Tabs -->
+        <div class="flex gap-1 border-b border-transparent -mb-[17px]">
+          <button data-tab-btn="overview" class="tab-active px-4 py-2 text-xs font-medium border-b-2 border-transparent text-white/40 hover:text-white/60 transition-colors cursor-pointer">Overview</button>
+          <button data-tab-btn="sessions" class="px-4 py-2 text-xs font-medium border-b-2 border-transparent text-white/40 hover:text-white/60 transition-colors cursor-pointer">Sessions</button>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="user-email" class="text-xs text-white/30"></span>
+        <button id="logout-btn" class="text-xs text-white/30 hover:text-white/60 px-2 py-1 rounded hover:bg-white/5 transition-colors cursor-pointer">Sign out</button>
+      </div>
+    </header>
+
+    <!-- KPIs (shared across tabs) -->
+    <div class="grid grid-cols-5 gap-4 px-6 py-5">
+      <div class="rounded-xl bg-white/[0.03] border border-white/5 p-4 kpi-clickable" onclick="drillToSessions('All parses', s => s.parses > 0)">
+        <div class="flex items-center gap-1.5 text-emerald-400 mb-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+          <span class="text-[10px] font-semibold uppercase tracking-wider">Parses</span>
+        </div>
+        <div id="kpi-parses" class="text-2xl font-bold text-white/80">0</div>
+      </div>
+      <div class="rounded-xl bg-white/[0.03] border border-white/5 p-4 kpi-clickable" onclick="drillToSessions('Sessions with errors', s => s.errors > 0)">
+        <div class="flex items-center gap-1.5 text-red-400 mb-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+          <span class="text-[10px] font-semibold uppercase tracking-wider">Errors</span>
+        </div>
+        <div id="kpi-errors" class="text-2xl font-bold text-white/80">0</div>
+      </div>
+      <div class="rounded-xl bg-white/[0.03] border border-white/5 p-4">
+        <div class="flex items-center gap-1.5 text-blue-400 mb-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span class="text-[10px] font-semibold uppercase tracking-wider">Avg Parse</span>
+        </div>
+        <div id="kpi-avg-time" class="text-2xl font-bold text-white/80">&mdash;</div>
+      </div>
+      <div class="rounded-xl bg-white/[0.03] border border-white/5 p-4 kpi-clickable" onclick="drillToSessions('All sessions', null)">
+        <div class="flex items-center gap-1.5 text-purple-400 mb-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
+          <span class="text-[10px] font-semibold uppercase tracking-wider">Sessions</span>
+        </div>
+        <div id="kpi-sessions" class="text-2xl font-bold text-white/80">0</div>
+      </div>
+      <div class="rounded-xl bg-white/[0.03] border border-white/5 p-4 kpi-clickable" onclick="drillToSessions('Sessions with exports', s => s.exports > 0)">
+        <div class="flex items-center gap-1.5 text-cyan-400 mb-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+          <span class="text-[10px] font-semibold uppercase tracking-wider">Exports</span>
+        </div>
+        <div id="kpi-exports" class="text-2xl font-bold text-white/80">0</div>
+      </div>
+    </div>
+
+    <!-- Filters (shared) -->
+    <div class="flex items-center gap-4 px-6 pb-4">
+      <div class="flex gap-1 rounded-lg bg-white/[0.03] p-1">
+        <button data-date-filter="24h" class="px-3 py-1.5 text-[11px] font-medium rounded-md text-white/30 hover:text-white/50 transition-colors cursor-pointer">24h</button>
+        <button data-date-filter="7d" class="active-filter px-3 py-1.5 text-[11px] font-medium rounded-md transition-colors cursor-pointer">7d</button>
+        <button data-date-filter="30d" class="px-3 py-1.5 text-[11px] font-medium rounded-md text-white/30 hover:text-white/50 transition-colors cursor-pointer">30d</button>
+        <button data-date-filter="all" class="px-3 py-1.5 text-[11px] font-medium rounded-md text-white/30 hover:text-white/50 transition-colors cursor-pointer">All</button>
+      </div>
+      <select id="user-filter" class="text-[11px] px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/60 focus:outline-none cursor-pointer">
+        <option value="all">All users</option>
+      </select>
+      <select id="type-filter" class="text-[11px] px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/60 focus:outline-none cursor-pointer">
+        <option value="all">All events</option>
+        <option value="login">Login</option>
+        <option value="logout">Logout</option>
+        <option value="parse_start">Parse started</option>
+        <option value="parse_success">Parse success</option>
+        <option value="parse_error">Parse error</option>
+        <option value="pdf_export">PDF export</option>
+        <option value="view_change">View change</option>
+      </select>
+      <span id="event-count" class="ml-auto text-[11px] text-white/20">0 events</span>
+    </div>
+
+    <!-- ═══ OVERVIEW TAB ═══ -->
+    <div id="tab-overview">
+      <div class="px-6 pb-4 grid grid-cols-[2fr_1fr] gap-4">
+        <div class="chart-card">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-white/30 mb-3">Activity Over Time</h3>
+          <div style="height: 220px"><canvas id="activity-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-white/30 mb-3">Event Breakdown</h3>
+          <div style="height: 220px"><canvas id="breakdown-chart"></canvas></div>
+        </div>
+      </div>
+      <div class="px-6 pb-4 grid grid-cols-[2fr_1fr] gap-4">
+        <div class="chart-card">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-white/30 mb-3">Parse Time Trend</h3>
+          <div style="height: 180px"><canvas id="parse-time-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-white/30 mb-3">Parses by User</h3>
+          <div style="height: 180px"><canvas id="user-chart"></canvas></div>
+        </div>
+      </div>
+      <div class="px-6 pb-8">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-white/30 mb-3">Users</h3>
+        <div class="rounded-xl border border-white/10 overflow-hidden">
+          <table class="w-full text-xs">
+            <thead>
+              <tr class="bg-white/[0.03]">
+                <th class="text-left px-4 py-2.5 font-medium text-white/40">User</th>
+                <th class="text-center px-4 py-2.5 font-medium text-white/40">Parses</th>
+                <th class="text-center px-4 py-2.5 font-medium text-white/40">Exports</th>
+                <th class="text-center px-4 py-2.5 font-medium text-white/40">Errors</th>
+                <th class="text-right px-4 py-2.5 font-medium text-white/40">Last Active</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr><td colspan="5" class="px-4 py-8 text-center text-white/20">No usage data yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SESSIONS TAB ═══ -->
+    <div id="tab-sessions" class="hidden">
+      <div class="px-6 pb-2 flex items-center gap-3">
+        <span id="session-count" class="text-[11px] text-white/20">0 sessions</span>
+        <div id="session-filter-badge" class="flex items-center gap-1"></div>
+      </div>
+      <div id="sessions-content" class="px-6 pb-8">
+        <p class="text-center text-white/20 py-12 text-sm">No sessions found</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

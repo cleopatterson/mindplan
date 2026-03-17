@@ -2,10 +2,16 @@ import { useState, useCallback, useRef } from 'react';
 import type { Edge } from '@xyflow/react';
 import type { FinancialPlan, ParseResponse, Insight, InsightsResponse, Asset, Liability, FamilyMember, Grandchild, Goal, Relationship, EstatePlanItem } from 'shared/types';
 import type { ChildNodeType } from '../utils/nodeChildTypes';
+import { logUsageEvent } from '../services/usageTracking';
 
 export type AppState = 'upload' | 'parsing' | 'completing' | 'dashboard';
 
-export function useFinancialData(getIdToken?: () => Promise<string>) {
+interface TrackingUser {
+  uid: string;
+  email: string | null;
+}
+
+export function useFinancialData(getIdToken?: () => Promise<string>, trackingUser?: TrackingUser | null) {
   const [appState, setAppState] = useState<AppState>('upload');
   const [data, setData] = useState<FinancialPlan | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +27,13 @@ export function useFinancialData(getIdToken?: () => Promise<string>) {
   const uploadFile = useCallback(async (file: File) => {
     setAppState('parsing');
     setError(null);
+    const t0 = performance.now();
+
+    const track = (type: 'parse_start' | 'parse_success' | 'parse_error', meta?: Record<string, unknown>) => {
+      if (trackingUser) logUsageEvent(trackingUser.uid, trackingUser.email ?? '', type, meta);
+    };
+
+    track('parse_start', { fileName: file.name, fileSize: file.size });
 
     try {
       const formData = new FormData();
@@ -42,6 +55,13 @@ export function useFinancialData(getIdToken?: () => Promise<string>) {
         throw new Error(json.error || 'Failed to parse document');
       }
 
+      const parseTimeMs = Math.round(performance.now() - t0);
+      track('parse_success', {
+        parseTimeMs,
+        clientCount: json.data.clients.length,
+        entityCount: json.data.entities?.length ?? 0,
+      });
+
       // Signal the spinner to race to 100%, then transition to dashboard
       setAppState('completing');
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -52,10 +72,12 @@ export function useFinancialData(getIdToken?: () => Promise<string>) {
       // Fire-and-forget insights fetch (non-blocking)
       fetchInsights(json.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      track('parse_error', { error: message, parseTimeMs: Math.round(performance.now() - t0) });
+      setError(message);
       setAppState('upload');
     }
-  }, []);
+  }, [trackingUser]);
 
   const fetchInsights = useCallback(async (plan: FinancialPlan) => {
     insightsAbortRef.current?.abort();

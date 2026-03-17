@@ -8,10 +8,11 @@ import { ExportModal, type ExportOptions } from './components/export/ExportModal
 import type { MindMapHandle } from './components/mindmap/MindMap';
 import { LogoFull } from './components/Logo';
 import { Network, TrendingUp, ArrowLeftRight, Download, Upload, Loader2, Sun, Moon, LogOut, MessageSquarePlus } from 'lucide-react';
-import { useRef, useState, useCallback, lazy, Suspense } from 'react';
+import { useRef, useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import { usePdfExport } from './hooks/usePdfExport';
 import { ThemeContext, type Theme } from './contexts/ThemeContext';
 import { FeedbackPanel } from './components/feedback/FeedbackPanel';
+import { logUsageEvent } from './services/usageTracking';
 
 const ProjectionView = lazy(() => import('./components/projection/ProjectionView').then((m) => ({ default: m.ProjectionView })));
 const CashflowView = lazy(() => import('./components/cashflow/CashflowView').then((m) => ({ default: m.CashflowView })));
@@ -21,6 +22,7 @@ type ViewMode = 'mindmap' | 'projection' | 'cashflow';
 export default function App() {
   const { user, loading: authLoading, signIn, signOut, resetPassword, getIdToken } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
+  const trackingUser = useMemo(() => user ? { uid: user.uid, email: user.email } : null, [user?.uid, user?.email]);
   const {
     appState, data, error,
     selectedNodeIds, selectNode,
@@ -30,7 +32,7 @@ export default function App() {
     insights, insightsLoading, dismissInsight,
     uploadFile, reset, resolveGap, updateNodeField, addNode, deleteNode,
     newNodeId, clearNewNodeId,
-  } = useFinancialData(getIdToken);
+  } = useFinancialData(getIdToken, trackingUser);
   const mapRef = useRef<HTMLDivElement>(null);
   const mindMapRef = useRef<MindMapHandle>(null);
   const { exportPdf, exporting } = usePdfExport();
@@ -38,7 +40,11 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(() =>
     (localStorage.getItem('mindplan-theme') as Theme) ?? 'dark',
   );
-  const [viewMode, setViewMode] = useState<ViewMode>('mindmap');
+  const [viewMode, setViewModeRaw] = useState<ViewMode>('mindmap');
+  const setViewMode = useCallback((mode: ViewMode) => {
+    setViewModeRaw(mode);
+    if (user) logUsageEvent(user.uid, user.email ?? '', 'view_change', { viewMode: mode });
+  }, [user]);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [projectionSettingsOpen, setProjectionSettingsOpen] = useState(false);
@@ -56,6 +62,7 @@ export default function App() {
     if (!data) return;
     exportPdf(mapRef.current, mindMapRef.current, data, options)
       .then(() => {
+        if (user) logUsageEvent(user.uid, user.email ?? '', 'pdf_export');
         setExportDone(true);
         setTimeout(() => {
           setShowExportModal(false);
@@ -167,7 +174,7 @@ export default function App() {
             <button
               onClick={() => setShowFeedback(true)}
               className={`cursor-pointer p-2 rounded-lg transition-colors
-                ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                ${isDark ? 'text-white/30 hover:text-white/60 hover:bg-white/10'  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
               title="Send feedback"
             >
               <MessageSquarePlus className="w-4 h-4" />
