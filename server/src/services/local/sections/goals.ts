@@ -28,6 +28,7 @@ const CATEGORY_MAP: Record<string, GoalItem['category']> = {
   'education': 'education',
   'debt management': 'wealth',
   'other investments': 'wealth',
+  'asset protection': 'protection',
   'other': 'other',
 };
 
@@ -46,48 +47,12 @@ export function parseGoals(text: string | null): GoalItem[] {
   const dataStart = goalIdx + 3;
   const dataCells = cells.slice(dataStart);
 
-  // Detect 4-column layout: first cell is a known category AND cell at +3 is a timeframe
-  // In 4-col layout, category rows are: [category, goalName, detail, timeframe]
-  // Subsequent goals under same category are: [goalName, detail, timeframe] (3 cells)
-  const firstCat = dataCells.length >= 4 ? matchCategory(dataCells[0]) : null;
-  const fourCol = firstCat !== null && isTimeframeText(dataCells[3]?.trim() || '');
-
   const items: GoalItem[] = [];
   let currentCategory: GoalItem['category'] = 'other';
 
   let i = 0;
   while (i < dataCells.length) {
     const cell = dataCells[i].trim();
-
-    if (fourCol) {
-      // 4-column mode: check if this cell is a category header with a goal in the same row
-      const catMatch = matchCategory(cell);
-      if (catMatch && i + 3 < dataCells.length && isTimeframeText(dataCells[i + 3].trim())) {
-        // 4-cell row: [category, name, detail, timeframe]
-        currentCategory = catMatch;
-        const name = dataCells[i + 1].trim();
-        const detail = dataCells[i + 2].trim();
-        const timeframe = dataCells[i + 3].trim();
-        const value = extractValue(detail);
-        items.push({ name, detail, timeframe, category: currentCategory, value });
-        i += 4;
-        continue;
-      }
-      // Otherwise a 3-cell goal row: [name, detail, timeframe]
-      if (i + 2 < dataCells.length) {
-        const name = cell;
-        const detail = dataCells[i + 1].trim();
-        const timeframe = dataCells[i + 2].trim();
-        const value = extractValue(detail);
-        items.push({ name, detail, timeframe: isTimeframeText(timeframe) ? timeframe : null, category: currentCategory, value });
-        i += isTimeframeText(timeframe) ? 3 : 2;
-      } else {
-        i++;
-      }
-      continue;
-    }
-
-    // ── 3-column mode (original logic) ──
 
     // Check if this is a category header (not a goal name that happens to match a category)
     // A category header is standalone — if cell at i+2 looks like a timeframe, this is
@@ -162,13 +127,20 @@ function matchCategory(text: string): GoalItem['category'] | null {
   return null;
 }
 
+/**
+ * Detect whether a cell is a timeframe value (e.g. "Ongoing", "Now", "2026/2027",
+ * "From July 2030 onwards") vs a detail/description that happens to contain
+ * time-related words (e.g. "$100,000k/year", "4 months/year").
+ *
+ * Only match month NAMES (Jan, Feb, etc.) — not the generic words "year" or "month"
+ * which appear in dollar amounts and descriptions like "$100,000k/year".
+ */
 function isTimeframeText(text: string): boolean {
-  return /^now$/i.test(text.trim()) ||
-    /ongoing/i.test(text) ||
-    /^\d{4}/i.test(text) ||
-    /year/i.test(text) ||
-    /month/i.test(text) ||
-    /june|july|jan|feb|mar|apr|may|aug|sep|oct|nov|dec/i.test(text);
+  const t = text.trim();
+  return /^now$/i.test(t) ||
+    /ongoing/i.test(t) ||
+    /^\d{4}/i.test(t) ||
+    /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\b/i.test(t);
 }
 
 /** Check if cell at idx starts a 3-column goal row (goal, detail, timeframe) */
