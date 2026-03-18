@@ -10,25 +10,33 @@ export interface GoalItem {
   name: string;
   detail: string | null;
   timeframe: string | null;
-  category: 'retirement' | 'wealth' | 'protection' | 'estate' | 'lifestyle' | 'education' | 'other';
+  category: 'retirement' | 'superannuation' | 'tax' | 'wealth' | 'protection' | 'estate' | 'lifestyle' | 'cash_reserve' | 'other_investments' | 'debt' | 'centrelink' | 'education' | 'regular_review' | 'other';
   value: number | null;
 }
 
 const CATEGORY_MAP: Record<string, GoalItem['category']> = {
   'retirement planning': 'retirement',
-  'superannuation & pensions': 'retirement',
-  'tax': 'wealth',
+  'superannuation & pensions': 'superannuation',
+  'superannuation': 'superannuation',
+  'tax': 'tax',
+  'tax planning': 'tax',
   'wealth accumulation': 'wealth',
   'wealth creation': 'wealth',
+  'wealth management': 'wealth',
   'living & lifestyle': 'lifestyle',
   'estate planning': 'estate',
   'protection': 'protection',
   'insurance': 'protection',
   'risk management': 'protection',
-  'education': 'education',
-  'debt management': 'wealth',
-  'other investments': 'wealth',
   'asset protection': 'protection',
+  'insurance and risk management': 'protection',
+  'education': 'education',
+  'cash reserve': 'cash_reserve',
+  'other investments': 'other_investments',
+  'debt & credit': 'debt',
+  'debt management': 'debt',
+  'centrelink': 'centrelink',
+  'regular review': 'regular_review',
   'other': 'other',
 };
 
@@ -122,25 +130,28 @@ export function parseGoals(text: string | null): GoalItem[] {
 function matchCategory(text: string): GoalItem['category'] | null {
   const lower = text.toLowerCase().replace(/\s+/g, ' ').trim();
   for (const [key, cat] of Object.entries(CATEGORY_MAP)) {
-    if (lower === key || lower.startsWith(key)) return cat;
+    if (lower === key) return cat;
   }
   return null;
 }
 
 /**
  * Detect whether a cell is a timeframe value (e.g. "Ongoing", "Now", "2026/2027",
- * "From July 2030 onwards") vs a detail/description that happens to contain
- * time-related words (e.g. "$100,000k/year", "4 months/year").
+ * "From July 2030 onwards", "Ongoing to June 2031") vs a detail/description that
+ * happens to contain time-related words (e.g. "cover your ongoing living expenses").
  *
- * Only match month NAMES (Jan, Feb, etc.) — not the generic words "year" or "month"
- * which appear in dollar amounts and descriptions like "$100,000k/year".
+ * Real timeframes are short and structured. Long sentences are descriptions.
  */
 function isTimeframeText(text: string): boolean {
   const t = text.trim();
+  if (t.length > 50) return false; // descriptions are long, timeframes are short
+  // Real timeframes always start with one of these patterns.
+  // Month names can appear in detail text (e.g. "by 31 December 2029") so
+  // we don't match them as a standalone signal.
   return /^now$/i.test(t) ||
-    /ongoing/i.test(t) ||
+    /^ongoing/i.test(t) ||
     /^\d{4}/i.test(t) ||
-    /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\b/i.test(t);
+    /^from\b/i.test(t);
 }
 
 /** Check if cell at idx starts a 3-column goal row (goal, detail, timeframe) */

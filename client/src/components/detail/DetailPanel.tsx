@@ -796,12 +796,19 @@ function GoalDetail({ goal, nodeId, onUpdate, autoFocusName }: { goal: Goal; nod
 }
 
 const goalCategoryOptions = [
-  { value: 'retirement', label: 'Retirement' },
+  { value: 'retirement', label: 'Retirement Planning' },
+  { value: 'superannuation', label: 'Superannuation & Pensions' },
+  { value: 'tax', label: 'Tax' },
   { value: 'wealth', label: 'Wealth' },
   { value: 'protection', label: 'Protection' },
-  { value: 'estate', label: 'Estate' },
-  { value: 'lifestyle', label: 'Lifestyle' },
+  { value: 'estate', label: 'Estate Planning' },
+  { value: 'lifestyle', label: 'Living & Lifestyle' },
+  { value: 'cash_reserve', label: 'Cash Reserve' },
+  { value: 'other_investments', label: 'Other Investments' },
+  { value: 'debt', label: 'Debt & Credit' },
+  { value: 'centrelink', label: 'Centrelink' },
   { value: 'education', label: 'Education' },
+  { value: 'regular_review', label: 'Regular Review' },
   { value: 'other', label: 'Other' },
 ];
 

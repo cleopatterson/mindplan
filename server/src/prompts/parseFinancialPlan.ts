@@ -60,7 +60,7 @@ Australian financial plans typically involve:
    - Include age if mentioned at either level.
 13. Extract structured goals and objectives:
    - name: Short description of the goal, e.g. "Retire at 65", "Fund children's education"
-   - category: retirement, wealth, protection, estate, lifestyle, education, or other
+   - category: retirement, superannuation, tax, wealth, protection, estate, lifestyle, cash_reserve, other_investments, debt, centrelink, education, regular_review, or other (matching the goal category headings in the document)
    - detail: Any additional notes or context about the goal
    - timeframe: When the goal should be achieved, e.g. "5 years", "by 2030", "ongoing"
    - value: Target dollar value if mentioned (e.g. retirement income target), null otherwise

@@ -9,7 +9,7 @@
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js';
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.5.0/firebase-auth.js';
-    import { getFirestore, collection, query, orderBy, where, onSnapshot, Timestamp } from 'https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js';
+    import { getFirestore, collection, query, orderBy, where, onSnapshot, Timestamp, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js';
 
     const ADMIN_UID = '7Ldd1nNF7vcDpjxpjaOe5xx1Nrh2';
     const app = initializeApp({
@@ -38,6 +38,8 @@
     let sessionSortKey = 'start';
     let sessionSortAsc = false;
     let unsubFirestore = null;
+    let unsubFeedback = null;
+    let feedbackItems = [];
 
     // Chart instances
     let activityChart = null;
@@ -60,10 +62,12 @@
         dashboardScreen.classList.remove('hidden');
         userEmailEl.textContent = user.email;
         subscribeToEvents();
+        subscribeFeedback();
       } else {
         loginScreen.classList.remove('hidden');
         dashboardScreen.classList.add('hidden');
         if (unsubFirestore) { unsubFirestore(); unsubFirestore = null; }
+        if (unsubFeedback) { unsubFeedback(); unsubFeedback = null; }
         if (user && user.uid !== ADMIN_UID) {
           loginError.textContent = 'Access denied — admin only';
           signOut(auth);
@@ -142,6 +146,15 @@
       unsubFirestore = onSnapshot(q, (snap) => {
         allEvents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         render();
+      });
+    }
+
+    function subscribeFeedback() {
+      if (unsubFeedback) unsubFeedback();
+      const q = query(collection(db, 'feedback'), orderBy('createdAt', 'desc'));
+      unsubFeedback = onSnapshot(q, (snap) => {
+        feedbackItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderFeedback();
       });
     }
 
@@ -593,6 +606,74 @@
       // If on sessions tab, re-render that too
       if (currentTab === 'sessions') renderSessions();
     }
+
+    // ── Feedback ──
+
+    const FEEDBACK_CAT_COLORS = {
+      bug: 'bg-red-500/20 text-red-300',
+      feature: 'bg-purple-500/20 text-purple-300',
+      question: 'bg-blue-500/20 text-blue-300',
+      general: 'bg-gray-500/20 text-gray-400',
+    };
+
+    function renderFeedback() {
+      const openCount = feedbackItems.filter(f => f.status === 'open').length;
+
+      // Header badge
+      const badge = document.getElementById('feedback-badge');
+      badge.replaceChildren();
+      if (openCount > 0) {
+        badge.appendChild(el('span', 'px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-orange-500 text-white', String(openCount)));
+      }
+
+      // Feedback list
+      const container = document.getElementById('feedback-list');
+      container.replaceChildren();
+
+      if (feedbackItems.length === 0) {
+        container.appendChild(el('p', 'text-center text-white/20 py-6 text-sm', 'No feedback yet'));
+        return;
+      }
+
+      feedbackItems.forEach(item => {
+        const card = el('div', `rounded-lg border p-3 ${item.status === 'open' ? 'border-white/10 bg-white/[0.03]' : 'border-white/5 bg-white/[0.01] opacity-50'}`);
+
+        const top = el('div', 'flex items-start justify-between gap-2');
+        const left = el('div', 'flex-1 min-w-0');
+        left.appendChild(el('span', 'text-[10px] font-medium text-white/30', item.userName || 'Unknown'));
+        const msg = el('p', 'text-xs text-white/70 mt-0.5 whitespace-pre-wrap break-words select-text', item.message);
+        left.appendChild(msg);
+
+        const right = el('div', 'flex items-center gap-1.5 shrink-0');
+        right.appendChild(el('span', `text-[10px] px-1.5 py-0.5 rounded-full font-medium ${FEEDBACK_CAT_COLORS[item.category] || FEEDBACK_CAT_COLORS.general}`, item.category));
+        if (item.status === 'open') {
+          right.appendChild(el('span', 'w-2 h-2 rounded-full bg-orange-400 shrink-0', ''));
+        }
+
+        top.appendChild(left);
+        top.appendChild(right);
+        card.appendChild(top);
+
+        // Date + mark addressed button
+        const bottom = el('div', 'flex items-center justify-between mt-2');
+        const ts = item.createdAt?.toDate?.();
+        bottom.appendChild(el('span', 'text-[10px] text-white/20', ts ? ts.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''));
+
+        if (item.status === 'open') {
+          const markBtn = el('button', 'text-[10px] font-medium text-emerald-400/60 hover:text-emerald-400 cursor-pointer transition-colors', '\u2713 Mark addressed');
+          markBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await updateDoc(doc(db, 'feedback', item.id), { status: 'addressed' });
+          });
+          bottom.appendChild(markBtn);
+        } else if (item.adminNote) {
+          bottom.appendChild(el('span', 'text-[10px] italic text-emerald-400/50', item.adminNote));
+        }
+
+        card.appendChild(bottom);
+        container.appendChild(card);
+      });
+    }
   </script>
   <style>
     body { background: #0f0f1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
@@ -629,7 +710,10 @@
     <header class="border-b border-white/10 px-6 py-4 flex items-center justify-between">
       <div class="flex items-center gap-8">
         <div>
-          <h1 class="text-lg font-bold text-white/90">MindPlan Usage</h1>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-bold text-white/90">MindPlan Usage</h1>
+            <div id="feedback-badge" class="flex items-center"></div>
+          </div>
           <p class="text-xs text-white/30">Real-time analytics</p>
         </div>
         <!-- Tabs -->
@@ -746,6 +830,14 @@
               <tr><td colspan="5" class="px-4 py-8 text-center text-white/20">No usage data yet</td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="px-6 pb-8">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-white/30 mb-3">Feedback</h3>
+        <div id="feedback-list" class="space-y-2 max-h-[400px] overflow-y-auto">
+          <p class="text-center text-white/20 py-6 text-sm">No feedback yet</p>
         </div>
       </div>
     </div>

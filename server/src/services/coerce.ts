@@ -37,7 +37,7 @@ const VALID_ENTITY_TYPES = new Set(['trust', 'smsf', 'company', 'partnership']);
 const VALID_ESTATE_TYPES = new Set(['will', 'poa', 'guardianship', 'super_nomination']);
 const VALID_RELATIONSHIP_TYPES = new Set(['child', 'other']);
 const RELATIONSHIP_ALIAS_MAP: Record<string, string> = { son: 'child', daughter: 'child' };
-const VALID_GOAL_CATEGORIES = new Set(['retirement', 'wealth', 'protection', 'estate', 'lifestyle', 'education', 'other']);
+const VALID_GOAL_CATEGORIES = new Set(['retirement', 'superannuation', 'tax', 'wealth', 'protection', 'estate', 'lifestyle', 'cash_reserve', 'other_investments', 'debt', 'centrelink', 'education', 'regular_review', 'other']);
 const VALID_ADVISER_TYPES = new Set(['accountant', 'stockbroker', 'solicitor', 'insurance_adviser', 'mortgage_broker', 'financial_adviser', 'other']);
 
 /** Ensure a key exists on an object, defaulting to null if absent */

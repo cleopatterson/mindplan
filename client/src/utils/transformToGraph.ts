@@ -660,12 +660,19 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
 
 /** Goal category → display label for group nodes */
 export const GOAL_CATEGORY_DISPLAY: Record<string, string> = {
-  retirement: 'Retirement',
+  retirement: 'Retirement Planning',
+  superannuation: 'Superannuation & Pensions',
+  tax: 'Tax',
   wealth: 'Wealth',
   protection: 'Protection',
-  estate: 'Estate',
-  lifestyle: 'Lifestyle',
+  estate: 'Estate Planning',
+  lifestyle: 'Living & Lifestyle',
+  cash_reserve: 'Cash Reserve',
+  other_investments: 'Other Investments',
+  debt: 'Debt & Credit',
+  centrelink: 'Centrelink',
   education: 'Education',
+  regular_review: 'Regular Review',
   other: 'Other',
 };
 

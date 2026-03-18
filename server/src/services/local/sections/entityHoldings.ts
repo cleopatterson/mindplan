@@ -149,18 +149,26 @@ function isKnownAssetType(s: string): boolean {
   const t = s.trim().toLowerCase();
   // Reject if too long to be a type keyword (types are typically < 40 chars)
   if (t.length > 45) return false;
-  return /everyday\s*cash/i.test(s) ||
+  // Plutosoft entity asset categories (fixed list):
+  // Cash, Investment portfolio, Shares, Property, Business assets,
+  // Loan assets, Loans, Share in private company
+  return /^cash$/i.test(t) ||
+    /everyday\s*cash/i.test(s) ||
     /savings/i.test(s) ||
     /on-?line\s*saver/i.test(s) ||
     /term\s*deposit/i.test(s) ||
     /loan\s*offset/i.test(s) ||
     /investment\s*portfolio/i.test(s) ||
+    /share\s*in\s*private\s*company/i.test(s) ||
+    /^shares?$/i.test(t) ||
     /residential\s*(property|unit|home)/i.test(s) ||
     /commercial\s*property/i.test(s) ||
     /holiday\s*home/i.test(s) ||
     /apartment/i.test(s) ||
     /\bland\b/i.test(s) ||
+    /^business\s*assets?$/i.test(s) ||
     /^business\b/i.test(s) ||
+    /loan\s*assets?/i.test(s) ||
     /listed\s*on\s*asx/i.test(s) ||
     /listed\s*\(other/i.test(s) ||
     /unlisted/i.test(s) ||

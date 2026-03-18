@@ -27,12 +27,14 @@ export function getPickerOptions(nodeType: NodeData['nodeType']): PickerOption[]
       ];
     case 'goalsGroup':
       return [
-        { label: 'Retirement', childType: 'goal', overrides: { category: 'retirement' } },
+        { label: 'Retirement Planning', childType: 'goal', overrides: { category: 'retirement' } },
+        { label: 'Super & Pensions', childType: 'goal', overrides: { category: 'superannuation' } },
+        { label: 'Tax', childType: 'goal', overrides: { category: 'tax' } },
         { label: 'Wealth', childType: 'goal', overrides: { category: 'wealth' } },
         { label: 'Protection', childType: 'goal', overrides: { category: 'protection' } },
-        { label: 'Estate', childType: 'goal', overrides: { category: 'estate' } },
-        { label: 'Lifestyle', childType: 'goal', overrides: { category: 'lifestyle' } },
-        { label: 'Education', childType: 'goal', overrides: { category: 'education' } },
+        { label: 'Estate Planning', childType: 'goal', overrides: { category: 'estate' } },
+        { label: 'Living & Lifestyle', childType: 'goal', overrides: { category: 'lifestyle' } },
+        { label: 'Debt & Credit', childType: 'goal', overrides: { category: 'debt' } },
         { label: 'Other', childType: 'goal', overrides: { category: 'other' } },
       ];
     case 'relationshipsGroup':

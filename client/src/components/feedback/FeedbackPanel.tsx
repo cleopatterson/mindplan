@@ -220,7 +220,7 @@ export function FeedbackPanel({ user, onClose }: FeedbackPanelProps) {
                       {item.userName}
                     </span>
                   )}
-                  <p className={`text-sm whitespace-pre-wrap break-words ${isDark ? 'text-white/80' : 'text-gray-800'}`}>
+                  <p className={`text-sm whitespace-pre-wrap break-words select-text ${isDark ? 'text-white/80' : 'text-gray-800'}`}>
                     {item.message}
                   </p>
                 </div>

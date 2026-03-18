@@ -76,7 +76,7 @@ export const FamilyMemberSchema = z.object({
 export const GoalSchema = z.object({
   id: z.string().describe('Unique ID, e.g. "goal-1"'),
   name: z.string().describe('Short goal name, e.g. "Retire at 65"'),
-  category: z.enum(['retirement', 'wealth', 'protection', 'estate', 'lifestyle', 'education', 'other']).describe('Goal category'),
+  category: z.enum(['retirement', 'superannuation', 'tax', 'wealth', 'protection', 'estate', 'lifestyle', 'cash_reserve', 'other_investments', 'debt', 'centrelink', 'education', 'regular_review', 'other']).describe('Goal category matching Plutosoft categories: Retirement planning, Superannuation & Pensions, Tax, Wealth, Protection, Estate Planning, Living & Lifestyle, Cash reserve, Other investments, Debt & Credit, Centrelink, Education, Regular review, Other'),
   detail: z.nullable(z.string()).describe('Additional detail or notes about the goal'),
   timeframe: z.nullable(z.string()).describe('Timeframe, e.g. "5 years", "by 2030", "ongoing"'),
   value: z.nullable(z.number()).describe('Target dollar value if applicable, null otherwise'),

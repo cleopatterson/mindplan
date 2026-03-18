@@ -44,12 +44,26 @@ export function useFinancialData(getIdToken?: () => Promise<string>, trackingUse
         headers['Authorization'] = `Bearer ${await getIdToken()}`;
       }
 
-      const res = await fetch('/api/parse', { method: 'POST', body: formData, headers });
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        throw new Error(text || `Server error (${res.status})`);
+      // Retry up to 2 times on network failures (e.g. Railway cold start)
+      let res: Response | undefined;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          res = await fetch('/api/parse', { method: 'POST', body: formData, headers });
+          break; // success — exit retry loop
+        } catch (fetchErr) {
+          if (attempt < 2) {
+            track('parse_error', { error: 'Network error (retrying)', attempt: attempt + 1 });
+            await new Promise((r) => setTimeout(r, 3000));
+            continue;
+          }
+          throw fetchErr; // final attempt failed
+        }
       }
-      const json: ParseResponse = await res.json();
+      if (!res!.ok) {
+        const text = await res!.text().catch(() => '');
+        throw new Error(text || `Server error (${res!.status})`);
+      }
+      const json: ParseResponse = await res!.json();
 
       if (!json.success || !json.data) {
         throw new Error(json.error || 'Failed to parse document');

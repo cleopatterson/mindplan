@@ -122,7 +122,7 @@ export interface Grandchild {
 export interface Goal {
   id: string;
   name: string;
-  category: 'retirement' | 'wealth' | 'protection' | 'estate' | 'lifestyle' | 'education' | 'other';
+  category: 'retirement' | 'superannuation' | 'tax' | 'wealth' | 'protection' | 'estate' | 'lifestyle' | 'cash_reserve' | 'other_investments' | 'debt' | 'centrelink' | 'education' | 'regular_review' | 'other';
   detail: string | null;
   timeframe: string | null;
   value: number | null;
