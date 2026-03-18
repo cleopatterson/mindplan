@@ -46,9 +46,14 @@ function isDollar(cell: string): boolean {
 function isNamedPolicy(cell: string): boolean {
   const trimmed = cell.trim();
   if (!trimmed) return false;
+  // "Super - ..." is an owner field (e.g. "Super - MLC: Aaron"), not a policy name
+  if (/^super\s*-/i.test(trimmed)) return false;
   // Cover type cells with " - " are named policies (e.g. "Income Protection Plan - Alicia")
   if (matchCoverType(trimmed) && /\s-\s/.test(trimmed)) return true;
   if (matchCoverType(trimmed)) return false;
+  // "Provider: PersonName" pattern (e.g. "CareSuper: Aaron Scagliotta", "Asteron: Heizel")
+  // Exclude feature detail lines (e.g. "Premium type: Stepped", "TPD definition: Any")
+  if (!isFeatureDetail(trimmed) && /^[A-Z][A-Za-z\s]+:\s+[A-Z]/.test(trimmed)) return true;
   return (
     /\s-\s/.test(trimmed) ||
     /insurance/i.test(trimmed) ||
