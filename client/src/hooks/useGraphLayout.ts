@@ -24,6 +24,7 @@ const NODE_WIDTH: Record<NodeData['nodeType'], number> = {
   expense: 230,
   insuranceGroup: 200,
   insuranceClient: 200,
+  insuranceCoverGroup: 200,
   insuranceCover: 200,
 };
 
@@ -48,6 +49,7 @@ const NODE_HEIGHT: Record<NodeData['nodeType'], number> = {
   expense: 50,
   insuranceGroup: 56,
   insuranceClient: 50,
+  insuranceCoverGroup: 56,
   insuranceCover: 50,
 };
 

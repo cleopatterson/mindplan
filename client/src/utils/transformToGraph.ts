@@ -8,7 +8,7 @@ export interface NodeData extends Record<string, unknown> {
   label: string;
   sublabel?: string;
   value?: number | null;
-  nodeType: 'family' | 'client' | 'entity' | 'asset' | 'liability' | 'assetGroup' | 'expensesGroup' | 'expense' | 'estateGroup' | 'estateClient' | 'estateItem' | 'familyGroup' | 'familyMember' | 'goalsGroup' | 'goalCategoryGroup' | 'goal' | 'relationshipsGroup' | 'relationship' | 'insuranceGroup' | 'insuranceClient' | 'insuranceCover';
+  nodeType: 'family' | 'client' | 'entity' | 'asset' | 'liability' | 'assetGroup' | 'expensesGroup' | 'expense' | 'estateGroup' | 'estateClient' | 'estateItem' | 'familyGroup' | 'familyMember' | 'goalsGroup' | 'goalCategoryGroup' | 'goal' | 'relationshipsGroup' | 'relationship' | 'insuranceGroup' | 'insuranceClient' | 'insuranceCoverGroup' | 'insuranceCover';
   entityType?: Entity['type'];
   assetType?: Asset['type'];
   liabilityType?: Liability['type'];
@@ -363,29 +363,56 @@ export function transformToGraph(plan: FinancialPlan): { nodes: Node<NodeData>[]
         target: insClientId,
       });
 
+      // Group covers by type — if 2+ of same type, create a collapsible group
+      const byType = new Map<string, typeof clientCovers>();
       for (const cover of clientCovers) {
-        const typeLabel = INSURANCE_COVER_DISPLAY[cover.type] ?? cover.type;
-        const sublabel = cover.coverAmount != null ? formatAUD(cover.coverAmount) : undefined;
+        const list = byType.get(cover.type) ?? [];
+        list.push(cover);
+        byType.set(cover.type, list);
+      }
+
+      for (const [coverType, typeCovers] of byType) {
+        const typeLabel = INSURANCE_COVER_DISPLAY[coverType] ?? coverType;
+
+        if (typeCovers.length < 2) {
+          // Single cover of this type — flat node, no group
+          const cover = typeCovers[0];
+          const sublabel = cover.coverAmount != null ? formatAUD(cover.coverAmount) : undefined;
+          nodes.push({
+            id: cover.id,
+            type: 'insuranceCoverNode',
+            position: { x: 0, y: 0 },
+            data: { label: typeLabel, sublabel, value: cover.coverAmount, nodeType: 'insuranceCover', insuranceCoverType: cover.type, side: 'right', raw: cover },
+          });
+          edges.push({ id: `${insClientId}-${cover.id}`, source: insClientId, target: cover.id });
+          continue;
+        }
+
+        // 2+ covers of same type → collapsible group
+        const groupId = `ins-type-${clientId}-${coverType}`;
+        const totalCover = typeCovers.reduce((sum, c) => sum + (c.coverAmount || 0), 0);
+        const sublabelParts = [`${typeCovers.length} policies`];
+        if (totalCover > 0) sublabelParts.push(formatCompactAUD(totalCover));
 
         nodes.push({
-          id: cover.id,
-          type: 'insuranceCoverNode',
+          id: groupId,
+          type: 'insuranceCoverGroupNode',
           position: { x: 0, y: 0 },
-          data: {
-            label: typeLabel,
-            sublabel,
-            value: cover.coverAmount,
-            nodeType: 'insuranceCover',
-            insuranceCoverType: cover.type,
-            side: 'right',
-            raw: cover,
-          },
+          data: { label: typeLabel, sublabel: sublabelParts.join(' · '), nodeType: 'insuranceCoverGroup', insuranceCoverType: coverType, side: 'right' },
         });
-        edges.push({
-          id: `${insClientId}-${cover.id}`,
-          source: insClientId,
-          target: cover.id,
-        });
+        edges.push({ id: `${insClientId}-${groupId}`, source: insClientId, target: groupId });
+
+        for (const cover of typeCovers) {
+          const policyLabel = cover.policyName || typeLabel;
+          const sublabel = cover.coverAmount != null ? formatAUD(cover.coverAmount) : undefined;
+          nodes.push({
+            id: cover.id,
+            type: 'insuranceCoverNode',
+            position: { x: 0, y: 0 },
+            data: { label: policyLabel, sublabel, value: cover.coverAmount, nodeType: 'insuranceCover', insuranceCoverType: cover.type, side: 'right', raw: cover },
+          });
+          edges.push({ id: `${groupId}-${cover.id}`, source: groupId, target: cover.id });
+        }
       }
     }
   }

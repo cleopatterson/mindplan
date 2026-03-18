@@ -45,6 +45,7 @@ import { ExpensesGroupNode } from './nodes/ExpensesGroupNode';
 import { InsuranceGroupNode } from './nodes/InsuranceGroupNode';
 import { InsuranceClientNode } from './nodes/InsuranceClientNode';
 import { InsuranceCoverNode } from './nodes/InsuranceCoverNode';
+import { InsuranceCoverGroupNode } from './nodes/InsuranceCoverGroupNode';
 
 const nodeTypes: NodeTypes = {
   familyNode: FamilyNode,
@@ -68,6 +69,7 @@ const nodeTypes: NodeTypes = {
   insuranceGroupNode: InsuranceGroupNode,
   insuranceClientNode: InsuranceClientNode,
   insuranceCoverNode: InsuranceCoverNode,
+  insuranceCoverGroupNode: InsuranceCoverGroupNode,
 };
 
 interface MindMapProps {
@@ -160,7 +162,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
     // Collect all collapsible group node IDs
     const groupNodeIds = new Set<string>();
     for (const node of rawNodes) {
-      if (node.data.nodeType === 'assetGroup' || node.data.nodeType === 'goalCategoryGroup' || node.data.nodeType === 'expensesGroup') groupNodeIds.add(node.id);
+      if (node.data.nodeType === 'assetGroup' || node.data.nodeType === 'goalCategoryGroup' || node.data.nodeType === 'expensesGroup' || node.data.nodeType === 'insuranceCoverGroup') groupNodeIds.add(node.id);
     }
 
     // Find children of collapsed groups (edges from collapsed group → child)
@@ -176,7 +178,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
       .filter((n) => !hiddenNodeIds.has(n.id))
       .map((n) => {
         const hasGap = gapNodeIds.size > 0 && gapNodeIds.has(n.id);
-        if (n.data.nodeType === 'assetGroup' || n.data.nodeType === 'goalCategoryGroup' || n.data.nodeType === 'expensesGroup') {
+        if (n.data.nodeType === 'assetGroup' || n.data.nodeType === 'goalCategoryGroup' || n.data.nodeType === 'expensesGroup' || n.data.nodeType === 'insuranceCoverGroup') {
           return { ...n, data: { ...n.data, isExpanded: expandedGroupIds.has(n.id), hasGap } };
         }
         if (hasGap) return { ...n, data: { ...n.data, hasGap } };
@@ -327,7 +329,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
       const parentEdge = rawEdges.find((e) => e.target === nodeId);
       if (parentEdge) {
         const parentNode = rawNodes.find((n) => n.id === parentEdge.source);
-        if ((parentNode?.data.nodeType === 'assetGroup' || parentNode?.data.nodeType === 'goalCategoryGroup' || parentNode?.data.nodeType === 'expensesGroup') && !expandedGroupIds.has(parentEdge.source)) {
+        if ((parentNode?.data.nodeType === 'assetGroup' || parentNode?.data.nodeType === 'goalCategoryGroup' || parentNode?.data.nodeType === 'expensesGroup' || parentNode?.data.nodeType === 'insuranceCoverGroup') && !expandedGroupIds.has(parentEdge.source)) {
           // Expand the group — the next render cycle will include our node in layoutedNodes
           setExpandedGroupIds((prev) => {
             const next = new Set(prev);
