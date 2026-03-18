@@ -480,7 +480,7 @@ const MindMapInner = forwardRef<MindMapHandle, MindMapProps>(function MindMapInn
     (event, node) => {
       // Collapsible group nodes toggle expand/collapse instead of selecting
       const nt = (node.data as NodeData).nodeType;
-      if (nt === 'assetGroup' || nt === 'goalCategoryGroup' || nt === 'expensesGroup') {
+      if (nt === 'assetGroup' || nt === 'goalCategoryGroup' || nt === 'expensesGroup' || nt === 'insuranceCoverGroup') {
         // Capture the node's current position + viewport so we can anchor after re-layout
         pendingAnchorRef.current = {
           nodeId: node.id,
