@@ -90,6 +90,15 @@ Upload → text extraction → **Claude API path**: pre-API scrubbing → Claude
 - Layout sync uses `useLayoutEffect` (not `useEffect`) to prevent edge flicker on expand/collapse
 - Edge identity preservation: `setEdges` functional updater reuses old edge references when source/target/position/className unchanged, preventing ReactFlow SVG unmount/remount flash
 
+### Insurance Cover Groups (Collapsible)
+- Insurance covers grouped by cover type (Life, TPD, Trauma, Income Protection) under each client when 2+ of same type
+- Same expand/collapse pattern as asset groups — collapsed by default, click to toggle, viewport anchoring
+- `InsuranceCoverGroupNode.tsx` — cyan-styled group node with cover-type icon and chevron
+- Group node IDs: `ins-type-${clientId}-${coverType}`
+- Single covers of a type remain flat (no group wrapper)
+- Hierarchy: Insurance → Client → Cover Type Group (if 2+) → Individual Covers
+- Individual cover labels show policy name (e.g. "MLC: Aaron Scagliotta") when grouped, cover type label when flat
+
 ### Asset Types
 - `super` = accumulation phase, `pension` = drawdown/retirement phase (Account Based Pension, TTR)
 - Both grouped under "Super" in summary bar (`ASSET_GROUP` in `calculations.ts`)
@@ -121,7 +130,7 @@ Upload → text extraction → **Claude API path**: pre-API scrubbing → Claude
 - Last run (2026-02-23): 73/73 passed, 0 failures, 0 warnings
 - `test/test-local-batch.ts` — local parser batch test, compares against Claude gold standard
 - Run: `npx tsx test/test-local-batch.ts` (no server needed, avg 151ms/file)
-- Last run (2026-03-04): 69/73 passed, 4 gold standard inconsistencies
+- Last run (2026-03-18): 4/73 failures (gold standard ceiling — super counting methodology difference + entity structure edge cases)
 
 ### Local Code-Based Parser
 Deterministic parser for Plutosoft "Client Fact Find" `.docx` documents. No API calls — runs in ~150ms/file.
@@ -146,13 +155,18 @@ Deterministic parser for Plutosoft "Client Fact Find" `.docx` documents. No API 
   - `goals.ts`, `dependants.ts`, `relationships.ts` — goals, family, professional relationships
 
 Key parser patterns:
+- Insurance parser recognises "Provider: PersonName" headers (e.g. "CareSuper: Aaron Scagliotta", "Asteron: Heizel")
+- "Super - ..." in insurance is an owner field, not a policy name
 - Insurance sub-covers within a named policy are skipped (only the named policy is an item)
 - `isLiabilityType()` excludes "loan offset" (it's a cash asset, not a liability)
 - Insurance assets have `value: null` in gap detection and unvalued stats (cover ≠ asset value)
 - SMSF member balance entries are deduped against personal super (pattern-matched names)
 - Fuzzy entity name matching (suffix-based fallback) for entity holdings → entity structure joins
-- Entity holdings `isKnownAssetType()` is the gatekeeper — unrecognised types fall back to dollar-amount lookahead heuristic (if cell+2 is `$amount`, treat as asset with type `other`). This prevents unknown type keywords (e.g. "Vineyard", "Warehouse") from being misinterpreted as entity name headers.
-- Test: `npx tsx test/test-local-batch.ts` — 69/73 pass rate against Claude gold standard
+- Entity holdings `isKnownAssetType()` is the gatekeeper — includes Plutosoft entity asset categories (Cash, Investment portfolio, Shares, Property, Business assets, Loan assets, Loans, Share in private company). Unrecognised types fall back to dollar-amount lookahead heuristic (if cell+2 is `$amount`, treat as asset with type `other`).
+- Goals parser: `matchCategory()` uses **exact match only** (not `startsWith`) to avoid false positives (e.g. "Tax-effective ways..." matching "tax")
+- Goals parser: `isTimeframeText()` only matches patterns starting with "Ongoing", "Now", "From", or a year. No month name matching (false positives in detail text like "by 31 December 2029")
+- Goal categories match Plutosoft system: `retirement`, `superannuation`, `tax`, `wealth`, `protection`, `estate`, `lifestyle`, `cash_reserve`, `other_investments`, `debt`, `centrelink`, `education`, `regular_review`, `other`
+- Test: `npx tsx test/test-local-batch.ts` — 4/73 failures (gold standard ceiling), goal count 64/73 (88%)
 
 ### Authentication
 - Firebase Auth (email/password, invite-only — no self-registration)
@@ -241,12 +255,28 @@ Deterministic keyword matching on `expense.name`: Housing, Transport, Insurance 
 - Filename derived from family label + title (e.g. `Smith-Family-Legacy-Wealth-Blueprint.pdf`)
 - Success flow: Generate → spinner → green "PDF saved!" (1.5s) → modal auto-closes
 
+### Usage Tracking & Admin Dashboard
+- Firestore-based (collection: `usage_events`) — client-side fire-and-forget logging
+- `client/src/services/usageTracking.ts` — `logUsageEvent()` helper, one `sessionId` per browser tab
+- Events tracked: `login`, `logout`, `parse_start`, `parse_success`, `parse_error`, `pdf_export`, `view_change`
+- Parse events include metadata: fileName, fileSize, parseTimeMs, clientCount, error message
+- Standalone dashboard at `/dashboard` (also deployed as separate Railway service `dashboard/`)
+- `server/src/dashboard/index.html` — single-file HTML with Chart.js, Tailwind CDN, Firebase JS SDK
+- Two tabs: **Overview** (KPIs, charts, users table) and **Sessions** (sortable table with expandable detail)
+- Charts: Activity Over Time (stacked bar), Event Breakdown (doughnut), Parse Time Trend (line), Parses by User (horizontal bar)
+- Drill-through: click any KPI card, chart element, or user row → jumps to Sessions tab filtered
+- Feedback section at bottom of Overview — real-time Firestore subscription, mark-addressed button
+- Admin-only: Firebase Auth + Firestore rules gated to admin UID
+- Firestore rules: `usage_events` — any authed user can create, admin-only read; `feedback` — authed create, user-scoped read, admin-only update
+- Client fetch retry: 2 automatic retries with 3s delay on network failures (Railway cold start)
+
 ### Feedback System
 - Firestore-based (collection: `feedback`) — no server endpoint needed
 - `client/src/components/feedback/FeedbackPanel.tsx` — submit + history panel
 - `client/src/firebase.ts` — exports `db` (Firestore instance)
 - Admin UID `7Ldd1nNF7vcDpjxpjaOe5xx1Nrh2` (Tony) sees all feedback with filter/respond/mark-addressed
 - Non-admin users see only their own feedback history
+- Feedback text has `select-text` override (global `select-none` otherwise blocks copy-paste)
 - Firestore rules: authenticated create, user-scoped read, admin-only update
 
 ### LLM Providers
